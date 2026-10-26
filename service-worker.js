@@ -1,6 +1,6 @@
-const CACHE='dvsky-shell-20261026-location-1';
+const CACHE='dvsky-shell-20261026-stargazer-1';
 const BASE=new URL('./',self.location.href);
-const FILES=['./','index.html','forecast.html','field-check.html','prototype/navigator.css','prototype/navigator.js','prototype/navigation.js','prototype/equipment-ui.js','prototype/eyepieces.js','prototype/pointing.js','prototype/alignment.js','prototype/positions.js','prototype/catalogue.js','prototype/easy-targets.js','prototype/sensors.js','prototype/location.js','prototype/vendor/astronomy.browser.min.js'];
+const FILES=['assets/stargazer-header.webp','./','index.html','forecast.html','field-check.html','prototype/navigator.css','prototype/navigator.js','prototype/navigation.js','prototype/equipment-ui.js','prototype/eyepieces.js','prototype/pointing.js','prototype/alignment.js','prototype/positions.js','prototype/catalogue.js','prototype/easy-targets.js','prototype/sensors.js','prototype/location.js','prototype/vendor/astronomy.browser.min.js'];
 const PATHS=new Set(FILES.map(path=>new URL(path,BASE).pathname));
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES.map(path=>new Request(new URL(path,BASE),{cache:'reload'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('dvsky-shell-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

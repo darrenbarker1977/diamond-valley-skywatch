@@ -48,3 +48,13 @@ remaining forecast dates. No new weather or new named-place lookups are possible
 offline. Manual coordinates and astronomical calculations work offline. Browser
 cache eviction, private mode or clearing site data can remove offline readiness.
 Equipment and saved sites remain per browser/device rather than account-synced.
+
+## Header illustration
+
+The owner's clay stargazer / full Moon artwork appears in the upper-right
+shared header on Home and Forecast, in the Navigator header on Objects,
+Pointing and Eyepieces, and above the outdoor instructions. Its prepared
+transparent-edge WebP is assets/stargazer-header.webp. CSS preserves the full
+composition, uses compact sizes at phone widths, and dims/tints it in red night
+mode. The service worker includes the image for offline use. Forecast source,
+location logic and sensor calculations are unchanged by this visual update.
