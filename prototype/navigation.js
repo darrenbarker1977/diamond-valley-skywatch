@@ -1,4 +1,4 @@
-export function createNavigation({dialog,launch,stopCamera}){
+export function createNavigation({dialog,launch,stopCamera,forecastURL}){
  const $=id=>document.getElementById(id);let view='home';
  const menus=[...document.querySelectorAll('[data-app-view]')];
  function mark(){for(const button of document.querySelectorAll('.dv-app-header button')){const active=dialog.open?button.hasAttribute('data-open-section'):button.dataset.appView===view;if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}}
@@ -12,7 +12,7 @@ export function createNavigation({dialog,launch,stopCamera}){
   if(dialog.open)dialog.close();view=name;$('home-view').hidden=name!=='home';$('forecast-view').hidden=name!=='forecast';document.body.classList.toggle('dv-app-forecast-mode',name==='forecast');
   if(name==='forecast'){
    const frame=$('forecast-frame');
-   if(!frame.hasAttribute('src'))frame.src=frame.dataset.src;
+   if(!frame.hasAttribute('src'))frame.src=forecastURL(frame.dataset.src);
    else {try{frame.contentWindow.dispatchEvent(new Event('focus'));}catch{}}
   }
   mark();window.scrollTo(0,0);
@@ -26,4 +26,5 @@ export function createNavigation({dialog,launch,stopCamera}){
  const height=()=>document.documentElement.style.setProperty('--app-header-height',$('app-header').getBoundingClientRect().height+'px');
  if(globalThis.ResizeObserver)new ResizeObserver(height).observe($('app-header'));height();
  section('objects');mark();
+ return {locationChanged(){const frame=$('forecast-frame');if(frame.hasAttribute('src'))frame.src=forecastURL(frame.dataset.src);}};
 }

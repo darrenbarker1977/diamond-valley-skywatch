@@ -1,3 +1,4 @@
+import {site} from './location.js?v=location-1';
 import {OrientationSession} from './sensors.js';
 import {skyVector,skyAngles,solveAlignment,validateAlignment,applyRotation,stableSample,guidance,angle} from './alignment.js';
 import {easyTargets,easyObjects} from './easy-targets.js';
@@ -75,13 +76,15 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
     else {const result=guidance(current,p);direction=`${target.name}: ${result.blocked||result.text}`;}
    }catch{direction='Sky calculation unavailable. Guidance is off.';}
   }
+  if(!site.physicalConfirmed)direction='Sky viewing only. Confirm you are physically at this observing location before using sensor guidance.';
   $('guidance').textContent=direction;
   $('compact-guidance').textContent=session.active?direction:session.message+'. Open Pointing when you want to align.';
   document.querySelector('.dv-nav-alignment').hidden=!session.active||verified;
   if(!session.active)$('pointing-setup').open=true;
   else if(session.status==='receiving'&&$('pointing-setup').dataset.autoCollapsed!=='true'){$('pointing-setup').open=false;$('pointing-setup').dataset.autoCollapsed='true';}
  }
- $('enable-sensors').addEventListener('click',()=>{reset();$('pointing-setup').dataset.autoCollapsed='false';session.start(mode());if($('alignment-target').value)onTargetSelect($('alignment-target').value);});
+ $('enable-sensors').addEventListener('click',()=>{if(!site.physicalConfirmed){$('alignment-feedback').textContent='Remote viewing only. Confirm that you are physically at this observing site before enabling pointing.';return;}reset();$('pointing-setup').dataset.autoCollapsed='false';session.start(mode());if($('alignment-target').value)onTargetSelect($('alignment-target').value);});
+ window.addEventListener('dvsky-presence-changed',()=>{if(!site.physicalConfirmed)suspend('Physical presence is not confirmed. Remote viewing remains available; pointing is off.');else paint();});
  $('stop-sensors').addEventListener('click',()=>suspend());
  $('reset-alignment').addEventListener('click',()=>reset());
  $('pointing-mode').addEventListener('change',()=>{suspend('Mode changed. Reposition your phone, enable sensors and start alignment again.');$('mount-confirm').checked=false;setup();});

@@ -7,7 +7,7 @@ export const easyObjects={
  Saturn:{rank:70,hint:'A steady yellowish point. Confirm the direction; its rings help identify it in a telescope.'},
  Sirius:{rank:86,hint:'A very bright, often twinkling star below and to one side of Orion’s Belt. Confirm the map direction.'},
  Vega:{rank:83,hint:'A bright bluish-white star in the Summer Triangle. Confirm the direction on the map.'},
- Polaris:{rank:75,hint:'The North Star is fairly bright, but not the brightest. Look north, about halfway up. The two outer stars in the Big Dipper’s bowl point toward it.'},
+ Polaris:{rank:75,hint:'The North Star is fairly bright, but not the brightest. Look toward north at the height shown on the map. The two outer stars in the Big Dipper’s bowl point toward it.'},
  Capella:{rank:84,hint:'A bright yellow-white star in Auriga. Match its direction and height on the map.'},
  Arcturus:{rank:85,hint:'A bright orange star. Follow the curve of the Big Dipper’s handle toward it, then check the map.'},
  Altair:{rank:78,hint:'A bright star flanked by two fainter stars in a line. It is part of the Summer Triangle.'},
