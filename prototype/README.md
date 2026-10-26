@@ -211,3 +211,22 @@ Future cross-device account storage can be added separately if requested.
 The separate private HTTPS test preview is hosted at
 https://diamond-valley-skywatch-navigator-preview.amazingstumbles.chatgpt.site .
 The GitHub Pages forecast remains unchanged; the feature branch is unmerged.
+
+
+## Compact home and tool views
+
+Home now has four direct buttons: Forecast, Find an object, Point my phone /
+telescope, and My eyepieces. Navigator sections display one tool at a time.
+Each object prominently shows a recommended viewing eyepiece; finding steps,
+extra magnifications, object background and sky map are expandable. Phone setup
+collapses after good readings arrive, and completed alignment steps hide after
+a successful independent check. Switching tools stops the optional camera;
+closing the Navigator still stops sensors and clears alignment.
+
+The preview embeds a byte-identical copy of the existing forecast in its Forecast
+view, without rewriting its weather code, links or refresh behavior. The frame
+is loaded on demand and retained across menu changes, preserving selection and
+cache state. Returning uses its existing focus-refresh handler. Local prototype
+uses ../index.html; the separate hosting copy uses forecast.html. The original
+root index.html is unchanged. This demonstrates a possible unified interface;
+production integration and any merge remain subject to the owner's approval.

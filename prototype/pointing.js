@@ -76,8 +76,12 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
    }catch{direction='Sky calculation unavailable. Guidance is off.';}
   }
   $('guidance').textContent=direction;
+  $('compact-guidance').textContent=session.active?direction:session.message+'. Open Pointing when you want to align.';
+  document.querySelector('.dv-nav-alignment').hidden=!session.active||verified;
+  if(!session.active)$('pointing-setup').open=true;
+  else if(session.status==='receiving'&&$('pointing-setup').dataset.autoCollapsed!=='true'){$('pointing-setup').open=false;$('pointing-setup').dataset.autoCollapsed='true';}
  }
- $('enable-sensors').addEventListener('click',()=>{reset();session.start(mode());if($('alignment-target').value)onTargetSelect($('alignment-target').value);});
+ $('enable-sensors').addEventListener('click',()=>{reset();$('pointing-setup').dataset.autoCollapsed='false';session.start(mode());if($('alignment-target').value)onTargetSelect($('alignment-target').value);});
  $('stop-sensors').addEventListener('click',()=>suspend());
  $('reset-alignment').addEventListener('click',()=>reset());
  $('pointing-mode').addEventListener('change',()=>{suspend('Mode changed. Reposition your phone, enable sensors and start alignment again.');$('mount-confirm').checked=false;setup();});
@@ -122,5 +126,6 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  $('close').addEventListener('click',()=>suspend());
  $('navigator').addEventListener('cancel',()=>suspend());
  $('navigator').addEventListener('close',()=>suspend());
- setup();refresh();return {refresh,paint,suspend};
+ $('camera-tools').addEventListener('toggle',()=>{if(!$('camera-tools').open)stopCamera();});
+ setup();refresh();return {refresh,paint,suspend,hideCamera:stopCamera};
 }

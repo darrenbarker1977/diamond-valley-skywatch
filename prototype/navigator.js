@@ -1,3 +1,4 @@
+import {createNavigation} from './navigation.js';
 import {createEquipment} from './equipment-ui.js';
 import {createPointing} from './pointing.js';
 import {catalogue} from './catalogue.js';
@@ -41,9 +42,10 @@ function render(){
   const detail=$('detail');detail.replaceChildren(node('span',o.type.toUpperCase(),'dv-nav-eyebrow'),Object.assign(node('h3',o.name),{id:'target-name'}));
   const stats=node('dl',undefined,'dv-nav-stats');
   for(const [label,value] of [['ALTITUDE',degrees(p.alt)],['TRUE AZIMUTH',`${degrees(p.az)} ${compass(p.az)}`]]){const group=node('div');group.append(node('dt',label),node('dd',value));stats.append(group);}
-  detail.append(stats,node('p',p.alt>0?'Above the geometric horizon · terrain and daylight may prevent viewing.':'Below the geometric horizon · not currently observable.'),node('p',o.note));
-  if(!o.body)detail.append(node('p','Precessed J2000 catalogue position. Rounded coordinates; proper motion not applied. Suitable for exploration, not precision alignment.'));
-  equipment.appendAdvice(detail,o,p.alt);
+  const about=node('details',undefined,'dv-nav-about');about.append(node('summary','About this object & calculation'));
+  detail.append(stats,node('p',p.alt>0?'Above the geometric horizon · terrain and daylight may prevent viewing.':'Below the geometric horizon · not currently observable.'));about.append(node('p',o.note));
+  if(!o.body)about.append(node('p','Precessed J2000 catalogue position. Rounded coordinates; proper motion not applied. Suitable for exploration, not precision alignment.'));
+  const advice=equipment.appendAdvice(detail,o,p.alt);detail.insertBefore(advice,stats);detail.append(about);
   drawMap();pointing.paint();
 }
 function drawMap(){
@@ -62,3 +64,5 @@ $('search').addEventListener('input',()=>{if(positions.size)render();});
 for(const button of document.querySelectorAll('[data-filter]'))button.addEventListener('click',()=>{filter=button.dataset.filter;for(const b of document.querySelectorAll('[data-filter]'))b.setAttribute('aria-pressed',String(b===button));if(positions.size)render();});
 document.addEventListener('visibilitychange',()=>{if(dialog.open&&!document.hidden)update();});
 window.addEventListener('pageshow',()=>{if(dialog.open)update();});
+
+createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera()});

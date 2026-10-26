@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test';
 const pageErrors=new WeakMap();
 test.beforeEach(async({page})=>{pageErrors.set(page,[]);page.on('pageerror',error=>pageErrors.get(page).push(error.message));});
 test.afterEach(async({page})=>expect(pageErrors.get(page)).toEqual([]));
-async function open(page){await page.addInitScript(()=>{for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});await page.clock.install({time:new Date('2026-10-27T03:00:00Z')});await page.clock.pauseAt(new Date('2026-10-27T03:00:10Z'));await page.goto('/prototype/');await page.locator('#launch').click();}
+async function open(page){await page.addInitScript(()=>{for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});await page.clock.install({time:new Date('2026-10-27T03:00:00Z')});await page.clock.pauseAt(new Date('2026-10-27T03:00:10Z'));await page.goto('/prototype/');await page.locator('#launch').click();await page.locator('[data-nav-section=pointing]').click();await page.locator('#camera-tools').evaluate(el=>el.open=true);}
 async function feed(page,{wrong=false,mode='mounted'}={}){
  await page.evaluate(()=>clearInterval(window.__testSensorTimer));
  await page.clock.runFor(300);
@@ -32,8 +32,8 @@ test('beginner mounted wizard records two objects, checks a third and loses alig
  await expect(page.locator('#alignment-feedback')).toContainText('check passed');
  await expect(page.locator('#measured-direction')).toContainText('Phone-derived tube estimate');
  await expect(page.locator('#guidance')).not.toContainText('arrows are off');
- await page.locator('#alignment-feedback').evaluate(el=>{el.textContent='SIMULATED DEVELOPMENT TEST — NOT REAL TELESCOPE READINGS. '+el.textContent;});
- await page.locator('#capture-alignment').scrollIntoViewIfNeeded();
+ await page.locator('#guidance').evaluate(el=>{const label=document.createElement('p');label.textContent='SIMULATED DEVELOPMENT TEST — NOT REAL TELESCOPE READINGS.';el.before(label);});
+ await page.locator('#guidance').scrollIntoViewIfNeeded();
  await page.screenshot({path:`prototype/screenshots/${info.project.name}-alignment.png`,fullPage:true});
  await page.evaluate(()=>clearInterval(window.__testSensorTimer));await page.clock.runFor(2000);
  await expect(page.locator('#sensor-status')).toContainText('stale');

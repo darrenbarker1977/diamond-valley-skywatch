@@ -8,7 +8,7 @@ include the prototype. Do not merge the PR to make a test link.
 
 1. Stay at the Diamond Valley observing site shown on the page. Wait until
    after dusk and choose a clear patch of sky. Lower the phone brightness.
-2. Open the telescope button, choose **In my hand**, and tap **Enable sensors**.
+2. On Home, choose **Point my phone / telescope** (or open the Navigator’s **Pointing** tab), choose **In my hand**, and tap **Enable sensors**.
    If Chrome asks, allow motion/orientation sensors. If it reports no usable
    readings, stop here and keep the error message for troubleshooting.
 3. The guide suggests an easy object for the current sky. Use its directions
@@ -23,7 +23,7 @@ include the prototype. Do not merge the PR to make a test link.
 5. Hold still, tick the confirmation, and record. Follow the guide for a
    second object in another part of the sky, then a third object to check it.
    The guide keeps arrows off until all three steps succeed.
-6. Select an easy target in search and move slowly. Check that the directions
+6. Use **Objects** to search for an easy target, then move slowly. A compact guidance line remains visible there while sensors are active. Check that the directions
    agree with the actual sky. “Within 3°” is a rough area, not a promise of
    centering. Try several parts of the sky. Stop if the directions disagree.
 

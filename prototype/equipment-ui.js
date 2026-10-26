@@ -40,10 +40,13 @@ export function createEquipment(onChange){
   current,
   alignmentHint:()=>alignmentEyepiece(current()),
   appendAdvice(container,object,alt){
-   const section=element('section');section.className='dv-nav-eyepiece-plan';section.setAttribute('aria-label','Your eyepiece plan');section.append(element('h4','Your eyepiece plan'));
+   const section=element('section');section.className='dv-nav-eyepiece-plan';section.setAttribute('aria-label','Your eyepiece plan');section.append(element('h4','Recommended eyepiece'));
    const plan=viewingPlan(object,current(),alt),list=element('ol');
+   const primary=plan.steps[1]||plan.steps[0];
+   if(primary){section.append(element('p',describe(primary.choice)));const tip=element('p',primary!==plan.steps[0]?`Find it first with ${describe(plan.steps[0].choice)}. Then increase power only if the image stays sharp.`:'Start at low power. More magnification is not always a better view.');tip.className='dv-nav-fine';section.append(tip);}
+   const extra=element('details');extra.append(element('summary','Finding steps & more options'));
    for(const step of plan.steps){const item=element('li');item.append(element('strong',step.title),element('p',describe(step.choice)),element('p',step.why));list.append(item);}
-   section.append(list,element('p',plan.note));const config=current();if(config)section.append(element('p',`Magnification = telescope focal length ÷ eyepiece focal length. Using ${config.focalLength} mm; check your tube label in My eyepieces.`));container.append(section);
+   extra.append(list,element('p',plan.note));const config=current();if(config)extra.append(element('p',`Magnification = telescope focal length ÷ eyepiece focal length. Using ${config.focalLength} mm; check your tube label in My eyepieces.`));section.append(extra);container.append(section);return section;
   }
  };
 }
