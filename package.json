@@ -1,0 +1,14 @@
+{
+  "name": "skywatch-navigator-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "preview": "python3 -m http.server 8000 --bind 0.0.0.0",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "astronomy-engine": "2.1.19"
+  }
+}
