@@ -1,20 +1,22 @@
+import {createPointing} from './pointing.js';
 import {catalogue} from './catalogue.js';
 import {position,project,matches} from './positions.js';
 const $=id=>document.getElementById(id), dialog=$('navigator');
 let selected='Moon',filter='all',timer,positions=new Map();
 const A=globalThis.Astronomy;
+const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),onTargetSelect:id=>{selected=id;if(positions.size)render();}});
 const degrees=n=>`${n.toFixed(1)}°`;
 const compass=az=>['N','NE','E','SE','S','SW','W','NW'][Math.round(az/45)%8];
 function node(tag,text,cls){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;}
 function svg(tag,attrs,text){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value] of Object.entries(attrs))el.setAttribute(key,value);if(text)el.textContent=text;return el;}
-function fail(error){positions.clear();$('objects').replaceChildren();$('detail').replaceChildren();drawMap();$('error').hidden=false;$('error').textContent=`Sky calculations unavailable: ${error.message}. No positions or pointing readings will be substituted.`;$('clock').textContent='Calculation unavailable';}
+function fail(error){pointing.suspend('Sky calculations failed. Guidance is off.');positions.clear();$('objects').replaceChildren();$('detail').replaceChildren();drawMap();$('error').hidden=false;$('error').textContent=`Sky calculations unavailable: ${error.message}. No positions or pointing readings will be substituted.`;$('clock').textContent='Calculation unavailable';}
 function update(){
   try {
     if(!A)throw new Error('astronomy library did not load');
     const now=new Date();
     positions=new Map(catalogue.map(o=>[o.id,position(A,o,now)]));
     $('clock').textContent=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Edmonton',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'}).format(now);
-    $('error').hidden=true;render();
+    $('error').hidden=true;render();pointing.refresh();
   }catch(error){fail(error);}
 }
 function render(){
@@ -39,7 +41,7 @@ function render(){
   for(const [label,value] of [['ALTITUDE',degrees(p.alt)],['TRUE AZIMUTH',`${degrees(p.az)} ${compass(p.az)}`]]){const group=node('div');group.append(node('dt',label),node('dd',value));stats.append(group);}
   detail.append(stats,node('p',p.alt>0?'Above the geometric horizon · terrain and daylight may prevent viewing.':'Below the geometric horizon · not currently observable.'),node('p',o.note));
   if(!o.body)detail.append(node('p','Precessed J2000 catalogue position. Rounded coordinates; proper motion not applied. Suitable for exploration, not precision alignment.'));
-  drawMap();
+  drawMap();pointing.paint();
 }
 function drawMap(){
   const sky=$('sky');sky.querySelectorAll(':scope > :not(title):not(desc)').forEach(n=>n.remove());

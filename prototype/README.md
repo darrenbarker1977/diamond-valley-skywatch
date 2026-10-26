@@ -22,7 +22,7 @@ east-right: it is a horizon diagram, not an overhead planetarium projection,
 phone camera or orientation view. Selected objects below the horizon remain
 in the detail card with a clear label and are omitted from the map.
 
-The catalogue contains 21 curated objects, not all astronomical objects.
+The catalogue contains 27 curated objects, not all astronomical objects.
 The current clock drives calculations every ten seconds while the panel is
 open and visible. Reopening/resuming recalculates immediately. Close stops
 the timer. Night mode applies to this preview only and resets on reload.
@@ -56,15 +56,94 @@ controlled by the web page; lower device brightness manually.
   Clock accuracy and catalogue rounding limit practical accuracy. No claim
   of eyepiece-centering precision is made.
 
-## Honest sensor boundary
+## Beginner alignment and pointing
 
-No orientation/motion listeners, geolocation, sensor permissions, pointing
-readings, motor commands or telescope arrows are implemented. “Sensors off”
-is deliberate, not a calibration result. A stock 250P has no telemetry.
-Mounted estimates require a rigid phone mount, measured multi-star alignment,
-true/magnetic-north handling, stale-reading rejection and independent-star
-validation on the actual Pixel 8 and telescope. Those stages remain pending.
-Do not turn catalogue positions into apparent telescope readings.
+Open “Point your phone or guide your telescope.” Choose handheld or strapped
+250P mode. No sensor or camera permission is requested until you tap its button.
+A secure HTTPS preview is required on a phone; localhost works on the machine
+serving it, but plain HTTP over a home LAN does not permit these APIs. This PR
+does not create hosting or change the permanent Pages site. Test on a separately
+approved HTTPS preview before considering live integration.
+
+1. **Set up the phone.** In your hand, aim the rear camera, not the top edge,
+   at the sky. An optional local rear-camera crosshair helps centre an object.
+   On the 250P, strap the phone tightly along the tube, screen outward, with
+   its physical top edge (opposite the charging port) toward the tube opening
+   and its long edges parallel to the tube. Confirm placement in the guide.
+   Arbitrary phone-to-tube angles are not supported. The app cannot detect
+   a loose strap; if it slips, stop and start alignment again.
+2. **Enable sensors.** Away from magnetic accessories, gently move the phone
+   in a figure eight, then return it to its final position. This may help the
+   compass but does not prove accuracy. Chrome must expose absolute orientation;
+   relative orientation alone cannot unlock guidance. If permission fails,
+   the page explains how to check the browser's motion-sensor settings.
+3. **Start with something easy.** Suggestions are recalculated for the current
+   time and fixed Diamond Valley site. The guide favors a well-placed Moon,
+   bright planets, or recognizable bright stars, including Polaris. Each has
+   identification hints. It never promises an object is visible through clouds.
+   Objects must be 20°–75° up and at least 30° from the Sun. The Sun must be
+   at least 6° below the horizon; the Moon must be at least 15% illuminated.
+   Choose another option if you cannot confidently identify the suggestion.
+4. **Record two objects.** Confirm the object's identity and centre it in the
+   camera crosshair (handheld) or low-power eyepiece (mounted), hold still, and
+   record. The second object must be 30°–140° from the first. One object cannot
+   unlock arrows. Finish these steps within five minutes or start again.
+5. **Check a third object.** Use a different object at least 20° from both
+   earlier objects. Centre it and record. A miss over 3° rejects the alignment.
+   Only a passing independent check unlocks coarse arrows. Use your finder,
+   then a low-power eyepiece to finish locating the target. This is not a
+   promise that a target will be in the eyepiece.
+
+The catalogue now adds Capella, Arcturus, Altair, Deneb, Betelgeuse and Rigel
+for easier seasonal choices. A lack of suitable suggestions means wait or try
+another night; do not guess at faint targets.
+
+### Measurement model and limits
+
+The W3C device Z-X-Y rotation maps the rear camera's -Z axis in handheld mode
+or the phone's physical +Y/top-edge axis in mounted mode into the browser's
+absolute reference frame. This axis choice is independent of the way text is
+rotated on screen; a screen-orientation change nevertheless clears alignment
+for conservative handling. A two-vector orthonormal basis fit estimates the
+rotation between the sensor reference and true astronomical directions. It
+can correct a stable reference-heading offset without pretending raw magnetic
+heading is true north. It does **not** infer an arbitrary mounting-axis offset
+or a time/position-dependent magnetic distortion. The known mounting-axis
+requirement and third-object check are essential.
+
+A capture needs at least eight finite absolute samples across at least 600 ms,
+within the last 1.2 seconds, with the newest sample no older than 700 ms and
+all samples within 1.5° of their mean direction. The two measured object
+separations must agree within 3°. The fit residual and independent check error
+are displayed. No browser-provided heading accuracy is assumed. A passing
+local check does not establish accuracy across the entire sky.
+
+After validation, guidance uses only fresh measured directions and the selected
+target's current coordinates. A 3° coarse arrival label does not mean centred.
+Left/right wraps across north using the shorter turn; raise/lower uses altitude.
+Readings moving more than 4° over the recent 400 ms pause arrows. Guidance is
+suppressed below the horizon, above 80° altitude, in daylight, and within 30°
+of the Sun. No motors are controlled.
+
+No usable reading in six seconds, invalid readings after acquisition, a >70°
+jump within 100 ms, or readings stale for more than 1.5 seconds stops the sensor
+session. Initial empty events wait for complete data rather than create zero
+coordinates. Closing the modal, changing modes, screen rotation, leaving or
+hiding the page releases sensors/camera and clears calibration. Sessions expire
+after 20 minutes. Changes in strap placement require a manual restart because
+slippage cannot always be detected electronically.
+
+Readings and camera video stay in memory locally, with no recording, upload or
+persisted calibration. The optional camera requires its own permission, verifies
+a rear-facing camera, and stops tracks on close, suspension or a canceled late
+permission response. Night mode dims and tints the preview; browser/OS permission
+dialogs remain outside page control.
+
+A stock Dobsonian supplies no encoder telemetry. All post-alignment directions
+are labelled phone-derived estimates. The steel tube, magnets, sensor drift,
+clock/location errors and imperfect phone placement can defeat this technique.
+Actual Pixel 8/Chrome and 250P hardware acceptance is still pending; do not
+interpret simulated development tests as real telescope readings.
 
 ## Validation
 
@@ -72,7 +151,7 @@ Development requires Node 20+; run `npm ci`, then `npm test`.
 For browser checks: `npx playwright install chromium`, then `npx playwright test`.
 Browser installation may require the normal Playwright Linux prerequisites.
 
-The 36 Node checks include 32 independent Astropy reference cases for the Sun,
+The original 36 Node checks include 32 independent Astropy reference cases for the Sun,
 Moon, Mars, Jupiter, Saturn, M31, Polaris and Sirius across four times including
 Edmonton DST transition dates and summer/winter conditions. Acceptable angular
 component differences are 0.15 degrees for solar-system bodies and 0.05 degrees
@@ -81,13 +160,20 @@ accuracy specification. Fixtures use Astropy 8.0.2 / ERFA and the built-in
 solar-system ephemeris, zero atmospheric pressure, and IERS data packaged
 2026-10-19. Regenerate with `python tests/reference.py > tests/reference.json`
 after installing Astropy separately; Astropy is not a runtime dependency.
+Eleven additional Node checks cover orientation transforms, full 3D frame fits,
+poor geometry, validation rejection, shortest-turn arrows, stable sample gates,
+easy-target planning and sensor lifecycle failures.
 Independent JPL Horizons comparison and precision catalogue validation remain
 future work before telescope guidance.
 
 Browser checks run at 1440×1000 and a 412×915 touch viewport approximating
 Pixel 8 logical dimensions. They cover open/close, search, aliases, selection,
 empty results, horizon filtering, expansion, red toggle, keyboard handling,
-refresh focus retention and a missing astronomy-library error. Screenshots
+refresh focus retention and a missing astronomy-library error. Further tests
+exercise the complete three-object wizard, rejected third-object checks,
+permission denial, missing/relative/invalid/stale data, mode changes, daylight
+exclusion and cancellation of a pending camera request. Orientation samples
+are synthetic and explicitly confined to the development tests. Screenshots
 are illustrative browser renders; they do not certify physical Pixel sensor
 accuracy, actual Chrome shortcut behavior or night-vision performance.
 

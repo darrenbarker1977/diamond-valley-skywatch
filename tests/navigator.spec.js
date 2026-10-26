@@ -6,7 +6,7 @@ test('open, search, select, filter, expand, red mode and close',async({page},tes
  await page.goto('/prototype/');
  await page.getByRole('button',{name:'Sky Navigator',exact:true}).click();
  await expect(page.getByRole('dialog')).toBeVisible();
- await expect(page.locator('#objects button')).toHaveCount(21);
+ await expect(page.locator('#objects button')).toHaveCount(27);
  await page.locator('#search').fill('m 31');
  await expect(page.locator('#objects button')).toHaveCount(1);
  await page.locator('#objects button').click();
@@ -23,11 +23,14 @@ test('open, search, select, filter, expand, red mode and close',async({page},tes
  await page.getByRole('button',{name:'Red night mode: off'}).click();
  await expect(page.locator('body')).toHaveClass('dv-nav-night');
  await page.waitForTimeout(250);
+ await page.locator('#pointing').evaluate(el=>el.open=false);
+ await page.locator('#close').scrollIntoViewIfNeeded();
  await page.screenshot({path:`prototype/screenshots/${testInfo.project.name}-night.png`,fullPage:true});
  await page.getByRole('button',{name:'Red night mode: on'}).click();
  await expect(page.locator('body')).not.toHaveClass('dv-nav-night');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- await expect(page.getByText('Coordinates only · sensors off')).toBeVisible();
+ await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
+ await page.locator('#pointing').evaluate(el=>el.open=false);
  await page.locator('#close').scrollIntoViewIfNeeded();
  await page.waitForTimeout(250);
  await page.screenshot({path:`prototype/screenshots/${testInfo.project.name}.png`,fullPage:true});
