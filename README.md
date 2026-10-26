@@ -58,3 +58,17 @@ transparent-edge WebP is assets/stargazer-header.webp. CSS preserves the full
 composition, uses compact sizes at phone widths, and dims/tints it in red night
 mode. The service worker includes the image for offline use. Forecast source,
 location logic and sensor calculations are unchanged by this visual update.
+
+## Navigation and site-specific launcher icon
+
+The Navigator title bar now uses the same Home / Forecast / Navigator buttons as
+the other views; its Objects / Pointing / Eyepieces controls remain separate.
+The title bar stays visible when scrolling and routes close the modal normally,
+releasing sensor and camera sessions while retaining weather frame state.
+
+manifest.webmanifest identifies only this repository-path app and supplies
+192px/512px maskable PNG icons adapted from the owner's stargazer artwork.
+download-icon.html offers a direct PNG download and Chrome/Lawnchair guidance.
+Existing Android shortcuts may retain cached icons; adding the site again can
+create a new one. Launcher custom-image support depends on its version. No
+global Chrome icon or other site's shortcut is changed by these metadata.

@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "Barker After Dark",
+  "short_name": "After Dark",
+  "description": "Weather, sky navigation and telescope eyepiece guidance for your observing location.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#07121f",
+  "theme_color": "#07121f",
+  "icons": [
+    {"src": "assets/barker-after-dark-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "assets/barker-after-dark-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
