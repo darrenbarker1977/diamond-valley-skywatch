@@ -180,3 +180,34 @@ accuracy, actual Chrome shortcut behavior or night-vision performance.
 The permanent weather entry is checked by Git blob identity, so its features,
 visuals, links and refresh code have no changes. No new forecast integration
 is proposed here. Live Open-Meteo behavior was not re-certified in this stage.
+
+## Personal eyepiece kit
+
+The preview now includes **My eyepieces** and a viewing plan in every target's
+card. The initial kit follows the owner's photos: SVBONY SV135 7–21 mm zoom,
+plus 25 mm and 10 mm eyepieces listed as supplied with the telescope. Entries
+can be disabled or removed when they do not match the actual kit. Telescope
+focal length defaults to the standard 250P's 1200 mm and is explicitly editable;
+the user should check the tube label. Magnification is telescope focal length
+divided by eyepiece focal length, rounded only for display. Apparent/true field
+of view is not inferred from the supplied-eyepiece listing.
+
+Users can add fixed or zoom eyepieces directly, with an optional name and focal
+length(s). Added entries immediately participate in the lowest-power finding
+step and appropriate detail suggestions. Only enabled inventory is used. Wide
+objects remain low-power recommendations; low-altitude objects avoid high-power
+steps. The beginner recommendations cap detail suggestions at 220×, and do not
+claim measured atmospheric seeing. A short-focal-length eyepiece can still be
+listed without being recommended at unsuitable power. No ordinary solar viewing
+recommendation is issued. The mounted alignment hint also uses the enabled
+kit's lowest available magnification.
+
+The equipment list persists in this browser's localStorage under a dedicated
+Navigator key, separate from forecast weather cache. It does not automatically
+sync between laptop and Pixel, and no equipment data is uploaded. Browser
+storage failures fall back to session-only edits with an explicit message.
+Future cross-device account storage can be added separately if requested.
+
+The separate private HTTPS test preview is hosted at
+https://diamond-valley-skywatch-navigator-preview.amazingstumbles.chatgpt.site .
+The GitHub Pages forecast remains unchanged; the feature branch is unmerged.

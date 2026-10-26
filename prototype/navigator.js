@@ -1,10 +1,12 @@
+import {createEquipment} from './equipment-ui.js';
 import {createPointing} from './pointing.js';
 import {catalogue} from './catalogue.js';
 import {position,project,matches} from './positions.js';
 const $=id=>document.getElementById(id), dialog=$('navigator');
 let selected='Moon',filter='all',timer,positions=new Map();
 const A=globalThis.Astronomy;
-const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),onTargetSelect:id=>{selected=id;if(positions.size)render();}});
+const equipment=createEquipment(()=>{if(positions.size)render();pointing.refresh();});
+const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();}});
 const degrees=n=>`${n.toFixed(1)}°`;
 const compass=az=>['N','NE','E','SE','S','SW','W','NW'][Math.round(az/45)%8];
 function node(tag,text,cls){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;}
@@ -41,6 +43,7 @@ function render(){
   for(const [label,value] of [['ALTITUDE',degrees(p.alt)],['TRUE AZIMUTH',`${degrees(p.az)} ${compass(p.az)}`]]){const group=node('div');group.append(node('dt',label),node('dd',value));stats.append(group);}
   detail.append(stats,node('p',p.alt>0?'Above the geometric horizon · terrain and daylight may prevent viewing.':'Below the geometric horizon · not currently observable.'),node('p',o.note));
   if(!o.body)detail.append(node('p','Precessed J2000 catalogue position. Rounded coordinates; proper motion not applied. Suitable for exploration, not precision alignment.'));
+  equipment.appendAdvice(detail,o,p.alt);
   drawMap();pointing.paint();
 }
 function drawMap(){

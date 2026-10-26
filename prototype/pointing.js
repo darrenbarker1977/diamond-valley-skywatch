@@ -1,7 +1,7 @@
 import {OrientationSession} from './sensors.js';
 import {skyVector,skyAngles,solveAlignment,validateAlignment,applyRotation,stableSample,guidance,angle} from './alignment.js';
 import {easyTargets,easyObjects} from './easy-targets.js';
-export function createPointing({A,catalogue,position,getSelected,onTargetSelect=()=>{},env=window}){
+export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},env=window}){
  const $=id=>document.getElementById(id);
  let samples=[],model=null,verified=false,checkError=null,choices=[],cameraStream=null,cameraGeneration=0;
  const session=new OrientationSession(env,()=>paint());
@@ -35,7 +35,7 @@ export function createPointing({A,catalogue,position,getSelected,onTargetSelect=
  }
  function identify(){
   const object=choices.find(o=>o.id===$('alignment-target').value);
-  $('identify-help').textContent=object?easyObjects[object.id].hint+' Its map position is selected for you when sensors are enabled. A fist at arm’s length spans roughly 10° of sky. Never aim at or near the Sun.':'';
+  $('identify-help').textContent=object?easyObjects[object.id].hint+' Its map position is selected for you when sensors are enabled. A fist at arm’s length spans roughly 10° of sky. Never aim at or near the Sun. '+(mode()==='mounted'?getAlignmentEyepiece():''):'';
  }
  function paint(){
   if(!session.active||session.status!=='receiving'){
