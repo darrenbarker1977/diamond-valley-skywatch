@@ -1,19 +1,19 @@
 # Skywatch Navigator — isolated prototype
 
-This directory is a standalone, unmerged prototype. It does not inject scripts,
-styles, sensors or controls into the permanent forecast. Root `index.html` must
-retain Git blob `b1c3ee54aad313c84e1e958bbc577851f61e5be2`.
-Do not merge or deploy this branch to GitHub Pages without the owner's approval.
-The existing Pages URL and Chrome shortcut remain unchanged.
+The permanent root entry now loads these shared Navigator assets. The standalone
+/prototype/ entry remains useful for development. The owner authorized permanent
+publication and ongoing live updates on 2026-10-26. The existing Pages URL and
+Chrome root shortcut stay the same. The complete original weather document is
+preserved byte-for-byte as forecast.html (Git blob
+b1c3ee54aad313c84e1e958bbc577851f61e5be2).
 
 ## Preview locally
 
 From the repository root, run `python3 -m http.server 8000`, then open
 http://localhost:8000/prototype/ and tap **Sky Navigator**. No build, CDN or API
 key is needed to run the prototype. Serve over HTTP; ES modules will not work
-reliably when opening the HTML directly as a file. No preview hosting is created
-by this PR. The forecast link opens the unchanged root page, which still uses
-Open-Meteo normally.
+reliably when opening the HTML directly as a file. The Forecast view opens forecast.html, which retains the original Open-Meteo
+implementation. A separate private Sites staging environment is also available.
 
 The modal offers a compact/expanded layout, an accessible telescope launcher,
 search by names and aliases, an above-horizon filter, a geometric sky map,
@@ -177,7 +177,7 @@ are synthetic and explicitly confined to the development tests. Screenshots
 are illustrative browser renders; they do not certify physical Pixel sensor
 accuracy, actual Chrome shortcut behavior or night-vision performance.
 
-The permanent weather entry is checked by Git blob identity, so its features,
+The archived weather document is checked by Git blob identity, so its features,
 visuals, links and refresh code have no changes. No new forecast integration
 is proposed here. Live Open-Meteo behavior was not re-certified in this stage.
 
@@ -210,7 +210,8 @@ Future cross-device account storage can be added separately if requested.
 
 The separate private HTTPS test preview is hosted at
 https://diamond-valley-skywatch-navigator-preview.amazingstumbles.chatgpt.site .
-The GitHub Pages forecast remains unchanged; the feature branch is unmerged.
+The GitHub Pages root now presents Home, Forecast and Navigator. The weather
+document itself remains unchanged at forecast.html.
 
 
 ## Compact home and tool views
@@ -227,6 +228,6 @@ The preview embeds a byte-identical copy of the existing forecast in its Forecas
 view, without rewriting its weather code, links or refresh behavior. The frame
 is loaded on demand and retained across menu changes, preserving selection and
 cache state. Returning uses its existing focus-refresh handler. Local prototype
-uses ../index.html; the separate hosting copy uses forecast.html. The original
-root index.html is unchanged. This demonstrates a possible unified interface;
-production integration and any merge remain subject to the owner's approval.
+uses ../forecast.html; the permanent root and separate hosting copy use forecast.html. The original weather
+source is retained at forecast.html. The owner approved this unified interface
+for permanent publication on 2026-10-26.

@@ -1,8 +1,8 @@
 # First outdoor check: Pixel 8 and Skywatch Navigator
 
-This is for the isolated prototype after a separate HTTPS preview has been
-arranged. The permanent weather website and existing shortcut do not yet
-include the prototype. Do not merge the PR to make a test link.
+Open the permanent Diamond Valley Skywatch website directly in Chrome on your
+Pixel. From Home, choose Point my phone / telescope. The private preview remains
+available separately for staging. Sensors require HTTPS; they stay opt-in.
 
 ## Start in your hand
 
@@ -53,5 +53,4 @@ message if a permission, sensor or camera step failed. Do not publish raw
 sensor streams or precise personal location information to diagnose this.
 
 A passing three-object check is only one local check. Real Pixel 8 / telescope
-performance remains unverified until these outdoor checks succeed. Keep the
-prototype separate from the permanent forecast during this process.
+performance remains unverified until these outdoor checks succeed. Use your finder and low-power eyepiece to finish locating targets.

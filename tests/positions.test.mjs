@@ -25,8 +25,8 @@ test('map north, east, zenith and wraparound',()=>{
  assert.ok(Math.abs(project({alt:10,az:0}).x-project({alt:10,az:360}).x)<1e-10);
 });
 test('invalid time is rejected',()=>assert.throws(()=>position(A,catalogue[0],new Date('bad'))));
-test('permanent entry file retains original Git blob identity',()=>{
- const data=readFileSync(new URL('../index.html',import.meta.url));
+test('forecast source retains original Git blob identity',()=>{
+ const data=readFileSync(new URL('../forecast.html',import.meta.url));
  const blob=createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex');
  assert.equal(blob,'b1c3ee54aad313c84e1e958bbc577851f61e5be2');
 });
