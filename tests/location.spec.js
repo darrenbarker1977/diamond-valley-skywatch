@@ -27,5 +27,5 @@ test('manual coordinates, failed precision request and reset retain honest locat
 test('successful precise fix updates all observing calculations without making tracking claims',async({page,context})=>{
  await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:51.5,longitude:-0.12,accuracy:17});await page.goto('/');await page.locator('#use-location').click();
  await expect(page.locator('#location-display')).toContainText('51.50000° N');await expect(page.locator('#location-display')).toContainText('±17 m');await expect(page.locator('#location-status')).toContainText('not live tracking');
- await page.locator('[data-open-section=objects]').last().click();await expect(page.locator('#observer-name')).toHaveText('MY LOCATION');
+ await page.locator('.dv-app-header [data-open-section=objects]').click();await expect(page.locator('#observer-name')).toHaveText('MY LOCATION');
 });
