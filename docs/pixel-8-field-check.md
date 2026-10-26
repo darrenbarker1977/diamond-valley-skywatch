@@ -6,7 +6,7 @@ available separately for staging. Sensors require HTTPS; they stay opt-in.
 
 ## Start in your hand
 
-1. Stay at the Diamond Valley observing site shown on the page. Wait until
+1. Set the actual observing location on Home (Use precise location, place search or coordinates). You must physically be at that site to use sensor guidance. Wait until
    after dusk and choose a clear patch of sky. Lower the phone brightness.
 2. On Home, choose **Point my phone / telescope** (or open the Navigator’s **Pointing** tab), choose **In my hand**, and tap **Enable sensors**.
    If Chrome asks, allow motion/orientation sensors. If it reports no usable
@@ -54,3 +54,13 @@ sensor streams or precise personal location information to diagnose this.
 
 A passing three-object check is only one local check. Real Pixel 8 / telescope
 performance remains unverified until these outdoor checks succeed. Use your finder and low-power eyepiece to finish locating targets.
+
+
+## Prepare for no cell service
+
+While online on the Pixel, choose your destination and wait for offline-page
+readiness. Open Forecast to download its weather. The last site is remembered
+on that browser. Then test an offline reload before leaving: sky calculations
+should still work, while weather is explicitly cached and may be stale. A
+failed GPS request or place search leaves the saved site unchanged. Do not
+expect new weather or new place-name searches without a connection.

@@ -1,4 +1,5 @@
-export const site = Object.freeze({latitude:50.68,longitude:-114.25,height:0});
+import {site} from './location.js?v=location-1';
+export {site};
 export function position(A, object, date) {
   if (!Number.isFinite(date.getTime())) throw new Error('Invalid calculation time');
   const observer = new A.Observer(site.latitude,site.longitude,site.height);

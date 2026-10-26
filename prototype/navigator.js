@@ -1,8 +1,9 @@
-import {createNavigation} from './navigation.js';
+import {createLocation,site,forecastURL} from './location.js?v=location-1';
+import {createNavigation} from './navigation.js?v=location-1';
 import {createEquipment} from './equipment-ui.js';
-import {createPointing} from './pointing.js';
+import {createPointing} from './pointing.js?v=location-1';
 import {catalogue} from './catalogue.js';
-import {position,project,matches} from './positions.js';
+import {position,project,matches} from './positions.js?v=location-1';
 const $=id=>document.getElementById(id), dialog=$('navigator');
 let selected='Moon',filter='all',timer,positions=new Map();
 const A=globalThis.Astronomy;
@@ -18,7 +19,7 @@ function update(){
     if(!A)throw new Error('astronomy library did not load');
     const now=new Date();
     positions=new Map(catalogue.map(o=>[o.id,position(A,o,now)]));
-    $('clock').textContent=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Edmonton',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'}).format(now);
+    $('clock').textContent=new Intl.DateTimeFormat('en-CA',{timeZone:site.clockTimezone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'}).format(now);
     $('error').hidden=true;render();pointing.refresh();
   }catch(error){fail(error);}
 }
@@ -65,4 +66,5 @@ for(const button of document.querySelectorAll('[data-filter]'))button.addEventLi
 document.addEventListener('visibilitychange',()=>{if(dialog.open&&!document.hidden)update();});
 window.addEventListener('pageshow',()=>{if(dialog.open)update();});
 
-createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera()});
+const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL});
+createLocation(()=>{pointing.suspend('Observing location changed. Repeat alignment at this location.');navigation.locationChanged();if(dialog.open)update();});

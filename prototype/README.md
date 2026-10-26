@@ -4,7 +4,7 @@ The permanent root entry now loads these shared Navigator assets. The standalone
 /prototype/ entry remains useful for development. The owner authorized permanent
 publication and ongoing live updates on 2026-10-26. The existing Pages URL and
 Chrome root shortcut stay the same. The complete original weather document is
-preserved byte-for-byte as forecast.html (Git blob
+preserved byte-for-byte as forecast-original.html (Git blob
 b1c3ee54aad313c84e1e958bbc577851f61e5be2).
 
 ## Preview locally
@@ -231,3 +231,32 @@ cache state. Returning uses its existing focus-refresh handler. Local prototype
 uses ../forecast.html; the permanent root and separate hosting copy use forecast.html. The original weather
 source is retained at forecast.html. The owner approved this unified interface
 for permanent publication on 2026-10-26.
+
+
+## Worldwide location selection and offline use
+
+Home now supports a high-accuracy, user-initiated device fix, worldwide named
+place search and direct coordinates for remote sites. The heading and all
+observer calculations follow the selection. Sky positions always use UTC
+instants; geocoding supplies the named site's clock timezone, and Open-Meteo
+resolves weather's timezone automatically. Manual coordinates use a labelled
+UTC clock until forecast timezone metadata arrives.
+
+The selected site is stored on this browser and restored on reload. Failed or
+canceled location/search requests never replace it. Restored/manual/default
+sites require the user's physical-presence confirmation before sensor access;
+a fresh device fix establishes the current observing site. Location changes
+stop sensors/camera and invalidate alignment. No continuous tracking is used.
+
+The root service worker caches only same-origin app assets. Weather data uses
+location-keyed localStorage; cached weather is identified as stale/offline and
+remaining dates are shown even when fewer than five nights remain. Fresh
+responses still require the complete five-night forecast. Cached weather older
+than seven days is not loaded. The original weather source is retained in
+forecast-original.html for reference/rollback.
+
+Before leaving service: select the site, wait for offline preparation to finish,
+and open Forecast online. Airplane-mode testing is recommended on the actual
+Pixel. New forecasts and place-name lookup need a connection. Static sky
+calculations and manually entered coordinates remain usable offline, subject
+to device time accuracy and browser cache/storage availability.
