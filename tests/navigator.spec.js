@@ -21,13 +21,13 @@ test('open, search, select, filter, expand, red mode and close',async({page},tes
  await page.getByRole('button',{name:'Expand panel'}).click();
  await expect(page.locator('#navigator')).toHaveClass(/dv-nav-expanded/);
  await page.getByRole('button',{name:'Red night mode: off'}).click();
- await expect(page.locator('body')).toHaveClass('dv-nav-night');
+ await expect(page.locator('body')).toHaveClass(/dv-nav-night/);
  await page.waitForTimeout(250);
  await page.locator('#pointing').evaluate(el=>el.open=false);
  await page.locator('#close').scrollIntoViewIfNeeded();
  await page.screenshot({path:`prototype/screenshots/${testInfo.project.name}-night.png`,fullPage:true});
  await page.getByRole('button',{name:'Red night mode: on'}).click();
- await expect(page.locator('body')).not.toHaveClass('dv-nav-night');
+ await expect(page.locator('body')).not.toHaveClass(/dv-nav-night/);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
  await page.locator('#pointing').evaluate(el=>el.open=false);
@@ -48,7 +48,7 @@ test('library failure gives an honest error and no positions',async({page})=>{
  await expect(page.locator('#objects button')).toHaveCount(0);
  await expect(page.locator('#detail')).toBeEmpty();
 });
-test('keyboard stays inside modal and timer retains search focus',async({page})=>{
+test('keyboard navigation and timer retain search focus',async({page})=>{
  await page.clock.install();await page.goto('/prototype/');await page.locator('#launch').click();
  await page.locator('#search').focus();await page.clock.fastForward(11000);
  await expect(page.locator('#search')).toBeFocused();

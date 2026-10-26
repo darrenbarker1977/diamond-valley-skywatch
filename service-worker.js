@@ -1,4 +1,4 @@
-const CACHE='dvsky-shell-20261026-circle-1';
+const CACHE='dvsky-shell-20261026-shared-header-1';
 const BASE=new URL('./',self.location.href);
 const FILES=['assets/barker-after-dark-circle.png','manifest.webmanifest','download-icon.html','assets/barker-after-dark-192.png','assets/barker-after-dark-512.png','assets/stargazer-header.webp','./','index.html','forecast.html','field-check.html','prototype/navigator.css','prototype/navigator.js','prototype/navigation.js','prototype/equipment-ui.js','prototype/eyepieces.js','prototype/pointing.js','prototype/alignment.js','prototype/positions.js','prototype/catalogue.js','prototype/easy-targets.js','prototype/sensors.js','prototype/location.js','prototype/vendor/astronomy.browser.min.js'];
 const PATHS=new Set(FILES.map(path=>new URL(path,BASE).pathname));

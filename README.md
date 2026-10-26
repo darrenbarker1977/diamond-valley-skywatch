@@ -52,8 +52,8 @@ Equipment and saved sites remain per browser/device rather than account-synced.
 ## Header illustration
 
 The owner's clay stargazer / full Moon artwork appears in the upper-right
-shared header on Home and Forecast, in the Navigator header on Objects,
-Pointing and Eyepieces, and above the outdoor instructions. Its prepared
+shared header on Home, Forecast and Navigator (including Objects, Pointing
+and Eyepieces), and above the outdoor instructions. Its prepared
 transparent-edge WebP is assets/stargazer-header.webp. CSS preserves the full
 composition, uses compact sizes at phone widths, and dims/tints it in red night
 mode. The service worker includes the image for offline use. Forecast source,
@@ -61,10 +61,12 @@ location logic and sensor calculations are unchanged by this visual update.
 
 ## Navigation and site-specific launcher icon
 
-The Navigator title bar now uses the same Home / Forecast / Navigator buttons as
-the other views; its Objects / Pointing / Eyepieces controls remain separate.
-The title bar stays visible when scrolling and routes close the modal normally,
-releasing sensor and camera sessions while retaining weather frame state.
+Home, Forecast and Navigator use one shared header element, with the same
+brand, illustration and Home / Forecast / Navigator buttons. Navigator opens
+as an in-page view below that header; its Objects / Pointing / Eyepieces
+controls remain separate. The header stays visible when scrolling. Leaving
+Navigator releases sensor and camera sessions while retaining weather frame
+state. Close and Escape return to the previous Home or Forecast view.
 
 manifest.webmanifest identifies only this repository-path app and supplies
 192px/512px maskable PNG icons adapted from the owner's stargazer artwork.

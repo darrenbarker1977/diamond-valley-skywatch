@@ -1,5 +1,5 @@
 import {createLocation,site,forecastURL} from './location.js?v=location-1';
-import {createNavigation} from './navigation.js?v=titlebar-1';
+import {createNavigation} from './navigation.js?v=shared-header-1';
 import {createEquipment} from './equipment-ui.js';
 import {createPointing} from './pointing.js?v=location-1';
 import {catalogue} from './catalogue.js';
@@ -56,7 +56,7 @@ function drawMap(){
   for(const [label,x,y] of [['N',196,20],['E',380,204],['S',196,390],['W',8,204],['Zenith',183,195]])sky.append(svg('text',{x,y},label));
   for(const o of catalogue){const p=positions.get(o.id);if(!p||p.alt<=0)continue;const {x,y}=project(p);const dot=svg('circle',{cx:x,cy:y,r:o.id===selected?5:2.7,class:'dv-nav-dot'});dot.append(svg('title',{},`${o.name}: ${degrees(p.alt)} altitude, ${degrees(p.az)} azimuth`));sky.append(dot);if(o.id===selected){sky.append(svg('circle',{cx:x,cy:y,r:10,class:'dv-nav-selected'}),svg('text',{x:Math.min(300,Math.max(40,x+14)),y:y-12,class:'dv-nav-target-label'},o.name));}}
 }
-$('launch').addEventListener('click',()=>{dialog.showModal();$('launch').setAttribute('aria-expanded','true');update();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)update();},10000);$('close').focus();});
+$('launch').addEventListener('click',()=>{if(!dialog.open)dialog.show();$('launch').setAttribute('aria-expanded','true');update();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)update();},10000);$('close').focus();});
 $('close').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('close',()=>{clearInterval(timer);$('launch').setAttribute('aria-expanded','false');$('launch').focus();});
 $('expand').addEventListener('click',()=>{const expanded=dialog.classList.toggle('dv-nav-expanded');$('expand').setAttribute('aria-pressed',String(expanded));$('expand').setAttribute('aria-label',expanded?'Collapse panel':'Expand panel');});
@@ -68,3 +68,5 @@ window.addEventListener('pageshow',()=>{if(dialog.open)update();});
 
 const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL});
 createLocation(()=>{pointing.suspend('Observing location changed. Repeat alignment at this location.');navigation.locationChanged();if(dialog.open)update();});
+
+window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close();}});
