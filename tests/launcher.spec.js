@@ -6,3 +6,9 @@ test('site-specific app manifest and downloadable PNG icons are valid',async({pa
  await page.getByRole('link',{name:'Home-screen icon & install help'}).click();await expect(page).toHaveTitle('Barker After Dark · Home-screen icon');const link=page.getByRole('link',{name:'Download icon · PNG'});await expect(link).toHaveAttribute('download','Barker-After-Dark-Icon.png');
  const download=page.waitForEvent('download');await link.click();expect((await download).suggestedFilename()).toBe('Barker-After-Dark-Icon.png');
 });
+test('circular widget PNG has transparent corners and a real downloadable file',async({page})=>{
+ await page.goto('/download-icon.html');const img=page.locator('img.icon');await expect.poll(()=>img.evaluate(e=>e.complete&&e.naturalWidth===512)).toBe(true);
+ const alpha=await img.evaluate(e=>{const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');ctx.drawImage(e,0,0);return [ctx.getImageData(0,0,1,1).data[3],ctx.getImageData(256,256,1,1).data[3]];});expect(alpha[0]).toBe(0);expect(alpha[1]).toBeGreaterThan(250);
+ const download=page.waitForEvent('download');await page.getByRole('link',{name:'Download circular image · PNG'}).click();expect((await download).suggestedFilename()).toBe('Barker-After-Dark-Circular.png');
+ await expect(page.getByText('Make it large like the Duolingo widget')).toBeVisible();
+});
