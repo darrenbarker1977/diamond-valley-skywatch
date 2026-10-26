@@ -72,3 +72,10 @@ download-icon.html offers a direct PNG download and Chrome/Lawnchair guidance.
 Existing Android shortcuts may retain cached icons; adding the site again can
 create a new one. Launcher custom-image support depends on its version. No
 global Chrome icon or other site's shortcut is changed by these metadata.
+
+The icon download page also provides a full circular PNG with transparent
+outer corners and no baked-in Chrome badge. A launcher controls shortcut size
+and badges; a custom image/shortcut widget is needed to resize just this item
+to the Duolingo widget's approximate width. Instructions cover that distinction,
+Chrome app installation versus basic shortcuts, and the installed short name
+After Dark. No phone launcher configuration is changed by a website update.
