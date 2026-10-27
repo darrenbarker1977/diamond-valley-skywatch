@@ -1,3 +1,4 @@
+import {compassVisual} from './live-compass.js';
 const photos={
  Moon:['moon','PIA00405'],Saturn:['saturn','PIA17172'],Jupiter:['jupiter','PIA22946'],
  M31:['m31','PIA04921'],M42:['m42','PIA04227'],M45:['m45','PIA09262'],NGC5139:['omega-centauri','PIA10372']
@@ -39,7 +40,8 @@ export function objectStory(object){
  if(object.id==='Sun')difficulty='Specialist solar equipment required';
  return {expect:expectations[object.id]||generic[object.type]||object.note,difficulty};
 }
-export function objectVisual(object){
+export function objectVisual(object,{compass=false}={}){
+ if(compass&&['Star','Double star'].includes(object.type))return compassVisual();
  const figure=document.createElement('figure');figure.className='object-visual';figure.dataset.kind=object.type.toLowerCase().replaceAll(' ','-');
  const photo=photos[object.id];
  if(photo){const img=document.createElement('img');img.src=new URL('../assets/objects/'+photo[0]+'.jpg',import.meta.url).href;img.alt=object.name+' — NASA image';img.loading='lazy';img.decoding='async';img.addEventListener('error',()=>{img.hidden=true;figure.classList.add('image-unavailable');figure.querySelector('figcaption').textContent='Photo unavailable · '+object.type+' illustration';},{once:true});figure.append(img);}

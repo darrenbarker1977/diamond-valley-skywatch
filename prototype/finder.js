@@ -1,4 +1,4 @@
-import {objectStory,objectVisual} from './object-cards.js?v=atlas-1';
+import {objectStory,objectVisual} from './object-cards.js?v=compass-1';
 import {viewingPlan,describe} from './eyepieces.js?v=catalogue-1';
 export function createFinder({onSetup,onMode,onStop,onSky,getKit}){
  const $=id=>document.getElementById(id);let lastId='',preferredMode='mounted';
