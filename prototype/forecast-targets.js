@@ -6,7 +6,7 @@ export {viewingPlan,describe} from './eyepieces.js?v=catalogue-1';
 const priorities={'Moon':95,'Planet':85,'Double star':75,'Globular cluster':76,'Open cluster':75,'Planetary nebula':66,'Nebula':69,'Supernova remnant':48,'Galaxy':64,'Star cloud':65,'Asterism':61,'Star':30};
 const highlights=new Set(['M42','M45','M13','M31','M57','NGC104','NGC5139','NGC4755','IC2602','NGC3372']);
 function separation(a,b){const r=Math.PI/180;return Math.acos(Math.max(-1,Math.min(1,Math.sin(a.alt*r)*Math.sin(b.alt*r)+Math.cos(a.alt*r)*Math.cos(b.alt*r)*Math.cos((a.az-b.az)*r))))/r;}
-export function shortlist(A,site,times,limit=6){
+export function rankTargets(A,site,times){
  if(!A)throw Error('The astronomy library did not load');
  if(!times.length)return [];
  const samples=times.map(time=>{
@@ -35,6 +35,10 @@ export function shortlist(A,site,times,limit=6){
   if(best)candidates.push(best);
  }
  candidates.sort((a,b)=>b.score-a.score||a.object.id.localeCompare(b.object.id));
+ return candidates;
+}
+export function shortlist(A,site,times,limit=6){
+ const candidates=rankTargets(A,site,times);
  const result=[],types=new Map();
  for(const candidate of candidates){
   const type=candidate.object.type;

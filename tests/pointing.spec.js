@@ -29,7 +29,7 @@ test('beginner mounted wizard records two objects, checks a third and loses alig
  await expect(page.locator('#alignment-step')).toContainText('3 ·');
  await expect(page.locator('#guidance')).toContainText('arrows are off');
  await feed(page);await page.locator('#capture-alignment').click();
- await expect(page.locator('#alignment-feedback')).toContainText('check passed');
+ await expect(page.locator('#alignment-feedback')).toContainText('check passed');await expect(page.locator('#finder-name')).toHaveText('Moon');
  await expect(page.locator('#measured-direction')).toContainText('Phone-derived tube estimate');
  await expect(page.locator('#guidance')).not.toContainText('arrows are off');
  await page.locator('[data-nav-section=finder]').click();await expect(page.locator('#finder-arrows')).toBeVisible();await expect(page.locator('#finder-horizontal')).not.toHaveText('');await page.locator('[data-nav-section=pointing]').click();
@@ -77,6 +77,14 @@ test('daylight offers no beginner alignment and rear-camera denial is explicit',
  await expect(page.locator('#alignment-target option')).toHaveCount(0);
  await page.locator('#camera-toggle').click();await expect(page.locator('#camera-status')).toContainText('Camera unavailable');
  await expect(page.locator('#camera-view')).toBeHidden();
+});
+test('future planning clears checked alignment and never restores it automatically',async({page})=>{
+ await page.route('https://api.open-meteo.com/**',route=>route.abort());
+ await open(page);await page.locator('#pointing-mode').selectOption('mounted');await page.locator('#mount-confirm').check();await page.locator('#enable-sensors').click();
+ for(let i=0;i<3;i++){await feed(page);await page.locator('#capture-alignment').click();}
+ await expect(page.locator('#alignment-feedback')).toContainText('check passed');await expect(page.locator('#finder-arrows')).not.toHaveAttribute('hidden');
+ await page.locator('[data-nav-section=objects]').click();await page.locator('#plan-night').click();await expect(page.locator('#sensor-status')).toHaveText('Sensors off');await expect(page.locator('#finder-arrows')).toHaveAttribute('hidden');await expect(page.locator('#finder-horizontal')).toHaveText('');await expect(page.locator('#atlas-follow')).toBeDisabled();
+ await page.locator('#plan-now').click();await expect(page.locator('#sensor-status')).toHaveText('Sensors off');await expect(page.locator('#finder-arrows')).toHaveAttribute('hidden');await page.evaluate(()=>clearInterval(window.__testSensorTimer));
 });
 test('closing during camera permission stops a late camera stream',async({page})=>{
  await page.addInitScript(()=>{window.__stoppedTracks=0;navigator.mediaDevices.getUserMedia=()=>new Promise(resolve=>{window.__cameraResolve=()=>resolve({getTracks:()=>[{stop:()=>window.__stoppedTracks++}]});});});
