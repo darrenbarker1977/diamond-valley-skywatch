@@ -24,7 +24,9 @@ export function createLiveCompass({env=window,root=document}={}){
  const header=root.getElementById('compass-launch'),panel=root.getElementById('phone-compass-dialog');
  if(header&&panel){
   const face=compassVisual();root.getElementById('header-compass-content').append(face);
-  header.append(face.querySelector('.phone-compass-dial').cloneNode(true));
+  const smallDial=face.querySelector('.phone-compass-dial').cloneNode(true);
+  smallDial.querySelector('.compass-north').setAttribute('y','48');
+  header.append(smallDial);
   header.addEventListener('click',()=>{headerRequested=true;if(!panel.open)panel.showModal();header.setAttribute('aria-expanded','true');});
   const close=()=>panel.close();root.getElementById('compass-close').addEventListener('click',close);
   panel.addEventListener('close',()=>{header.setAttribute('aria-expanded','false');sync();header.focus({preventScroll:true});});
@@ -47,6 +49,8 @@ export function createLiveCompass({env=window,root=document}={}){
    const label=heading===null?'Open live phone compass':`Phone compass: ${Math.round(heading)%360} degrees · open compass`;
    header.dataset.state=state;header.setAttribute('aria-label',label);header.title=label;
    header.querySelector('svg').style.transform=heading===null?'':'rotate('+(-heading)+'deg)';
+   // Let north travel around the rim while keeping the small N upright.
+   header.querySelector('.compass-north').setAttribute('transform',`rotate(${heading??0} 100 32)`);
   }
   for(const figure of faces){
    figure.dataset.state=state;figure.querySelector('.phone-compass-face').style.transform=heading===null?'':'rotate('+(-heading)+'deg)';
