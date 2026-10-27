@@ -69,17 +69,19 @@ test('relative readings, invalid values, mode change and closed panel cannot sup
  await page.locator('#close').click();await page.locator('#launch').click();
  await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
 });
-test('daylight offers no beginner alignment and rear-camera denial is explicit',async({page})=>{
+test('daylight offers no beginner alignment and rear-camera denial is explicit',async({page},info)=>{
  await page.addInitScript(()=>{navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException('Camera permission denied','NotAllowedError');};});
  await open(page);await page.clock.setFixedTime(new Date('2026-10-26T19:00:00Z'));
  await page.locator('#reset-alignment').click();
  await expect(page.locator('#easy-explanation')).toContainText('too bright');
+ await expect(page.locator('#alignment-daylight')).toBeVisible();await expect(page.locator('#alignment-daylight')).toContainText('This is expected');await expect(page.locator('#alignment-step')).toContainText('Waiting for dusk');await expect(page.locator('#capture-alignment')).toHaveText('Alignment available after dusk');await page.locator('#alignment-daylight').scrollIntoViewIfNeeded();await page.screenshot({path:`/tmp/skywatch-${info.project.name}-daylight-alignment.png`});
  await expect(page.locator('#alignment-target')).toBeDisabled();
  await expect(page.locator('#alignment-target')).toContainText('Available after dusk');
  await expect(page.locator('#object-confirm')).toBeDisabled();
  await page.locator('#alignment-search').fill('North Star');await expect(page.locator('#alignment-search-status')).toContainText('after dusk');await expect(page.locator('#capture-alignment')).toBeDisabled();
  await page.locator('#camera-toggle').click();await expect(page.locator('#camera-status')).toContainText('Camera unavailable');
  await expect(page.locator('#camera-view')).toBeHidden();
+ await page.locator('[data-nav-section=finder]').click();await expect(page.locator('#finder-guide-text')).toContainText('Alignment is paused until after dusk');await expect(page.locator('#finder-arrows')).toBeHidden();await page.locator('[data-nav-section=pointing]').click();await page.clock.setFixedTime(new Date('2026-10-27T03:00:00Z'));await page.locator('#reset-alignment').click();await expect(page.locator('#alignment-daylight')).toBeHidden();await expect(page.locator('#alignment-target')).toBeEnabled();await expect(page.locator('#capture-alignment')).toHaveText('Record first object · start guidance');
 });
 test('future planning clears checked alignment and never restores it automatically',async({page})=>{
  await page.route('https://api.open-meteo.com/**',route=>route.abort());

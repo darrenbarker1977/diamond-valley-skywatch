@@ -17,3 +17,5 @@
 
 /* Native match list stays reliable with touch, keyboard and screen readers. */
 #alignment-search{font-size:16px;min-height:48px}#alignment-target{font-size:16px;min-height:48px}#alignment-target:disabled{opacity:.7}#alignment-search-status{margin-block:10px;font-size:13px}#alignment-browse{margin-bottom:8px}
+
+.alignment-daylight{padding:16px 18px;margin:8px 0 18px;border:1px solid var(--accent);border-radius:14px;background:var(--raised)}.alignment-daylight strong{display:block;font-size:16px;color:var(--ink)}.alignment-daylight p{margin:8px 0 0;line-height:1.7;font-size:13px}
