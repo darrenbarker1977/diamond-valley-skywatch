@@ -32,6 +32,7 @@ test('beginner mounted wizard records two objects, checks a third and loses alig
  await expect(page.locator('#alignment-feedback')).toContainText('check passed');
  await expect(page.locator('#measured-direction')).toContainText('Phone-derived tube estimate');
  await expect(page.locator('#guidance')).not.toContainText('arrows are off');
+ await page.locator('[data-nav-section=finder]').click();await expect(page.locator('#finder-arrows')).toBeVisible();await expect(page.locator('#finder-horizontal')).not.toHaveText('');await page.locator('[data-nav-section=pointing]').click();
  await page.locator('#guidance').evaluate(el=>{const label=document.createElement('p');label.textContent='SIMULATED DEVELOPMENT TEST — NOT REAL TELESCOPE READINGS.';el.before(label);});
  await page.locator('#guidance').scrollIntoViewIfNeeded();
  await page.screenshot({path:`prototype/screenshots/${info.project.name}-alignment.png`,fullPage:true});
@@ -39,6 +40,7 @@ test('beginner mounted wizard records two objects, checks a third and loses alig
  await expect(page.locator('#sensor-status')).toContainText('stale');
  await expect(page.locator('#guidance')).toContainText('arrows are off');
  await expect(page.locator('#measured-direction')).toHaveText('No measured direction available.');
+ await expect(page.locator('#finder-arrows')).toHaveAttribute('hidden');await expect(page.locator('#finder-horizontal')).toHaveText('');await expect(page.locator('#atlas-follow')).toBeDisabled();
 });
 test('wrong independent object never unlocks arrows',async({page})=>{
  await open(page);await page.locator('#enable-sensors').click();

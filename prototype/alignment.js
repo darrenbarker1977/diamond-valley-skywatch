@@ -35,9 +35,9 @@ export function guidance(current,target){
  if(target.alt<=0)return {blocked:'Target is below the horizon.'};
  if(target.alt>80||current.alt>80)return {blocked:'Too close to overhead for reliable left/right guidance. Choose a lower object.'};
  const error=angle(skyVector(current),skyVector(target));
- if(error<=3)return {error,text:'Within the 3° estimate — use the finder, then a low-power eyepiece (or look at the sky). This does not confirm centering.'};
  const az=((target.az-current.az+540)%360)-180,alt=target.alt-current.alt;
- return {error,text:`${Math.abs(az)<2?'Azimuth close':`${az>0?'→ Turn right':'← Turn left'} ${Math.abs(az).toFixed(1)}°`} · ${Math.abs(alt)<2?'Height close':`${alt>0?'↑ Raise':'↓ Lower'} ${Math.abs(alt).toFixed(1)}°`}`};
+ if(error<=3)return {error,azDelta:az,altDelta:alt,text:'Within the 3° estimate — use the finder, then a low-power eyepiece (or look at the sky). This does not confirm centering.'};
+ return {error,azDelta:az,altDelta:alt,text:`${Math.abs(az)<2?'Azimuth close':`${az>0?'→ Turn right':'← Turn left'} ${Math.abs(az).toFixed(1)}°`} · ${Math.abs(alt)<2?'Height close':`${alt>0?'↑ Raise':'↓ Lower'} ${Math.abs(alt).toFixed(1)}°`}`};
 }
 export function stableSample(history,now){
  const recent=history.filter(s=>now-s.time<=1200);

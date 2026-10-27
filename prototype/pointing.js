@@ -1,8 +1,8 @@
 import {site} from './location.js?v=location-1';
 import {OrientationSession} from './sensors.js';
-import {skyVector,skyAngles,solveAlignment,validateAlignment,applyRotation,stableSample,guidance,angle} from './alignment.js';
+import {skyVector,skyAngles,solveAlignment,validateAlignment,applyRotation,stableSample,guidance,angle} from './alignment.js?v=atlas-1';
 import {easyTargets,easyObjects} from './easy-targets.js?v=catalogue-1';
-export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},env=window}){
+export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},onPose=()=>{},env=window}){
  const $=id=>document.getElementById(id);
  let samples=[],model=null,verified=false,checkError=null,choices=[],cameraStream=null,cameraGeneration=0;
  const session=new OrientationSession(env,()=>paint());
@@ -64,7 +64,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   $('capture-alignment').disabled=verified||!fresh||!stable||!$('object-confirm').checked||!choices.length||(mode()==='mounted'&&!$('mount-confirm').checked);
   $('alignment-target').disabled=verified||!choices.length;
   $('object-confirm').disabled=verified;
-  let direction='Direction arrows are off until two objects and an independent check agree.';
+  let direction='Direction arrows are off until two objects and an independent check agree.',pose={ready:false};
   if(model&&verified&&fresh){
    const recent=session.history.filter(s=>session.now()-s.time<400);
    const quiet=recent.length>=3&&recent.every(s=>angle(s.vector,latest.vector)<4);
@@ -73,10 +73,11 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
     if(!quiet)direction='Hold steady briefly. Direction arrows are paused while readings are moving or noisy.';
     else if(sun.alt>-6)direction='Guidance paused until after dusk.';
     else if(target.id==='Sun'||angle(skyVector(p),skyVector(sun))<30)direction='No guidance toward the Sun or objects within 30° of it.';
-    else {const result=guidance(current,p);direction=`${target.name}: ${result.blocked||result.text}`;}
+    else {const result=guidance(current,p);direction=`${target.name}: ${result.blocked||result.text}`;if(!result.blocked)pose={ready:true,current,...result};}
    }catch{direction='Sky calculation unavailable. Guidance is off.';}
   }
-  if(!site.physicalConfirmed)direction='Sky viewing only. Confirm you are physically at this observing location before using sensor guidance.';
+  if(!site.physicalConfirmed){direction='Sky viewing only. Confirm you are physically at this observing location before using sensor guidance.';pose={ready:false};}
+  onPose({...pose,message:direction});
   $('guidance').textContent=direction;
   $('compact-guidance').textContent=session.active?direction:session.message+'. Open Pointing when you want to align.';
   document.querySelector('.dv-nav-alignment').hidden=!session.active||verified;

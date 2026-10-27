@@ -100,3 +100,14 @@ and badges; a custom image/shortcut widget is needed to resize just this item
 to the Duolingo widget's approximate width. Instructions cover that distinction,
 Chrome app installation versus basic shortcuts, and the installed short name
 After Dark. No phone launcher configuration is changed by a website update.
+
+## Interactive sky atlas
+
+Navigator now opens a real 2,851-star atlas with constellation patterns, drag,
+zoom, compass bearings, target centring and an all-sky option. Find it is a
+separate focused view; its large direction arrows and phone-follow stay locked
+until checked alignment supplies fresh valid sensor estimates. Object cards
+include NASA imagery where available, realistic eyepiece expectations and the
+saved kit recommendations. Optional panels fold away across all three pages.
+See docs/sky-atlas.md for interaction, accuracy, data/image sources and failure
+behaviour. The original weather document remains preserved byte-for-byte.

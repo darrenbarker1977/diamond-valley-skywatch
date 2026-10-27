@@ -4,7 +4,9 @@ export function createNavigation({dialog,launch,stopCamera,forecastURL}){
  function mark(){for(const button of document.querySelectorAll('.dv-app-header button')){const active=dialog.open?button.hasAttribute('data-open-section'):button.dataset.appView===view;if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}}
  function section(name){
   for(const [id,wanted] of [['pointing','pointing'],['equipment','equipment']]){$(id).hidden=name!==wanted;$(id).open=name===wanted;}
-  document.querySelector('.dv-nav-content').hidden=name!=='objects';$('compact-guidance').hidden=name!=='objects';
+  document.querySelector('.dv-nav-content').hidden=!['objects','finder'].includes(name);$('compact-guidance').hidden=name!=='objects';
+  document.querySelector('.dv-nav-explore').hidden=name!=='objects';document.querySelector('.dv-nav-browser').hidden=name!=='objects';$('finder-view').hidden=name!=='finder';
+  document.body.classList.toggle('dv-app-finder-mode',name==='finder');
   for(const button of document.querySelectorAll('[data-nav-section]'))button.setAttribute('aria-pressed',String(button.dataset.navSection===name));
   if(name!=='pointing')stopCamera();dialog.scrollTop=0;window.scrollTo(0,0);
  }
@@ -25,5 +27,5 @@ export function createNavigation({dialog,launch,stopCamera,forecastURL}){
  const height=()=>document.documentElement.style.setProperty('--app-header-height',$('app-header').getBoundingClientRect().height+'px');
  if(globalThis.ResizeObserver)new ResizeObserver(height).observe($('app-header'));height();
  section('objects');mark();
- return {locationChanged(){const frame=$('forecast-frame');if(frame.hasAttribute('src'))frame.src=forecastURL(frame.dataset.src);}};
+ return {section,locationChanged(){const frame=$('forecast-frame');if(frame.hasAttribute('src'))frame.src=forecastURL(frame.dataset.src);}};
 }
