@@ -2,12 +2,14 @@
 import {test,expect} from '@playwright/test';
 test.use({serviceWorkers:'block'});
 async function open(page){
- await page.addInitScript(()=>{for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});
+ await page.addInitScript(()=>{localStorage.setItem('dvsky:compass:auto:v2','off');for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});
  await page.clock.install({time:new Date('2026-10-27T03:00Z')});await page.goto('/');await page.locator('#launch').click();await page.locator('#search').fill('Polaris');await page.locator('#objects button').click();return page.locator('#detail .live-phone-compass');
 }
 async function sample(page,{alpha=270,beta=0,gamma=0,absolute=true}={}){
  await page.evaluate(values=>{const event=new Event('deviceorientationabsolute');Object.assign(event,values);window.dispatchEvent(event);},{alpha,beta,gamma,absolute});
 }
+test.describe('manual compass controls',()=>{
+ test.use({hasTouch:false,isMobile:false});
 test('live compass uses absolute top-edge heading and hides stale, vertical and relative readings',async({page},info)=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));const compass=await open(page),heading=compass.locator('.phone-compass-heading'),button=compass.getByRole('button');
  await expect(compass.locator('figcaption')).toHaveText('Live phone compass');await expect(heading).toHaveText('—');
@@ -47,7 +49,7 @@ test('continuous sensor updates survive sky refresh and switching target clears 
 });
 
 test('header compass works across all pages and closing it keeps the live dial running',async({page},info)=>{
- await page.addInitScript(()=>{for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});
+ await page.addInitScript(()=>{localStorage.setItem('dvsky:compass:auto:v2','off');for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});
  await page.clock.install({time:new Date('2026-10-27T03:00Z')});await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.goto('/');
  const shortcut=page.locator('#compass-launch'),panel=page.locator('#phone-compass-dialog');await expect(shortcut).toBeVisible();await shortcut.click();await expect(panel).toBeVisible();await expect(page.locator('#home-view')).toBeVisible();
  await panel.locator('.phone-compass-toggle').click();await sample(page);await expect(shortcut).toHaveAttribute('data-state','live');await expect(panel.locator('.phone-compass-heading')).toHaveText('90° E');
@@ -61,13 +63,15 @@ test('header compass works across all pages and closing it keeps the live dial r
  await shortcut.click();await panel.locator('.phone-compass-toggle').click();await expect(shortcut).toHaveAttribute('data-state','off');await expect(panel.locator('.phone-compass-heading')).toHaveText('—');await panel.locator('.phone-compass-toggle').click();await page.clock.runFor(150);await page.locator('#compass-close').click();await page.locator('#app-header [data-app-view=home]').click();await page.clock.runFor(1000);await expect(shortcut).toHaveAttribute('data-state','live');await shortcut.click();await panel.locator('.phone-compass-toggle').click();await page.evaluate(()=>clearInterval(window.__compassTestTimer));
 });
 
+});
+
 test.describe('automatic compass on phones',()=>{
  test.use({userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'});
  async function phone(page){
   await page.addInitScript(()=>{for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});
   await page.clock.install({time:new Date('2026-10-27T03:00Z')});await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.goto('/');
  }
- test('starts on load, resumes with fresh samples and remembers Stop across reloads',async({page})=>{
+ test('starts on load, resumes with fresh samples and stops only for this visit',async({page})=>{
   await phone(page);const header=page.locator('#compass-launch'),panel=page.locator('#phone-compass-dialog');
   await expect(header).toHaveAttribute('data-state','waiting');await sample(page);await expect(header).toHaveAttribute('data-state','live');await expect(header).toHaveAttribute('aria-label',/90 degrees/);
   await expect(page.locator('#sensor-status')).toHaveText('Sensors off');await expect(page.locator('#finder-arrows')).toBeHidden();
@@ -75,8 +79,8 @@ test.describe('automatic compass on phones',()=>{
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>false});document.dispatchEvent(new Event('visibilitychange'));});await expect(header).toHaveAttribute('data-state','waiting');await sample(page,{alpha:180});await expect(header).toHaveAttribute('aria-label',/180 degrees/);
   await page.locator('#launch').click();await sample(page,{alpha:180});await expect(header).toHaveAttribute('data-state','live');
   await page.locator('[data-nav-section=finder]').click();await page.locator('#finder-scope-view').click();await expect(header).toHaveAttribute('data-state','paused');await page.locator('#scope-exit').click();await expect(header).toHaveAttribute('data-state','waiting');await sample(page);await expect(header).toHaveAttribute('data-state','live');await expect(page.locator('#finder-arrows')).toBeHidden();
-  await header.click();await panel.locator('.phone-compass-toggle').click();await expect(header).toHaveAttribute('data-state','off');await page.reload();await expect(header).toHaveAttribute('data-state','off');await sample(page);await expect(header).toHaveAttribute('data-state','off');
-  await header.click();await panel.locator('.phone-compass-toggle').click();await sample(page);await expect(header).toHaveAttribute('data-state','live');await page.reload();await expect(header).toHaveAttribute('data-state','waiting');await sample(page);await expect(header).toHaveAttribute('data-state','live');
+  await header.click();await panel.locator('.phone-compass-toggle').click();await expect(header).toHaveAttribute('data-state','off');await page.reload();await expect(header).toHaveAttribute('data-state','waiting');await sample(page);await expect(header).toHaveAttribute('data-state','live');
+  await header.click();await expect(panel.locator('.phone-compass-toggle')).toHaveText('Stop compass');await sample(page);await expect(header).toHaveAttribute('data-state','live');await page.reload();await expect(header).toHaveAttribute('data-state','waiting');await sample(page);await expect(header).toHaveAttribute('data-state','live');
  });
  test('gesture-only browsers never request permission until tapped',async({page})=>{
   await page.addInitScript(()=>{window.__permissionCalls=0;window.DeviceOrientationEvent=class{static requestPermission(){window.__permissionCalls++;return Promise.resolve('granted');}};});
@@ -84,8 +88,24 @@ test.describe('automatic compass on phones',()=>{
   await header.click();await expect(panel.locator('.phone-compass-status')).toContainText('Tap Start compass once');expect(await page.evaluate(()=>window.__permissionCalls)).toBe(0);
   await panel.locator('.phone-compass-toggle').click();expect(await page.evaluate(()=>window.__permissionCalls)).toBe(1);await sample(page);await expect(header).toHaveAttribute('data-state','live');
  });
- test('missing automatic samples report an error and do not retry on DOM changes',async({page})=>{
-  await phone(page);const header=page.locator('#compass-launch');await page.clock.runFor(6500);await expect(header).toHaveAttribute('data-state','unreliable');await header.click();await expect(page.locator('#phone-compass-dialog .phone-compass-status')).toContainText('No usable absolute');
-  await page.locator('#compass-night').click();await page.locator('#compass-close').click();await page.locator('#launch').click();await page.clock.runFor(1000);await expect(header).toHaveAttribute('data-state','unreliable');await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
+ test('missing startup stream retries once on a real site tap, with no retry loop',async({page})=>{
+  await phone(page);const header=page.locator('#compass-launch');await page.clock.runFor(6500);await expect(header).toHaveAttribute('data-state','unreliable');await expect(page.locator('#phone-compass-dialog .phone-compass-status')).toContainText('No usable absolute');
+  await page.locator('#night').evaluate(el=>el.click());await page.clock.runFor(1000);await expect(header).toHaveAttribute('data-state','unreliable');
+  await header.click();await expect(header).toHaveAttribute('data-state','waiting');await page.clock.runFor(6500);await expect(header).toHaveAttribute('data-state','unreliable');await page.locator('#compass-close').click();await header.click();await expect(header).toHaveAttribute('data-state','unreliable');
+  await page.locator('#phone-compass-dialog .phone-compass-toggle').click();await sample(page);await expect(header).toHaveAttribute('data-state','live');await page.clock.runFor(2000);await expect(header).toHaveAttribute('data-state','unreliable');await page.locator('#compass-close').click();await expect(header).toHaveAttribute('data-state','unreliable');
+ });
+ test('only the explicit auto-start setting persists an off choice',async({page})=>{
+  await phone(page);const header=page.locator('#compass-launch');await header.click();const option=page.locator('#compass-auto');await expect(option).toBeChecked();await option.uncheck();await expect(header).toHaveAttribute('data-state','off');await page.reload();await expect(header).toHaveAttribute('data-state','off');
+  await header.click();await expect(option).not.toBeChecked();await option.check();await sample(page);await expect(header).toHaveAttribute('data-state','live');await page.reload();await expect(header).toHaveAttribute('data-state','waiting');await sample(page);await expect(header).toHaveAttribute('data-state','live');
+ });
+ test('the first site tap retries a withheld stream before the startup timeout',async({page})=>{
+  await page.addInitScript(()=>{window.__compassStarts=0;const add=window.addEventListener;window.addEventListener=function(name,...args){if(name==='deviceorientationabsolute')window.__compassStarts++;return add.call(this,name,...args);};});
+  await phone(page);const starts=await page.evaluate(()=>window.__compassStarts);await expect(page.locator('#compass-launch')).toHaveAttribute('data-state','waiting');await page.locator('#launch').click();expect(await page.evaluate(()=>window.__compassStarts)).toBe(starts+1);await page.locator('[data-nav-section=finder]').click();expect(await page.evaluate(()=>window.__compassStarts)).toBe(starts+1);await sample(page);await expect(page.locator('#compass-launch')).toHaveAttribute('data-state','live');await expect(page.locator('#finder-arrows')).toBeHidden();
+ });
+ test.describe('phones in desktop browser mode',()=>{
+  test.use({userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',hasTouch:true,isMobile:true});
+  test('touch input enables auto-start despite desktop identity and an old Stop preference',async({page})=>{
+   await page.addInitScript(()=>{localStorage.setItem('dvsky:compass:auto:v1','off');});await phone(page);await expect(page.locator('#compass-launch')).toHaveAttribute('data-state','waiting');await sample(page);await expect(page.locator('#compass-launch')).toHaveAttribute('data-state','live');await page.locator('#compass-launch').click();await expect(page.locator('#compass-auto')).toBeChecked();
+  });
  });
 });

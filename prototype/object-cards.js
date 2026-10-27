@@ -1,4 +1,4 @@
-import {compassVisual} from './live-compass.js';
+import {compassVisual} from './live-compass.js?v=compass-5';
 const photos={
  Moon:['moon','PIA00405'],Saturn:['saturn','PIA17172'],Jupiter:['jupiter','PIA22946'],
  M31:['m31','PIA04921'],M42:['m42','PIA04227'],M45:['m45','PIA09262'],NGC5139:['omega-centauri','PIA10372']

@@ -35,7 +35,7 @@ test('open, search, select, filter, expand, red mode and close',async({page},tes
  await page.locator('#close').scrollIntoViewIfNeeded();
  await page.waitForTimeout(250);
  await page.screenshot({path:`prototype/screenshots/${testInfo.project.name}.png`,fullPage:true});
- expect(await page.evaluate(()=>window.sensorSubscriptions)).toEqual([]);
+ expect(await page.evaluate(()=>window.sensorSubscriptions)).toEqual(testInfo.project.name==='pixel-8-size'?['deviceorientationabsolute','deviceorientation']:[]);
  await page.getByRole('button',{name:'Close Navigator'}).click();
  await expect(page.locator('#launch')).toBeFocused();
  await page.locator('#launch').click();await page.keyboard.press('Escape');

@@ -6,11 +6,11 @@ import {catalogue} from './catalogue.js?v=catalogue-1';
 import {position,matches} from './positions.js?v=catalogue-1';
 import {createSkyAtlas} from './sky-atlas.js?v=mission-1';
 import {createFinder} from './finder.js?v=compass-1';
-import {objectVisual,objectStory} from './object-cards.js?v=compass-1';
+import {objectVisual,objectStory} from './object-cards.js?v=compass-5';
 import {createPlanner} from './planner.js';
 import {createNightMission} from './night-mission.js';
 import {localParts,nightDate,addDays} from './observing-time.js';
-import {createLiveCompass} from './live-compass.js';
+import {createLiveCompass} from './live-compass.js?v=compass-5';
 import {createScopeView} from './scope-view.js';
 const requestedQuery=new URLSearchParams(location.search);
 if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has('lon')){
