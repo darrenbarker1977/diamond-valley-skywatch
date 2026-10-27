@@ -1,9 +1,8 @@
-import {defaultKit,validateKit,viewingPlan,describe,alignmentEyepiece} from './eyepieces.js';
-const KEY='dvsky:navigator:eyepieces:v1';
+import {validateKit,viewingPlan,describe,alignmentEyepiece} from './eyepieces.js?v=catalogue-1';
+import {KIT_KEY as KEY,readKit} from './kit-store.js?v=catalogue-1';
 const element=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
 export function createEquipment(onChange){
- const $=id=>document.getElementById(id);let kit=defaultKit();
- try{const stored=localStorage.getItem(KEY);if(stored)kit=validateKit(JSON.parse(stored));}catch{}
+ const $=id=>document.getElementById(id);let kit=readKit();
  $('telescope-focal').value=kit.focalLength;
  function current(){const focalLength=Number($('telescope-focal').value);try{return validateKit({...kit,focalLength});}catch{return null;}}
  function update(){

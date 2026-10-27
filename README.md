@@ -25,6 +25,25 @@ The owner authorized permanent publication and ongoing live updates on
 2026-10-26. Continue using branches and pull requests for reviewable changes.
 The private test Site remains a separate staging environment.
 
+## Worldwide observing catalogue
+
+Forecast and Navigator now share 237 searchable objects, including every
+Messier object, southern-sky highlights, named bright stars and planets. Forecast
+shows up to six choices calculated across the selected local evening's weather
+window, rather than taking the first three entries of a northern-only list.
+Cards give a local viewing time, direction, altitude and an eyepiece plan from
+the same saved kit used by Navigator. The link opens the selected object in
+the live Navigator; it explicitly shows the current sky, not that future night.
+Southern alignment suggestions include Canopus, Achernar, Alpha Centauri,
+Acrux and Fomalhaut when suitable. Sensor and alignment checks are unchanged.
+
+The bundled catalogue works offline. Moon interference is applied while the
+Moon is above the horizon. Shortlist ranking is an observing heuristic and
+does not measure seeing, transparency, light pollution or terrain. An astronomy
+library failure leaves weather and refresh available with an explicit target
+error. Data provenance, coordinates, ranking limits and the upstream license
+are documented in docs/catalogue-sources.md.
+
 ## Locations and offline preparation
 
 Home offers a user-initiated high-accuracy browser location fix, worldwide place

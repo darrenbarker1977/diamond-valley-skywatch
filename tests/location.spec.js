@@ -12,7 +12,7 @@ test('remote global search updates title, weather coordinates/timezone and survi
  await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
  await page.unroute('https://api.open-meteo.com/**');await context.setOffline(true);await page.reload();
  await expect(page.locator('.dv-app-brand')).toContainText('Alice Springs');await expect(page.locator('#location-status')).toContainText('Restored your last');
- await page.locator('.dv-app-header [data-app-view=forecast]').click();await expect(f.locator('#days .day')).toHaveCount(5);await expect(f.locator('#connection')).toContainText('Offline');
+ await page.locator('.dv-app-header [data-app-view=forecast]').click();await expect(f.locator('#days .day')).toHaveCount(5);await expect(f.locator('#connection')).toContainText('Offline');await expect(f.locator('#target-summary')).toContainText('237 searchable objects');await expect(f.locator('#targets .target').first()).toBeVisible();
  await context.setOffline(false);
 });
 test('manual coordinates, failed precision request and reset retain honest locations',async({page})=>{

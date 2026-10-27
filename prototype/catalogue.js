@@ -1,6 +1,6 @@
-// Small, deliberately curated J2000 catalogue. RA in hours, declination in degrees.
-// Rounded SIMBAD coordinates; see README for provenance and accuracy limits.
-export const catalogue = [
+import {importedObjects} from './catalogue-data.js?v=catalogue-1';
+// J2000 RA in hours, declination in degrees. Preserve familiar IDs and notes.
+const familiarObjects = [
   ...['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune'].map(body => ({id:body,name:body,type:body === 'Sun' ? 'Star' : body === 'Moon' ? 'Moon' : 'Planet',body,aliases:body === 'Moon' ? ['Luna'] : [],note:body === 'Sun' ? 'Never look at the Sun through a telescope without a certified full-aperture solar filter.' : 'Position calculated for the current time and observing site.'})),
   {id:'M31',name:'Andromeda Galaxy',type:'Galaxy',ra:0.71231,dec:41.26917,aliases:['M31','NGC224','Andromeda'],note:'Best under dark skies. Start with your lowest-power eyepiece.'},
   {id:'M42',name:'Orion Nebula',type:'Nebula',ra:5.58814,dec:-5.38967,aliases:['M42','NGC1976','Orion'],note:'A bright stellar nursery in Orion’s sword.'},
@@ -21,3 +21,9 @@ export const catalogue = [
   {id:'Rigel',name:'Rigel',type:'Star',ra:5.2423,dec:-8.20164,aliases:['Beta Orionis'],note:'The bright blue-white foot of Orion.'},
   {id:'Sirius',name:'Sirius',type:'Star',ra:6.75248,dec:-16.71612,aliases:['Alpha Canis Majoris','Dog Star'],note:'The brightest night-time star; low altitude can cause strong twinkling.'}
 ];
+const byId=new Map(importedObjects.map(object=>[object.id,object]));
+for(const object of familiarObjects){
+ const imported=byId.get(object.id);
+ byId.set(object.id,{...imported,...object,aliases:[...new Set([...(imported?.aliases||[]),...object.aliases])]});
+}
+export const catalogue=[...familiarObjects.map(object=>byId.get(object.id)),...byId.values()].filter((object,index,all)=>all.findIndex(other=>other.id===object.id)===index);

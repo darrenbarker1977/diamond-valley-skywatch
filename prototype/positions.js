@@ -1,19 +1,8 @@
 import {site} from './location.js?v=location-1';
+import {positionFor} from './sky-position.js?v=catalogue-1';
 export {site};
 export function position(A, object, date) {
-  if (!Number.isFinite(date.getTime())) throw new Error('Invalid calculation time');
-  const observer = new A.Observer(site.latitude,site.longitude,site.height);
-  let eq;
-  if (object.body) eq = A.Equator(object.body,date,observer,true,true);
-  else {
-    const ra=object.ra*Math.PI/12, dec=object.dec*Math.PI/180;
-    const vector = new A.Vector(Math.cos(dec)*Math.cos(ra),Math.cos(dec)*Math.sin(ra),Math.sin(dec),date);
-    eq = A.EquatorFromVector(A.RotateVector(A.Rotation_EQJ_EQD(date),vector));
-  }
-  // No atmospheric refraction: an honest geometric horizon, not predicted visibility.
-  const h=A.Horizon(date,observer,eq.ra,eq.dec);
-  if (![h.altitude,h.azimuth].every(Number.isFinite)) throw new Error('Non-finite sky position');
-  return {alt:h.altitude,az:((h.azimuth%360)+360)%360};
+  return positionFor(A,object,date,site);
 }
 export function project({alt,az}) {
   const radius=(90-alt)/90*166, angle=az*Math.PI/180;
