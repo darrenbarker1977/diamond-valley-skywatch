@@ -39,17 +39,17 @@ export function viewingPlan(object,kit,alt=45){
  let note='Suggestions use your enabled eyepieces. Atmospheric steadiness is not measured: if the view blurs or shimmers, return to lower power.';
  if(alt<=0)return {steps,note:'Planning for later: this object is currently below the horizon. '+note};
  if(alt<20)return {steps,note:'This object is low in the sky. Start at low power; air distortion can make detail poor. '+note};
- if(['M31','M45','NGC869'].includes(object.id))note='Stay at low power to frame this large object. It may extend beyond the eyepiece view; binoculars can show more of the surroundings. '+note;
+ if(['M31','M45','NGC869'].includes(object.id)||object.sizeArcmin>=50||['Star cloud','Asterism'].includes(object.type))note='Stay at low power to frame this large object. It may extend beyond the eyepiece view; binoculars can show more of the surroundings. '+note;
  else if(object.id==='Moon'){
   add('Explore craters',100,'Look near the light–dark boundary for shadows; near full Moon the shadows are less pronounced.');
   add('Try more detail only if sharp',200,'Increase slowly. Stop if detail softens; higher magnification does not guarantee a better view.',true);
  }else if(object.type==='Planet'){
   add('Look for a disk or detail',120,object.id==='Venus'||object.id==='Mercury'?'Look for its phase; do not expect surface markings.':'Let the telescope cool, focus carefully, and wait for moments when the air settles.');
   add('Optional higher power',200,'Try this only while the image stays sharp. Uranus and Neptune remain tiny; phone guidance only brings you to the rough area.',true);
- }else if(['M13','M57','Almach'].includes(object.id)){
+ }else if(['M13','M57','Almach'].includes(object.id)||['Globular cluster','Planetary nebula','Double star'].includes(object.type)){
   add('Inspect the target',120,object.id==='Almach'?'Look for the two contrasting-colour stars.':'After finding the target at low power, increase magnification to inspect its compact structure.');
   add('Optional closer look',180,'Only keep this setting if it reveals more detail rather than a dimmer or blurrier view.',true);
- }else if(['M42','M81','Albireo'].includes(object.id))add('Take a closer look',90,object.id==='Albireo'?'Look for the blue-and-gold pair; you may already separate it at low power.':'Compare the brighter central region at moderate power; return to low power for the wider surroundings.');
+ }else if(['M42','M81','Albireo'].includes(object.id)||['Open cluster','Galaxy','Nebula','Supernova remnant'].includes(object.type))add('Take a closer look',90,object.id==='Albireo'?'Look for the blue-and-gold pair; you may already separate it at low power.':'Compare the brighter central region at moderate power; return to low power for the wider surroundings.');
  else note='Low power is enough to identify this bright star or use it for alignment. Stars remain points; extra magnification will not reveal a stellar surface. '+note;
  if(start.power>100)note='Your lowest enabled power is already fairly high. Finding objects may be harder; a longer-focal-length eyepiece would make a useful low-power option. '+note;
  return {steps,note};

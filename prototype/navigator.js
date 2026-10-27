@@ -1,9 +1,9 @@
 import {createLocation,site,forecastURL} from './location.js?v=location-1';
 import {createNavigation} from './navigation.js?v=shared-header-1';
-import {createEquipment} from './equipment-ui.js';
-import {createPointing} from './pointing.js?v=location-1';
-import {catalogue} from './catalogue.js';
-import {position,project,matches} from './positions.js?v=location-1';
+import {createEquipment} from './equipment-ui.js?v=catalogue-1';
+import {createPointing} from './pointing.js?v=catalogue-1';
+import {catalogue} from './catalogue.js?v=catalogue-1';
+import {position,project,matches} from './positions.js?v=catalogue-1';
 const $=id=>document.getElementById(id), dialog=$('navigator');
 let selected='Moon',filter='all',timer,positions=new Map();
 const A=globalThis.Astronomy;
@@ -25,7 +25,7 @@ function update(){
 }
 function render(){
   const objects=catalogue.filter(o=>matches(o,$('search').value)&&(filter!=='up'||positions.get(o.id).alt>0));
-  $('count').textContent=`${objects.length} of ${catalogue.length} curated objects · positions update every 10 seconds`;
+  $('count').textContent=`${objects.length} of ${catalogue.length} objects · all 110 Messier objects, southern highlights, bright stars and planets · positions update every 10 seconds`;
   const list=$('objects');const previous=list.scrollTop;
   // Keep existing buttons when the result IDs have not changed, preserving keyboard focus.
   const ids=objects.map(o=>o.id).join('|');
@@ -70,3 +70,15 @@ const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>poin
 createLocation(()=>{pointing.suspend('Observing location changed. Repeat alignment at this location.');navigation.locationChanged();if(dialog.open)update();});
 
 window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close();}});
+function openTarget(id){
+ if(id&&!catalogue.some(object=>object.id===id))return;
+ if(id)selected=id;
+ $('search').value='';filter='all';for(const button of document.querySelectorAll('[data-filter]'))button.setAttribute('aria-pressed',String(button.dataset.filter==='all'));
+ $('launch').click();
+}
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.source!==$('forecast-frame').contentWindow||event.data?.type!=='dvsky-select-target'||typeof event.data.id!=='string')return;
+ openTarget(event.data.id);
+});
+const requestedTarget=new URLSearchParams(location.search);
+if(requestedTarget.has('target')||requestedTarget.has('navigator'))openTarget(requestedTarget.get('target')||'');

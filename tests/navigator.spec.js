@@ -1,3 +1,4 @@
+import {catalogue} from '../prototype/catalogue.js';
 import {test,expect} from '@playwright/test';
 test('open, search, select, filter, expand, red mode and close',async({page},testInfo)=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -6,7 +7,7 @@ test('open, search, select, filter, expand, red mode and close',async({page},tes
  await page.goto('/prototype/');
  await page.getByRole('button',{name:'Sky Navigator',exact:true}).click();
  await expect(page.getByRole('dialog')).toBeVisible();
- await expect(page.locator('#objects button')).toHaveCount(27);
+ await expect(page.locator('#objects button')).toHaveCount(catalogue.length);
  await page.locator('#search').fill('m 31');
  await expect(page.locator('#objects button')).toHaveCount(1);
  await page.locator('#objects button').click();

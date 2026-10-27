@@ -1,6 +1,11 @@
 import {angle,skyVector} from './alignment.js';
 // Ranking is ease of recognition, not a promise of local visibility.
 export const easyObjects={
+ Canopus:{rank:88,hint:'A brilliant star in the southern sky. Check the map direction and height before recording.'},
+ Achernar:{rank:84,hint:'A bright star at the southern end of Eridanus. Match the map; it is not a pole star.'},
+ RigilKentaurus:{rank:85,hint:'Alpha Centauri, one of the bright pointers near the Southern Cross. Check its map position before recording.'},
+ Acrux:{rank:79,hint:'The bright star at the foot of the Southern Cross. Match the cross pattern and the map direction.'},
+ Fomalhaut:{rank:81,hint:'A bright, relatively isolated star in the southern part of the sky. Match its map direction and height.'},
  Moon:{rank:100,hint:'Look for the bright Moon. Use the middle of its disk, not an edge.'},
  Jupiter:{rank:94,hint:'A very bright, steady point of light. Confirm its direction on the map; in the telescope it has a disk and may show small moons.'},
  Venus:{rank:96,hint:'A brilliant, steady point of light. Use only after sunset, well away from the Sun.'},

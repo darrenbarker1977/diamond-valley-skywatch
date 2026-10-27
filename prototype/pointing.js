@@ -1,7 +1,7 @@
 import {site} from './location.js?v=location-1';
 import {OrientationSession} from './sensors.js';
 import {skyVector,skyAngles,solveAlignment,validateAlignment,applyRotation,stableSample,guidance,angle} from './alignment.js';
-import {easyTargets,easyObjects} from './easy-targets.js';
+import {easyTargets,easyObjects} from './easy-targets.js?v=catalogue-1';
 export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},env=window}){
  const $=id=>document.getElementById(id);
  let samples=[],model=null,verified=false,checkError=null,choices=[],cameraStream=null,cameraGeneration=0;

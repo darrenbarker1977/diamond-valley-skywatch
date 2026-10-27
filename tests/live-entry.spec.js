@@ -1,3 +1,4 @@
+import {catalogue} from '../prototype/catalogue.js';
 import {test,expect} from '@playwright/test';
 test('permanent entry loads shared Navigator assets and original forecast',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -7,7 +8,7 @@ test('permanent entry loads shared Navigator assets and original forecast',async
  await page.route('https://api.open-meteo.com/**',route=>route.fulfill({json:{hourly}}));
  await page.goto('/');await expect(page).toHaveTitle('Barker After Dark · Diamond Valley');
  await page.locator('[data-open-section=equipment]').click();await expect(page.locator('#kit-list')).toContainText('SVBONY');
- await page.locator('[data-nav-section=objects]').click();await expect(page.locator('#objects button')).toHaveCount(27);await expect(page.locator('#detail h4')).toHaveText('Recommended eyepiece');
+ await page.locator('[data-nav-section=objects]').click();await expect(page.locator('#objects button')).toHaveCount(catalogue.length);await expect(page.locator('#detail h4')).toHaveText('Recommended eyepiece');
  await page.locator('#nav-to-forecast').click();const f=page.frameLocator('#forecast-frame');await expect(f.locator('#days .day')).toHaveCount(5);await expect(f.locator('#refresh')).toBeEnabled();await f.locator('#refresh').click();await expect(f.locator('#connection')).toContainText('Live');
  expect(errors).toEqual([]);
 });
