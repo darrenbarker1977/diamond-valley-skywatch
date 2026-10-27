@@ -7,8 +7,10 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  let samples=[],model=null,verified=false,checkError=null,choices=[],cameraStream=null,cameraGeneration=0;
  const session=new OrientationSession(env,()=>paint());
  const mode=()=>$('pointing-mode').value;
+ const searchText=value=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const matchesSearch=object=>{const text=searchText(`${object.id} ${object.name} ${object.id==='Polaris'?'North Star pole star':''}`);return searchText($('alignment-search').value).split(' ').every(word=>text.includes(word));};
  function reset(message='Alignment cleared. Start with the easiest object you can identify.'){
-  samples=[];model=null;verified=false;checkError=null;$('object-confirm').checked=false;$('alignment-feedback').textContent=message;refresh();
+  samples=[];model=null;verified=false;checkError=null;$('alignment-search').value='';$('object-confirm').checked=false;$('alignment-feedback').textContent=message;refresh();
  }
  function stopCamera(){cameraGeneration++;if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;$('camera').srcObject=null;$('camera-view').hidden=true;$('camera-toggle').setAttribute('aria-pressed','false');$('camera-toggle').textContent='Show rear-camera aiming view';$('camera-status').textContent='Camera off · nothing recorded or uploaded.';}
  function suspend(message='Sensors stopped. Enable again and repeat alignment before using arrows.'){
@@ -25,14 +27,17 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   try {
    const positions=currentPositions(),sun=positions.get('Sun');
    const phase=A.Illumination('Moon',new Date()).phase_fraction;
-   choices=easyTargets(catalogue,positions,samples,phase);
+   const available=easyTargets(catalogue,positions,samples,phase),daylight=sun.alt>-6;
+   choices=available.filter(matchesSearch);
    const select=$('alignment-target'),prior=select.value,ids=choices.map(o=>o.id).join('|');
    if(select.dataset.ids!==ids){select.replaceChildren(...choices.map(o=>{const option=document.createElement('option'),p=positions.get(o.id);option.value=o.id;option.textContent=`${o.name} · ${p.alt.toFixed(0)}° up · ${Math.round(p.az)}° true azimuth`;return option;}));select.dataset.ids=ids;if(choices.some(o=>o.id===prior))select.value=prior;else $('object-confirm').checked=false;}
-   else for(const option of select.options){const o=catalogue.find(o=>o.id===option.value),p=positions.get(o.id);option.textContent=`${o.name} · ${p.alt.toFixed(0)}° up · ${Math.round(p.az)}° true azimuth`;}
-   $('easy-explanation').textContent=sun.alt>-6?'It is too bright for this beginner alignment. Return after dusk; daylight alignment is disabled.':choices.length?'Suggested for right now, not a weather report. Clouds, trees and buildings may hide them. Choose a different option if you cannot confidently identify the first.':'No suitable easy object is available for this step right now. Wait for another time; do not guess at a faint object.';
+   else if(choices.length)for(const option of select.options){const o=catalogue.find(o=>o.id===option.value),p=positions.get(o.id),text=`${o.name} · ${p.alt.toFixed(0)}° up · ${Math.round(p.az)}° true azimuth`;if(option.textContent!==text)option.textContent=text;}
+   if(!choices.length){const text=daylight?'Available after dusk':available.length?'No matches · clear or change your search':'No suitable alignment objects right now';if(select.options[0]?.textContent!==text){const option=document.createElement('option');option.value='';option.textContent=text;select.replaceChildren(option);}$('object-confirm').checked=false;}
+   $('easy-explanation').textContent=daylight?'It is too bright for this beginner alignment. This list opens after dusk; daylight alignment is disabled. You can still search all observing targets below.':available.length?'Suggested for right now, not a weather report. Clouds, trees and buildings may hide them. Type a name to filter this list, then choose the object you can confidently identify.':'No suitable easy object is available for this step right now. Wait for another time; do not guess at a faint object.';
+   $('alignment-search-status').textContent=daylight?'Alignment search is ready; matching choices become available after dusk.':!available.length?'No easy objects meet the height, Sun distance and alignment separation requirements right now.':choices.length?`${choices.length} available ${choices.length===1?'match':'matches'}. The selected object is shown below.`:'No available match. Try another name or clear the search. This list contains easy alignment objects, not every observing target.';
    if(session.active&&!model&&select.value&&prior!==select.value)onTargetSelect(select.value);
    identify();paint();
-  }catch(e){choices=[];$('alignment-target').replaceChildren();$('easy-explanation').textContent='Alignment suggestions unavailable: '+e.message;paint();}
+  }catch(e){choices=[];const option=document.createElement('option');option.value='';option.textContent='Alignment choices unavailable';$('alignment-target').replaceChildren(option);delete $('alignment-target').dataset.ids;$('identify-help').textContent='';$('object-confirm').checked=false;$('alignment-search-status').textContent='Sky calculations are unavailable. Try refreshing the page.';$('easy-explanation').textContent='Alignment suggestions unavailable: '+e.message;paint();}
  }
  function identify(){
   const object=choices.find(o=>o.id===$('alignment-target').value);
@@ -57,12 +62,13 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   $('measured-direction').textContent=measured;
   const stage=samples.length;$('alignment-find').hidden=!model;
   $('alignment-step').textContent=verified?'Alignment checked for this session':stage===0?'1 · Start with something easy':stage===1?'2 · Basic guidance ready · add another object if you like':'3 · Refined guidance ready · optional independent check';
-  $('alignment-help').textContent=verified?'Use search to select your destination. Move slowly and confirm through the finder.':stage===0?'Identify one bright object, centre it and hold still for about one second. One target starts basic guidance; a second refines it.':stage===1?'You can find targets now. One-target guidance corrects heading and tilt at your chosen object; accuracy elsewhere is not verified. Add a second object 30°–140° away for a fuller alignment.':'You can find targets now. A third object at least 20° from both alignment objects optionally checks the result. It is not required to start.';
+  $('alignment-help').textContent=verified?'Use search to select your destination. Move slowly and confirm through the finder.':stage===0?(session.active?'Identify one bright object, centre it and hold still for about one second. One target starts basic guidance; a second refines it.':'Choose an easy object below. Enable sensors above when you are ready to centre and record it. One target is enough to start.'):stage===1?'You can find targets now. One-target guidance corrects heading and tilt at your chosen object; accuracy elsewhere is not verified. Add a second object 30°–140° away for a fuller alignment.':'You can find targets now. A third object at least 20° from both alignment objects optionally checks the result. It is not required to start.';
   $('capture-alignment').textContent=stage===0?'Record first object · start guidance':stage===1?'Add second object · refine alignment':'Check a third object · optional';
   let stable=false;try{stableSample(session.history,session.now());stable=true;}catch{}
   $('capture-alignment').disabled=verified||!fresh||!stable||!$('object-confirm').checked||!choices.length||(mode()==='mounted'&&!$('mount-confirm').checked);
   $('alignment-target').disabled=verified||!choices.length;
-  $('object-confirm').disabled=verified;
+  $('object-confirm').disabled=verified||!choices.length;
+  $('alignment-search').disabled=verified;
   let direction=session.status==='stale'?'Sensor readings are stale; direction arrows are off until fresh samples arrive.':'Direction arrows are off until you align on one identified object.',pose={ready:false};
   if(model&&fresh){
    const recent=session.history.filter(s=>session.now()-s.time<400);
@@ -80,7 +86,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   onPose({...pose,message:direction,listening:session.active||session.status==='permission',mode:mode()});
   $('guidance').textContent=direction;
   $('compact-guidance').textContent=session.active?direction:session.message+'. Open Pointing when you want to align.';
-  document.querySelector('.dv-nav-alignment').hidden=!session.active||verified;
+  document.querySelector('.dv-nav-alignment').hidden=verified;
   if(!session.active)$('pointing-setup').open=true;
   else if(session.status==='receiving'&&$('pointing-setup').dataset.autoCollapsed!=='true'){$('pointing-setup').open=false;$('pointing-setup').dataset.autoCollapsed='true';}
  }
@@ -92,6 +98,8 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  $('pointing-mode').addEventListener('change',()=>{suspend('Mode changed. Reposition your phone, enable sensors and start alignment again.');$('mount-confirm').checked=false;setup();});
  $('mount-confirm').addEventListener('change',()=>{reset('Phone placement changed. Start alignment again.');});
  $('object-confirm').addEventListener('change',paint);
+ $('alignment-search').addEventListener('input',()=>{$('object-confirm').checked=false;refresh();if($('alignment-target').value)onTargetSelect($('alignment-target').value);});
+ $('alignment-browse').addEventListener('click',()=>{document.querySelector('[data-nav-section=objects]').click();$('object-library').open=true;$('search').focus();});
  $('alignment-target').addEventListener('change',()=>{$('object-confirm').checked=false;if($('alignment-target').value)onTargetSelect($('alignment-target').value);identify();paint();});
  $('capture-alignment').addEventListener('click',()=>{
   let accepted=false;
@@ -106,7 +114,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
    if(samples.length===0){samples.push(sample);model={...singleAlignment(sample),created:session.now()};$('alignment-feedback').textContent=`${object.name} recorded. Basic one-target guidance is ready. Accuracy is not verified; confirm through the finder. Add another object whenever you like.`;onAligned();}
    else if(samples.length===1){model={...solveAlignment(samples[0],sample),kind:'two',created:session.now()};samples.push(sample);$('alignment-feedback').textContent=`Two-target guidance is ready; fit residual ${model.residual.toFixed(1)}°. A third-object check is optional, not an accuracy guarantee.`;onAligned();}
    else {checkError=validateAlignment(model,samples,sample);verified=true;model.created=session.now();$('alignment-feedback').textContent=`Third-object check passed within ${checkError.toFixed(1)}°. This is a coarse estimate; confirm targets in the eyepiece.`;onAligned();}
-   $('object-confirm').checked=false;refresh();
+   $('alignment-search').value='';$('object-confirm').checked=false;refresh();
   }catch(e){if(accepted){samples=[];model=null;verified=false;}$('alignment-feedback').textContent=e.message;refresh();}
  });
  $('camera-toggle').addEventListener('click',async()=>{

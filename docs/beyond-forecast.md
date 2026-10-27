@@ -30,6 +30,15 @@ the calibration. The compass is not telescope encoder telemetry.
 
 ## Progressive alignment
 
+The alignment picker has a typed search and a native touch/keyboard match list.
+"North Star" and "pole star" match Polaris. Search only filters currently
+eligible easy alignment objects; it never creates a custom sky coordinate.
+Daylight, no eligible objects and no matching name have separate visible empty
+states. No selection disables the identification checkbox and capture button.
+Filtering or changing a choice clears the previous identification confirmation;
+after capture the filter clears to show candidates for the next optional step.
+Search all observing targets opens the separate full observing catalogue.
+
 One identified object starts **basic** guidance, including Polaris when its
 actual altitude and Sun separation satisfy the existing easy-target filters.
 The model applies measured heading and tilt offsets from that recorded object.
