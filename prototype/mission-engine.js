@@ -1,49 +1,58 @@
 import {rankTargets,catalogue} from './forecast-targets.js?v=mission-1';
 import {positionFor} from './sky-position.js?v=catalogue-1';
-import {weatherAt,assessWeather} from './mission-weather.js';
+import {weatherAt,assessWeather,coordinateKey} from './mission-weather.js';
 import {localInstant} from './observing-time.js';
 const easy=new Set(['Moon','Jupiter','Saturn','Venus','Albireo','M42','M45','NGC104','NGC5139','Sirius','Vega','Canopus','Achernar']);
-const step=15*60000;
+const minute=60000;
+export function missionStopCount(minutes){
+ if(!Number.isInteger(minutes)||minutes<1||minutes>719)throw Error('Choose a duration of at least one minute, up to 11 hours 59 minutes.');
+ return Math.max(1,Math.min(5,Math.ceil(minutes/25)));
+}
+function localWeather(snapshot,site,time){return snapshot?.coordinateKey===coordinateKey(site)?weatherAt(snapshot,time):null;}
+function weatherPenalty(row){
+ if(!Number.isFinite(row?.cloud_cover))return 12;
+ return row.cloud_cover*.4+Math.max(0,(row.precipitation_probability||0)-30)*.3+(row.snowfall>.09?20:0)+Math.max(0,(row.wind_gusts_10m||0)-30)*.5;
+}
 export function targetAssessment(A,site,snapshot,id,time){
  const object=catalogue.find(o=>o.id===id);if(!object)return {usable:false,reason:'Choose a catalogue object.'};
- const position=positionFor(A,object,new Date(time),site),weather=weatherAt(snapshot,time),outlook=assessWeather(weather);
- if(!outlook.usable)return {usable:false,position,weather,reason:outlook.reason};
+ const position=positionFor(A,object,new Date(time),site),weather=localWeather(snapshot,site,time),outlook=assessWeather(weather);
  const candidate=rankTargets(A,site,[new Date(time)]).find(item=>item.object.id===id);
- return {usable:!!candidate,position,weather,reason:candidate?outlook.reason:position.alt<=0?'This target is now below your horizon.':position.alt<20?'This target is now too low for a beginner mission.':'Daylight, Moon interference or Sun-separation checks make another target a better choice.'};
+ return {usable:!!candidate,position,weather,outlook,reason:candidate?outlook.reason:position.alt<=0?'This target is now below your horizon.':position.alt<20?'This target is now too low for a beginner tour.':'Daylight, Moon interference or Sun-separation checks make another target a better choice.'};
 }
 export function buildMission(A,{site,snapshot,night,anchor,zone,live=true,minutes=90,excluded=[],endAt=null,maxStops=5}){
  if(!A)throw Error('The astronomy library did not load.');
- if(!snapshot)return {steps:[],reason:'Download this location’s forecast to build a weather-based mission.',covered:false};
- if(snapshot.coordinateKey!==`${site.latitude.toFixed(5)}:${site.longitude.toFixed(5)}`)return {steps:[],reason:'Waiting for the selected location’s forecast.',covered:false};
- if(![45,60,90,120,180].includes(minutes))throw Error('Choose a session length from the menu.');
- if(maxStops<=0)return {steps:[],covered:true,reason:'Your mission route is complete. End this session to build another route.'};
+ const budget=missionStopCount(minutes);
+ if(maxStops<=0)return {steps:[],covered:false,reason:'Your mission route is complete. End this session to build another route.'};
  const from=live?Math.max(new Date(anchor).getTime(),localInstant(night,960,zone).getTime()):new Date(anchor).getTime();
- const nightEnd=localInstant(night,1800,zone).getTime(),deadline=endAt===null?Infinity:new Date(endAt).getTime(),scanEnd=Math.min(live?nightEnd:Math.min(nightEnd,from+minutes*60000),deadline);
- if(from>=deadline)return {steps:[],covered:!!weatherAt(snapshot,from),reason:'Your chosen session time has finished. End this session to build a new mission.'};
- if(from>=nightEnd)return {steps:[],covered:!!weatherAt(snapshot,from),reason:'This evening’s mission window has ended. Choose a start before 6 AM or select another night.'};
- const times=[];let covered=false,weatherBlocked=false;
- for(let t=Math.ceil(from/step)*step;t<scanEnd;t+=step){
-  const weather=weatherAt(snapshot,t),outlook=assessWeather(weather);if(outlook.known)covered=true;
-  if(!outlook.usable){if(outlook.known)weatherBlocked=true;continue;}
-  const sun=positionFor(A,{body:'Sun'},new Date(t),site);if(sun.alt>-6)continue;
-  times.push({date:new Date(t),weather});
- }
- if(!times.length)return {steps:[],covered,reason:!covered?'No downloaded hourly forecast covers this night or time. Sky planning still works.':weatherBlocked?'No dark, suitable weather window remains in this session. Check actual skies and try another time.':'This window is too bright for a beginner night mission. Choose a later time.'};
- const start=times[0].date.getTime(),end=Math.min(scanEnd,live?start+minutes*60000:scanEnd);
- const samples=times.filter(t=>t.date.getTime()<end).map(t=>({...t,items:rankTargets(A,site,[t.date])}));
- const used=new Set(excluded),types=new Map(),count=Math.min(maxStops,Math.max(3,Math.min(5,Math.round(minutes/25)))),steps=[];
- let previousTime=start-step;
+ const nightEnd=localInstant(night,1800,zone).getTime(),deadline=endAt===null?Infinity:new Date(endAt).getTime();
+ if(!Number.isFinite(from)||!Number.isFinite(nightEnd)||Number.isNaN(deadline))throw Error('Choose a valid observing date and time.');
+ if(from>=deadline)return {steps:[],covered:false,reason:'Your chosen session time has finished. End this session to build a new mission.'};
+ if(from>=nightEnd)return {steps:[],covered:false,reason:'This evening’s mission window has ended. Choose a start before 6 AM or select another night.'};
+ // In live mode a not-yet-started tour may begin after dusk. Once started its
+ // real deadline remains fixed. Planned sessions retain their selected window.
+ const scanEnd=Math.min(nightEnd,deadline,live?Infinity:from+minutes*minute);
+ let start=from;
+ while(start<scanEnd&&positionFor(A,{body:'Sun'},new Date(start),site).alt>-6)start+=5*minute;
+ if(start>=scanEnd)return {steps:[],covered:false,reason:'This window is too bright for a night tour. Choose a later start in Plan a night. Weather is not blocking the route.'};
+ const end=Math.min(scanEnd,start+minutes*minute),count=Math.min(maxStops,budget),used=new Set(excluded),types=new Map(),steps=[];
  for(let i=0;i<count;i++){
-  const desired=start+i*(end-start)/count;
-  const ordered=samples.filter(sample=>sample.date.getTime()>previousTime).sort((a,b)=>Math.abs(a.date.getTime()-desired)-Math.abs(b.date.getTime()-desired));
-  let choice=null;
-  for(const sample of ordered){
-   const candidates=sample.items.filter(item=>!used.has(item.object.id)&&(types.get(item.object.type)||0)<(item.object.type==='Star'?1:2));
-   candidates.sort((a,b)=>(b.score+(i===0&&easy.has(b.object.id)?16:0))-(a.score+(i===0&&easy.has(a.object.id)?16:0)));
-   if(candidates.length){choice={...candidates[0],weather:sample.weather};break;}
+  const slotStart=start+i*(end-start)/count,slotEnd=start+(i+1)*(end-start)/count;
+  // Compare the beginning, middle and end of each stop's time slot. Weather
+  // influences preference, never removes astronomical candidates or fills gaps.
+  const times=[slotStart,(slotStart+slotEnd)/2,Math.max(slotStart,slotEnd-Math.min(minute,(slotEnd-slotStart)/4))];
+  let choice=null,best=-Infinity;
+  for(const t of [...new Set(times)]){
+   const date=new Date(t),weather=localWeather(snapshot,site,date);
+   for(const item of rankTargets(A,site,[date])){
+    if(used.has(item.object.id)||(types.get(item.object.type)||0)>=(item.object.type==='Star'?1:2))continue;
+    const score=item.score+(i===0&&easy.has(item.object.id)?16:0)-weatherPenalty(weather)-(t-slotStart)/minute*.08;
+    if(score>best){best=score;choice={...item,weather};}
+   }
   }
-  if(!choice)break;
-  used.add(choice.object.id);types.set(choice.object.type,(types.get(choice.object.type)||0)+1);steps.push(choice);previousTime=choice.date.getTime();
+  if(!choice)continue;
+  used.add(choice.object.id);types.set(choice.object.type,(types.get(choice.object.type)||0)+1);steps.push(choice);
  }
- return {steps,covered,start:new Date(start),end:new Date(end),reason:steps.length?'A short route through the best-placed beginner targets in this forecast window.':'No suitable beginner targets meet the sky checks in this window. Try another time.'};
+ const known=steps.filter(s=>assessWeather(s.weather).known),poor=known.filter(s=>!assessWeather(s.weather).usable),covered=known.length>0;
+ const weatherNotice=!steps.length?'':known.length<steps.length?'Weather is unavailable for some or all stops. This is a sky-based tour; visibility is unconfirmed.':poor.length?'Weather caution: cloud, precipitation or wind may prevent observing. The tour remains available for planning.':'Forecast conditions help choose stop times. Check the actual sky before observing.';
+ return {steps,covered,weatherNotice,weatherCaution:poor.length>0||known.length<steps.length,start:new Date(start),end:new Date(end),delayed:start>from,reason:steps.length?(start>from?'Your tour starts after dusk. ':'')+'A short route through well-placed beginner targets. Weather advises this tour; it does not hide it.':'No suitable beginner targets meet the darkness, altitude and Sun-distance checks in this window. Try a later time or another night.'};
 }

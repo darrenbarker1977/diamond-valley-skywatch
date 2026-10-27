@@ -8,7 +8,7 @@ import {createSkyAtlas} from './sky-atlas.js?v=field-1';
 import {createFinder} from './finder.js?v=field-1';
 import {objectVisual,objectStory,discoveryNote} from './object-cards.js?v=field-1';
 import {createPlanner} from './planner.js';
-import {createNightMission} from './night-mission.js';
+import {createNightMission} from './night-mission.js?v=tour-1';
 import {localParts,nightDate,addDays} from './observing-time.js';
 import {createLiveCompass} from './live-compass.js?v=field-1';
 import {createDiscovery} from './discovery.js';
