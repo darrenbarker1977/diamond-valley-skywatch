@@ -1,3 +1,9 @@
+> Current workflow (2026-10-27): one positively identified target starts basic
+> guidance; a second refines it; a third check is optional. Older three-object
+> instructions below remain useful for the optional full check. The compass now
+> has a separate persistent session. See docs/beyond-forecast.md in the repository
+> for the current behavior and limits. No physical field accuracy is implied.
+
 # Sky atlas and finding view
 
 The permanent Home, Forecast and Navigator screens retain one actual shared

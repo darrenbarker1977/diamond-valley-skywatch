@@ -33,7 +33,7 @@ export class OrientationSession {
  tick(){
   if(!this.active)return;
   const latest=this.history.at(-1);
-  if(latest&&this.now()-latest.time>1500){this.interrupt('Sensor readings became stale. Enable sensors again and recalibrate.');return;}
+  if(latest&&this.now()-latest.time>1500){this.status='stale';this.message='Sensor readings are stale; direction arrows are off until fresh samples arrive. Sensors remain listening.';this.notify();return;}
   if(!latest&&this.now()-this.started>6000){this.interrupt('No usable absolute sensor readings. Check Chrome motion-sensor permissions and device support, then retry.');return;}
   this.notify();
  }

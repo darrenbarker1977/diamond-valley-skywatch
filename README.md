@@ -35,7 +35,7 @@ Cards give a local viewing time, direction, altitude and an eyepiece plan from
 the same saved kit used by Navigator. The link opens the selected object in
 the live Navigator; it explicitly shows the current sky, not that future night.
 Southern alignment suggestions include Canopus, Achernar, Alpha Centauri,
-Acrux and Fomalhaut when suitable. Sensor and alignment checks are unchanged.
+Acrux and Fomalhaut when suitable. Visibility filters are preserved; progressive alignment is described below.
 
 The bundled catalogue works offline. Moon interference is applied while the
 Moon is above the horizon. Shortlist ranking is an observing heuristic and
@@ -84,7 +84,7 @@ Home, Forecast and Navigator use one shared header element, with the same
 brand, illustration and Home / Forecast / Navigator buttons. Navigator opens
 as an in-page view below that header; its Objects / Pointing / Eyepieces
 controls remain separate. The header stays visible when scrolling. Leaving
-Navigator releases sensor and camera sessions while retaining weather frame
+Navigator releases telescope sensor and camera sessions while retaining weather frame
 state. Close and Escape return to the previous Home or Forecast view.
 
 manifest.webmanifest identifies only this repository-path app and supplies
@@ -106,7 +106,7 @@ After Dark. No phone launcher configuration is changed by a website update.
 Navigator now opens a real 2,851-star atlas with constellation patterns, drag,
 zoom, compass bearings, target centring and an all-sky option. Find it is a
 separate focused view; its large direction arrows and phone-follow stay locked
-until checked alignment supplies fresh valid sensor estimates. Object cards
+until recorded alignment supplies fresh valid sensor estimates. Object cards
 include NASA imagery where available, realistic eyepiece expectations and the
 saved kit recommendations. Optional panels fold away across all three pages.
 See docs/sky-atlas.md for interaction, accuracy, data/image sources and failure
@@ -123,39 +123,30 @@ handheld/mounted choices, next-stop access, red mode and an optional screen hold
 There is no observing journal. See docs/night-mission.md for update behaviour,
 offline limits, timezone handling and the unchanged alignment safeguards.
 
-## Live phone compass
+## Compass, progressive alignment and Skywatch extras
 
-Star and double-star viewing guides show a brass compass rose, rotating cardinal
-dial and live top-edge heading. A small compass beside the three main menu
-buttons shares the same readings, with a readable upright N. The small button
-opens the larger compass on Home, Forecast or Navigator; Escape closes just
-that panel and restores focus. Navigator retains its original launch action.
+The compass now has its own persistent listening session. Quiet sensor periods
+hide the heading while leaving listeners enabled; fresh samples recover without
+toggling auto-start. It stays enabled through menus and Scope view. Only app
+backgrounding or explicit Stop/off pauses it. Actual browser permission rules
+still apply. Telescope sensor/calibration state is separate.
 
-The compass starts automatically on mobile browsers that allow orientation
-without a gesture, including touch phones using a desktop browser identity.
-Browsers exposing requestPermission still need an explicit Start compass tap;
-no permission prompt is attempted on page load. The visible Start automatically
-on phones checkbox is the only persistent opt-out (dvsky:compass:auto:v2).
-Stop compass pauses only this visit; it no longer silently disables future
-starts. An old v1 Stop preference is ignored. Enabled phone compasses pause
-while hidden and resume on return, with no saved heading. Desktop browsers
-without touch keep manual starts. DOM changes do not retry sensor failures.
+One identified target, including Polaris when suitable, starts basic heading
+and tilt-offset guidance. A second target refines the model; a third independent
+check is optional. Each level is labelled, all readings remain sensor-derived,
+and stale samples pause arrows. A one-target fit does not establish global
+accuracy. Freshness, stable capture, physical presence, safe Sun geometry,
+mode/site changes and session expiry are still enforced.
 
-No heading appears until fresh absolute orientation arrives. The existing
-OrientationSession permission, invalid-sample, abrupt-jump and stale-reading
-checks still apply. Bearings hide near vertical. Device north's magnetic/true
-reference and accuracy are not exposed by the browser. The compass measures
-the physical phone now, independent of the observing location or planned date.
-Telescope sensors and checked sky alignment remain manual and separate; this
-does not unlock arrows, reuse alignment or claim to measure the telescope.
+Home → Beyond the forecast or Navigator → Skywatch opens Moon/planet details,
+NOAA aurora, CAMS haze/dew context and predicted ISS fly-bys. Optional panels
+collapse, sources and timestamps are visible, and invalid/stale feeds stay
+unavailable. The atlas adds Milky Way contours and 22,872 fainter real stars when
+zoomed; Finder adds named-star routes and optional checked-alignment haptics.
+Reference photos and useful facts stay. Appearance descriptions are hidden by
+default, with a Home toggle. No eyepiece-view simulator, observing journal or
+camera plate solving is added.
 
-Compass tips collapse, red mode covers every dial element, and the module is
-included in the offline shell. Run tests/compass.spec.js for synthetic sensor,
-auto-start/resume/stop, gesture permissions, stale, visibility, red-mode and
-phone-layout checks. A real Pixel 8 field check remains necessary to assess
-local magnetic interference.
-
-If the initial sensor stream is withheld before any sample, the first trusted
-site tap may retry it, including before the startup timeout. DOM changes never loop retries, and stale or abrupt-jump
-failures after real samples still require a manual restart. Compass module
-imports carry the current release version to avoid an old browser module copy.
+See [docs/beyond-forecast.md](docs/beyond-forecast.md) for data sources, cache
+policy, alignment limits and implementation detail. Real Pixel 8 field testing
+is still needed to assess sensor accuracy at the telescope.

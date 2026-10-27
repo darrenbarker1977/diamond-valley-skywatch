@@ -1,4 +1,4 @@
-import {objectStory,objectVisual} from './object-cards.js?v=compass-1';
+import {objectStory,objectVisual} from './object-cards.js?v=field-1';
 import {viewingPlan,describe} from './eyepieces.js?v=catalogue-1';
 export function createFinder({onSetup,onMode,onStop,onSky,getKit}){
  const $=id=>document.getElementById(id);let lastId='',preferredMode='mounted';
@@ -25,7 +25,7 @@ export function createFinder({onSetup,onMode,onStop,onSky,getKit}){
    $('finder-stop').disabled=!state.listening;
    const ready=!!state.ready;$('finder-arrows').hidden=!ready;$('finder-locked').hidden=ready;
    $('finder-compass').classList.toggle('is-ready',ready);set('finder-guide-text',state.message||'Align your phone before direction arrows appear.');
-   set('finder-session',ready?'CHECKED ALIGNMENT · LIVE SENSOR ESTIMATE':'SKY POSITION ONLY · ARROWS LOCKED');
+   set('finder-session',ready?(state.quality==='basic'?'ONE-TARGET BASIC · ACCURACY UNVERIFIED':state.quality==='refined'?'TWO-TARGET REFINED · CHECK OPTIONAL':'CHECKED ALIGNMENT · LIVE SENSOR ESTIMATE'):'SKY POSITION ONLY · ARROWS LOCKED');
    if(!ready){set('finder-horizontal','');set('finder-vertical','');set('finder-error','');return;}
    set('finder-horizontal',Math.abs(state.azDelta)<2?'↔ Azimuth close':`${state.azDelta>0?'→ Right':'← Left'} ${Math.abs(state.azDelta).toFixed(1)}°`);
    set('finder-vertical',Math.abs(state.altDelta)<2?'↕ Height close':`${state.altDelta>0?'↑ Raise':'↓ Lower'} ${Math.abs(state.altDelta).toFixed(1)}°`);

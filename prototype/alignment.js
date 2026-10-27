@@ -16,6 +16,16 @@ export function deviceAxis({alpha,beta,gamma},mode){
 }
 function basis(a,b){const x=unit(a),z=unit(cross(x,b)),y=cross(z,x);return [x,y,z];}
 export function applyRotation(rotation,v){return rotation.map(row=>dot(row,v));}
+export function singleAlignment(sample){
+ const measured=skyAngles(sample.measured),target=skyAngles(sample.target);
+ return {kind:'single',azOffset:((target.az-measured.az+540)%360)-180,altOffset:target.alt-measured.alt,residual:null};
+}
+export function alignedDirection(model,vector){
+ if(model.kind!=='single')return skyAngles(applyRotation(model.rotation,vector));
+ const raw=skyAngles(vector),alt=raw.alt+model.altOffset;
+ if(alt< -90||alt>90)throw Error('Single-target tilt correction is outside its usable range. Realign nearby.');
+ return {alt,az:(raw.az+model.azOffset+360)%360};
+}
 export function solveAlignment(first,second){
  const measured=angle(first.measured,second.measured),expected=angle(first.target,second.target);
  if(expected<30||expected>140||measured<25||measured>145)throw Error('Choose two objects 30°–140° apart in the sky.');

@@ -1,4 +1,4 @@
-import {OrientationSession} from './sensors.js';
+import {CompassSession} from './compass-session.js';
 import {skyAngles} from './alignment.js';
 
 const node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;if(text!==undefined)el.textContent=text;return el;};
@@ -38,7 +38,7 @@ export function createLiveCompass({env=window,root=document}={}){
   const smallDial=face.querySelector('.phone-compass-dial').cloneNode(true);
   smallDial.querySelector('.compass-north').setAttribute('y','48');
   header.append(smallDial);
-  header.addEventListener('click',()=>{headerRequested=true;if(!panel.open)panel.showModal();header.setAttribute('aria-expanded','true');});
+  header.addEventListener('click',()=>{headerRequested=true;if(!panel.open)panel.showModal();header.setAttribute('aria-expanded','true');if(wanted&&session.status!=='permission')session.active?session.reconnect():session.start();});
   const close=()=>panel.close();root.getElementById('compass-close').addEventListener('click',close);
   panel.addEventListener('close',()=>{header.setAttribute('aria-expanded','false');sync();header.focus({preventScroll:true});});
   root.getElementById('compass-night').addEventListener('click',()=>{root.getElementById('night').click();night();});
@@ -46,14 +46,14 @@ export function createLiveCompass({env=window,root=document}={}){
   new MutationObserver(night).observe(root.body,{attributes:true,attributeFilter:['class']});night();
   root.addEventListener('keydown',event=>{if(panel.open&&event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();close();}},true);
  }
- const session=new OrientationSession(env,paint);
+ const session=new CompassSession(env,paint);
  const visible=el=>el.checkVisibility?el.checkVisibility({visibilityProperty:true}):!!el.getClientRects().length;
  function paint(){
-  const latest=session.history.at(-1),fresh=session.active&&session.status==='receiving'&&latest&&session.now()-latest.time<=700;
+  const latest=session.history.at(-1),fresh=session.active&&session.status==='receiving'&&latest&&session.now()-latest.time<=3000;
   let heading=null,message=session.message,state=session.status;
   if(fresh){received=true;const pose=skyAngles(latest.vector);if(Math.abs(pose.alt)>80){message='Lower the phone’s top edge: near vertical, a compass bearing is undefined.';state='tilted';}
    else{heading=pose.az;state='live';message='Live device-north heading · accuracy unknown. Keep away from magnets and telescope metal.';}}
-  else if(session.active&&latest){state='waiting';message='Waiting for a fresh reading · heading hidden.';}
+  else if(session.active&&latest){state='waiting';message='Compass enabled · waiting for a fresh reading; heading hidden.';}
   if(state==='off')message='Sensors off. Tap Start compass to read your phone’s heading.';
   const busy=session.active||session.status==='permission';
   if(header){
@@ -82,22 +82,22 @@ export function createLiveCompass({env=window,root=document}={}){
  }
  function sync(){
   faces=[...root.querySelectorAll('.live-phone-compass')];
-  const available=!env.document.hidden&&(faces.some(visible)||((headerRequested||(phone&&wanted))&&header&&visible(header)));
-  if((session.active||session.status==='permission')&&!available){pause();return;}
-  if(phone&&wanted&&available&&['off','paused'].includes(session.status))autoStart();
+  const available=!env.document.hidden&&(faces.some(visible)||((headerRequested||wanted)&&header&&visible(header)));
+  if((session.active||session.status==='permission')&&env.document.hidden){pause();return;}
+  if(wanted&&available&&['off','paused'].includes(session.status))autoStart();
   if(faces.some(figure=>!drawn.has(figure)))paint();
  }
- root.addEventListener('click',event=>{if(!event.target.closest('.phone-compass-toggle'))return;if(session.active||session.status==='permission')stop();else{wanted=true;received=false;if(phone||panel?.contains(event.target))headerRequested=true;session.start('mounted');}});
+ root.addEventListener('click',event=>{if(!event.target.closest('.phone-compass-toggle'))return;if(session.active||session.status==='permission')stop();else{wanted=true;received=false;headerRequested=true;session.start('mounted');}});
  // Some phone/browser combinations withhold the first stream until a site tap.
  // Retry once for a missing stream, never for a jump or a stream that became stale.
  const retryAfterTap=event=>{
-  if(!event.isTrusted||event.repeat||event.target.closest?.('.phone-compass-toggle,#compass-auto')||!phone||!automatic||!wanted||received||retriedAfterTap||!['waiting','unreliable'].includes(session.status)||typeof env.DeviceOrientationEvent?.requestPermission==='function')return;
-  retriedAfterTap=true;autoStart();
+  if(!event.isTrusted||event.repeat||event.target.closest?.('.phone-compass-toggle,#compass-auto')||!automatic||!wanted||retriedAfterTap||!['waiting','receiving','gesture','unreliable','paused'].includes(session.status)||typeof env.DeviceOrientationEvent?.requestPermission==='function')return;
+  retriedAfterTap=true;session.active?session.reconnect():autoStart();
  };
  root.addEventListener('pointerdown',retryAfterTap,true);root.addEventListener('keydown',retryAfterTap,true);
  // Watch only placement/visibility changes, not our own heading text updates.
  const observer=new MutationObserver(changes=>{if(changes.some(change=>change.type==='attributes'||[...change.addedNodes,...change.removedNodes].some(el=>el.nodeType===1&&(el.matches('.live-phone-compass')||el.querySelector('.live-phone-compass')))))sync();});
  observer.observe(root.documentElement||root,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open','class']});
- env.document.addEventListener('visibilitychange',()=>{if(env.document.hidden)pause();else sync();});env.addEventListener('pagehide',pause);env.addEventListener('pageshow',sync);sync();
+ env.document.addEventListener('visibilitychange',()=>{if(env.document.hidden)pause();else sync();});env.addEventListener('pagehide',pause);env.addEventListener('pageshow',sync);root.addEventListener('click',event=>{if(event.target.closest?.('#enable-sensors')&&wanted&&!session.active)session.start();});sync();
  return {stop};
 }

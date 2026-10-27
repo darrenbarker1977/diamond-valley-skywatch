@@ -65,7 +65,7 @@ test('sensors never substitute relative, invalid or stale readings',async()=>{
  assert.equal(s.history.length,0);
  env.emit({type:'deviceorientation',absolute:false,alpha:0,beta:90,gamma:0});assert.equal(s.history.length,0);assert.equal(s.status,'unreliable');
  env.emit({type:'deviceorientationabsolute',absolute:true,alpha:0,beta:90,gamma:0});assert.equal(s.history.length,1);
- env.setNow(1600);s.tick();assert.equal(s.status,'unreliable');assert.equal(s.history.length,0);assert.equal(env.listeners.size,0);
+ env.setNow(1600);s.tick();assert.equal(s.status,'stale');assert.equal(env.listeners.size,2);assert.throws(()=>stableSample(s.history,1600),/Hold still/);env.setNow(1700);env.emit({type:'deviceorientationabsolute',absolute:true,alpha:0,beta:90,gamma:0});assert.equal(s.status,'receiving');assert.equal(s.history.at(-1).time,1700);
  await s.start('mounted');env.emit({type:'deviceorientationabsolute',absolute:true,alpha:0,beta:0,gamma:0});env.emit({type:'deviceorientationabsolute',absolute:true,alpha:null,beta:0,gamma:0});assert.equal(s.history.length,0);assert.equal(s.status,'unreliable');
 });
 test('permission denial, no events, insecure context and canceled prompt are explicit',async()=>{
