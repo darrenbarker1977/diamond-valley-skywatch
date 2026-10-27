@@ -132,12 +132,14 @@ opens the larger compass on Home, Forecast or Navigator; Escape closes just
 that panel and restores focus. Navigator retains its original launch action.
 
 The compass starts automatically on mobile browsers that allow orientation
-without a gesture. Browsers exposing requestPermission still need an explicit
-Start compass tap; no permission prompt is attempted on page load. Stop compass
-is remembered in local storage (dvsky:compass:auto:v1); Start compass enables
-it again. Enabled phone compasses pause while hidden and resume on return,
-with no saved heading. Desktop starts remain manual. Opening a guide does not
-retry sensor failures automatically; errors remain visible with a manual retry.
+without a gesture, including touch phones using a desktop browser identity.
+Browsers exposing requestPermission still need an explicit Start compass tap;
+no permission prompt is attempted on page load. The visible Start automatically
+on phones checkbox is the only persistent opt-out (dvsky:compass:auto:v2).
+Stop compass pauses only this visit; it no longer silently disables future
+starts. An old v1 Stop preference is ignored. Enabled phone compasses pause
+while hidden and resume on return, with no saved heading. Desktop browsers
+without touch keep manual starts. DOM changes do not retry sensor failures.
 
 No heading appears until fresh absolute orientation arrives. The existing
 OrientationSession permission, invalid-sample, abrupt-jump and stale-reading
@@ -152,3 +154,8 @@ included in the offline shell. Run tests/compass.spec.js for synthetic sensor,
 auto-start/resume/stop, gesture permissions, stale, visibility, red-mode and
 phone-layout checks. A real Pixel 8 field check remains necessary to assess
 local magnetic interference.
+
+If the initial sensor stream is withheld before any sample, the first trusted
+site tap may retry it, including before the startup timeout. DOM changes never loop retries, and stale or abrupt-jump
+failures after real samples still require a manual restart. Compass module
+imports carry the current release version to avoid an old browser module copy.
