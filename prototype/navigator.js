@@ -5,11 +5,12 @@ import {createPointing} from './pointing.js?v=mission-1';
 import {catalogue} from './catalogue.js?v=catalogue-1';
 import {position,matches} from './positions.js?v=catalogue-1';
 import {createSkyAtlas} from './sky-atlas.js?v=mission-1';
-import {createFinder} from './finder.js?v=mission-1';
-import {objectVisual,objectStory} from './object-cards.js?v=atlas-1';
+import {createFinder} from './finder.js?v=compass-1';
+import {objectVisual,objectStory} from './object-cards.js?v=compass-1';
 import {createPlanner} from './planner.js';
 import {createNightMission} from './night-mission.js';
 import {localParts,nightDate,addDays} from './observing-time.js';
+import {createLiveCompass} from './live-compass.js';
 import {createScopeView} from './scope-view.js';
 const requestedQuery=new URLSearchParams(location.search);
 if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has('lon')){
@@ -24,6 +25,7 @@ atlas=createSkyAtlas({A,site,catalogue,onSelect:id=>chooseObject(id)});
 function setPointingMode(mode){if($('pointing-mode').value!==mode){$('pointing-mode').value=mode;$('pointing-mode').dispatchEvent(new Event('change'));}}
 finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>{setPointingMode(mode);navigation.section('pointing');},onMode:setPointingMode,onStop:()=>pointing.suspend(),onSky:()=>navigation.section('objects')});
 const scopeView=createScopeView();
+createLiveCompass();
 planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,onChange:()=>{
  if(planner.planning)pointing.suspend('Planned sky only. Return to Now and repeat alignment before using direction arrows.');
  if(mission?.active||planner.planning)mission?.activate();
@@ -71,11 +73,11 @@ function render(){
   $('selected-summary').textContent=catalogue.find(o=>o.id===selected).name+' · viewing guide';
   const o=catalogue.find(o=>o.id===selected),p=positions.get(selected),story=objectStory(o);
   const detail=$('detail'),same=lastDetail===selected,openKeys=same?[...detail.querySelectorAll('details[open]')].map(el=>el.dataset.detailKey):[];
-  const focusId=detail.contains(document.activeElement)?document.activeElement.id:null;
+  const focusElement=detail.contains(document.activeElement)?document.activeElement:null,focusId=focusElement?.id;
   const hero=same?detail.querySelector(':scope > .object-visual'):null;
   const heading=node('div',undefined,'object-caption');heading.append(node('span',o.type.toUpperCase(),'dv-nav-eyebrow'),node('span',story.difficulty,'object-difficulty'),Object.assign(node('h3',o.name),{id:'target-name'}));
   const sun=positions.get('Sun');const availability=o.id==='Sun'?'Solar observing requires specialist protection':p.alt<=0?'Below the horizon · plan for another time':sun?.alt>0?'Daylight · sky positions shown for planning':p.alt<20?'Low in the sky · watch for obstacles':'Above the horizon · check your actual sky';
-  heading.append(node('p',(planner.planning?'Planned sky · ':'')+availability,'object-availability'),node('p',`${compass(p.az)} · ${degrees(p.alt)} up · ${degrees(p.az)} true azimuth`,'object-position'));detail.replaceChildren(hero||objectVisual(o),heading);
+  heading.append(node('p',(planner.planning?'Planned sky · ':'')+availability,'object-availability'),node('p',`${compass(p.az)} · ${degrees(p.alt)} up · ${degrees(p.az)} true azimuth`,'object-position'));detail.replaceChildren(hero||objectVisual(o,{compass:true}),heading);
   const stats=node('dl',undefined,'dv-nav-stats');
   for(const [label,value] of [['ALTITUDE',degrees(p.alt)],['TRUE AZIMUTH',`${degrees(p.az)} ${compass(p.az)}`]]){const group=node('div');group.append(node('dt',label),node('dd',value));stats.append(group);}
   const actions=node('div',undefined,'object-actions'),findButton=node('button',planner.planning?'⌖ Find in the live sky':'⌖ Find this object'),center=node('button','Show on sky map');findButton.id='find-selected';center.id='center-selected';findButton.type=center.type='button';findButton.disabled=o.id==='Sun';findButton.addEventListener('click',()=>navigation.section('finder'));center.addEventListener('click',()=>{atlas.centerTarget();$('atlas-card').scrollIntoView({block:'nearest'});});actions.append(findButton,center);detail.append(actions);
@@ -84,7 +86,7 @@ function render(){
   const advice=equipment.appendAdvice(detail,o,p.alt);advice.querySelector('details').dataset.detailKey='eyepiece';
   const expect=node('details',undefined,'object-expect');expect.dataset.detailKey='expect';expect.append(node('summary','What will I see through the eyepiece?'),node('p',story.expect),node('p','Space images can use enhanced colour and non-visible wavelengths. Expect subtler colours and less detail through an eyepiece.','dv-nav-fine'));detail.append(expect,about);
   for(const extra of detail.querySelectorAll('details'))if(openKeys.includes(extra.dataset.detailKey))extra.open=true;
-  if(focusId)document.getElementById(focusId)?.focus({preventScroll:true});lastDetail=selected;
+  if(focusElement?.isConnected)focusElement.focus({preventScroll:true});else if(focusId)document.getElementById(focusId)?.focus({preventScroll:true});lastDetail=selected;
   finder.target(o,livePositions.get(selected));drawMap();pointing.paint();
 }
 function drawMap(){atlas?.update(positions,selected,calculationTime,planner.planning);}

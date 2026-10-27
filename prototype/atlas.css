@@ -56,6 +56,19 @@
 .object-visual img:not([hidden])~.object-illustration{display:none}
 .object-visual[data-kind=galaxy] .object-illustration{transform:rotate(-22deg) scaleX(1.7);color:#d9d9e5;filter:drop-shadow(0 0 18px #aaa7ce)}
 .object-visual[data-kind=globular-cluster] .object-illustration{font-size:70px;letter-spacing:10px}
+.object-visual.live-phone-compass{height:auto;min-height:210px;display:grid;grid-template-columns:150px minmax(0,1fr);gap:0 14px;align-items:center;padding:18px 18px 14px;box-sizing:border-box;background:radial-gradient(ellipse at 18% 30%,#24484c66,transparent 65%),#07131c;color:var(--ink)}
+.phone-compass-dial{position:relative;grid-row:1 / span 2;width:150px;aspect-ratio:1;filter:drop-shadow(0 6px 14px #0006)}
+.phone-compass-face{display:block;width:100%;height:100%;transform-origin:center;opacity:.42}
+.live-phone-compass[data-state=live] .phone-compass-face{opacity:1}
+.compass-rim{fill:#0b1a24;stroke:#8f805d;stroke-width:1.2}.compass-inner{fill:none;stroke:#71684e;stroke-width:.5}.compass-tick{fill:none;stroke:#9d9273;stroke-width:.8}.compass-cardinal,.compass-north{fill:#cbbd99;font:11px system-ui,sans-serif;letter-spacing:1px}.compass-north{fill:#a8d9cc;font-weight:700}.compass-rose-light{fill:#c6b080}.compass-rose-dark{fill:#4b615e}.compass-hub{fill:#0c2028;stroke:#b9a779;stroke-width:1.5}
+.phone-compass-pointer{position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-size:22px;color:#d9bd83;text-shadow:0 2px 8px #000}
+.phone-compass-info .atlas-kicker{font-size:8px;letter-spacing:1.4px;line-height:1.7}.phone-compass-heading{display:block;font:30px/1.3 Georgia,serif;color:#ead7b3;white-space:nowrap;margin:7px 0}.phone-compass-reference{display:block;font-size:10px;line-height:1.6;color:var(--muted)}
+.live-phone-compass .phone-compass-toggle{justify-self:start;min-height:46px;font-size:11px;padding:9px 15px;background:#18303388;border-color:#6a7d70;color:#bde1d6;margin-top:10px}
+.live-phone-compass .phone-compass-status{grid-column:1/-1;margin:12px 0 0;font-size:10px;line-height:1.6;color:var(--muted);min-height:32px}
+.phone-compass-tips{grid-column:1/-1;border-top:1px solid var(--line);margin:9px 0 0}.phone-compass-tips summary{min-height:40px;font-size:10px}.phone-compass-tips p{font-size:11px;line-height:1.7;margin:0 0 8px;color:var(--muted)}
+.object-visual.live-phone-compass figcaption{position:static;grid-column:1/-1;background:none;padding:0;margin-top:2px;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.dv-nav-night .live-phone-compass{background:var(--bg);color:var(--ink)}.dv-nav-night .compass-rim{fill:var(--panel);stroke:var(--line)}.dv-nav-night .compass-inner,.dv-nav-night .compass-tick{stroke:var(--ink)}.dv-nav-night .compass-cardinal,.dv-nav-night .compass-north,.dv-nav-night .compass-rose-light{fill:var(--ink)}.dv-nav-night .compass-rose-dark{fill:var(--line)}.dv-nav-night .compass-hub{fill:var(--bg);stroke:var(--ink)}.dv-nav-night .phone-compass-pointer{color:var(--ink);text-shadow:none}.dv-nav-night .live-phone-compass .phone-compass-toggle{background:var(--panel)}
+@media(max-width:380px){.object-visual.live-phone-compass{grid-template-columns:120px minmax(0,1fr);gap:0 10px;padding-inline:12px}.phone-compass-dial{width:120px}.phone-compass-heading{font-size:25px}}
 .object-caption{padding:17px 0 0}
 .object-caption .dv-nav-eyebrow{font-size:9px;letter-spacing:1.6px}
 .object-difficulty{display:block;color:#dbbf89;font-size:10px;margin-top:5px}

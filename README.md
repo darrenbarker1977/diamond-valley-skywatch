@@ -122,3 +122,22 @@ always uses the actual current sky. Scope view provides larger telescope control
 handheld/mounted choices, next-stop access, red mode and an optional screen hold.
 There is no observing journal. See docs/night-mission.md for update behaviour,
 offline limits, timezone handling and the unchanged alignment safeguards.
+
+## Live phone compass
+
+The star and double-star viewing guides replace their decorative star placeholder
+with a brass compass rose, rotating cardinal dial and live top-edge heading.
+Tap Start compass on a supported HTTPS phone browser; no heading appears until
+fresh absolute orientation arrives. It uses the existing OrientationSession
+permission, invalid-sample, abrupt-jump and stale-reading checks. It hides
+bearings near vertical and stops when its guide is hidden or the page is left.
+
+The compass uses device north, whose magnetic/true reference and accuracy are
+not exposed by the browser. It always measures this physical phone now,
+independent of the selected observing location or planned date. It does not
+unlock telescope arrows, reuse alignment, or claim to measure the telescope.
+The existing checked sky alignment remains required for telescope guidance.
+Compass tips collapse, red mode covers every dial element, and the module is
+included in the offline shell. Run tests/compass.spec.js for synthetic sensor,
+permission, stale, visibility, red-mode and phone-layout checks. A real Pixel 8
+field check remains necessary to assess local magnetic interference.
