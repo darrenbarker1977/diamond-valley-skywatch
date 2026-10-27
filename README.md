@@ -131,6 +131,12 @@ Tap Start compass on a supported HTTPS phone browser; no heading appears until
 fresh absolute orientation arrives. It uses the existing OrientationSession
 permission, invalid-sample, abrupt-jump and stale-reading checks. It hides
 bearings near vertical and stops when its guide is hidden or the page is left.
+A small live compass replaces the telescope shortcut beside the three main
+menu buttons on every screen. Open it to start a compass that keeps running
+in the shared header across Home, Forecast and Navigator; Stop compass or
+hiding/leaving the app switches it off. Escape closes just the compass panel
+and restores focus. The Navigator menu button now also owns the original
+Navigator launch action.
 
 The compass uses device north, whose magnetic/true reference and accuracy are
 not exposed by the browser. It always measures this physical phone now,

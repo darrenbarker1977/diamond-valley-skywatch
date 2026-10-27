@@ -27,7 +27,7 @@ export function createNavigation({dialog,launch,stopCamera,forecastURL,onSection
  }
  $('forecast-frame').addEventListener('load',()=>{$('forecast-frame').contentWindow?.postMessage({type:'dvsky-weather-request'},location.origin);});
  for(const button of menus)button.addEventListener('click',()=>show(button.dataset.appView));
- for(const button of document.querySelectorAll('[data-open-section]'))button.addEventListener('click',()=>{if(!dialog.open)launch.click();section(button.dataset.openSection);mark();});
+ for(const button of document.querySelectorAll('[data-open-section]'))if(button!==launch)button.addEventListener('click',()=>{if(!dialog.open)launch.click();section(button.dataset.openSection);mark();});
  for(const button of document.querySelectorAll('[data-nav-section]'))button.addEventListener('click',()=>section(button.dataset.navSection));
  launch.addEventListener('click',()=>{$('home-view').hidden=true;$('forecast-view').hidden=true;document.body.classList.remove('dv-app-forecast-mode');document.body.classList.add('dv-app-navigator-mode');section('objects');mark();window.scrollTo(0,0);});
  dialog.addEventListener('close',()=>{$('home-view').hidden=view!=='home';$('forecast-view').hidden=view!=='forecast';document.body.classList.remove('dv-app-navigator-mode');document.body.classList.toggle('dv-app-forecast-mode',view==='forecast');section('objects');mark();});
