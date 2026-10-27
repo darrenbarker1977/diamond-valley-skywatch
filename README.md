@@ -150,3 +150,11 @@ camera plate solving is added.
 See [docs/beyond-forecast.md](docs/beyond-forecast.md) for data sources, cache
 policy, alignment limits and implementation detail. Real Pixel 8 field testing
 is still needed to assess sensor accuracy at the telescope.
+
+## Flexible Night Mission tours
+
+Hours and Minutes wheels (with optional typed entry) replace the fixed session
+menu. Tours accept any whole-minute duration from 1 to 719 minutes and scale
+from one to five stops. Poor, missing or out-of-range weather is labelled as
+advice and never removes the astronomical route. Twilight, horizon, Sun and
+Moon checks still apply. See docs/night-mission.md for scheduling and limits.
