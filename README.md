@@ -111,3 +111,14 @@ include NASA imagery where available, realistic eyepiece expectations and the
 saved kit recommendations. Optional panels fold away across all three pages.
 See docs/sky-atlas.md for interaction, accuracy, data/image sources and failure
 behaviour. The original weather document remains preserved byte-for-byte.
+
+## Adaptive Night Mission
+
+Home and Forecast now open a location- and weather-aware Night Mission in
+Navigator. The upcoming route adapts every minute and when fresh weather,
+location, time or equipment changes; the current stop stays selected. The Now /
+Plan a night controls preview local evenings in the atlas while measured finding
+always uses the actual current sky. Scope view provides larger telescope controls,
+handheld/mounted choices, next-stop access, red mode and an optional screen hold.
+There is no observing journal. See docs/night-mission.md for update behaviour,
+offline limits, timezone handling and the unchanged alignment safeguards.

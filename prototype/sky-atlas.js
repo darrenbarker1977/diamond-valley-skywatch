@@ -2,7 +2,7 @@ import {positionFor} from './sky-position.js?v=catalogue-1';
 import {projectView,projectDome,moveCamera,wrap,starColour} from './atlas-math.js';
 export function createSkyAtlas({A,site,catalogue,onSelect}){
  const $=id=>document.getElementById(id),canvas=$('sky-canvas'),ctx=canvas.getContext('2d');
- let camera={az:180,alt:28,fov:85},mode='horizon',lines=true,labels=true,following=false,pose=null;
+ let camera={az:180,alt:28,fov:85},mode='horizon',lines=true,labels=true,following=false,pose=null,isPlanned=false;
  let stars=[],constellations=[],dataLoaded=false,dataFailed=false;
  let starPositions=[],linePositions=[],labelPositions=[],positions=new Map(),selected='Moon',date=null,lastEpoch=0,hits=[],width=0,height=0,frame=0,failed=false;
  const pointers=new Map();let drag=null,pinch=0,moved=false;
@@ -70,8 +70,8 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
   }
   $('atlas-direction').textContent=mode==='dome'?'All sky · north at top':`${following?'Aligned view':'Map view'} · ${compass(camera.az)} · ${Math.round(camera.az)}° · ${Math.round(camera.alt)}° up`;
   $('atlas-zoom').textContent=mode==='dome'?'Whole sky':Math.round(camera.fov)+'° vertical';
-  $('atlas-status').textContent=daylight?'Daylight preview · most stars are hidden to the eye':sun&&sun.alt>-12?'Twilight · brighter objects are easier to see':'Live sky · drag to explore, tap an object';
-  canvas.dataset.ready='true';canvas.dataset.starCount=String(stars.length);canvas.dataset.view=mode;canvas.dataset.azimuth=String(Math.round(camera.az));
+  $('atlas-status').textContent=daylight?'Daylight preview · most stars are hidden to the eye':sun&&sun.alt>-12?'Twilight · brighter objects are easier to see':isPlanned?'Planned sky · drag to explore, tap an object':'Live sky · drag to explore, tap an object';
+  canvas.dataset.ready='true';canvas.dataset.starCount=String(stars.length);canvas.dataset.view=mode;canvas.dataset.azimuth=String(Math.round(camera.az));canvas.dataset.planned=String(isPlanned);canvas.dataset.epoch=date.toISOString();
  }
  function stopFollowing(){following=false;$('atlas-follow').setAttribute('aria-pressed','false');}
  function move(dx,dy){if(mode==='dome')return;stopFollowing();camera=moveCamera(camera,dx,dy,width,height);request();}
@@ -97,13 +97,14 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
  $('atlas-follow').addEventListener('click',()=>{if(!pose?.ready)return;following=!following;mode='horizon';$('atlas-overview').setAttribute('aria-pressed','false');$('atlas-follow').setAttribute('aria-pressed',String(following));if(following){camera.az=pose.current.az;camera.alt=Math.min(85,Math.max(-10,pose.current.alt));}request();});
  const resize=new ResizeObserver(request);resize.observe(canvas);new MutationObserver(request).observe(document.body,{attributes:true,attributeFilter:['class']});
  return {
-  update(nextPositions,id,now=new Date()){
+  update(nextPositions,id,now=new Date(),planned=false){
+   isPlanned=planned;if(isPlanned){stopFollowing();$('atlas-follow').disabled=true;}
    const first=!date;positions=nextPositions;selected=id;date=now;failed=dataFailed;
    const target=positions.get(selected);if(first&&target?.alt>0)camera={az:target.az,alt:Math.min(85,target.alt),fov:85};
    try{if(!A)throw Error('Astronomy library unavailable');if(dataLoaded&&(!lastEpoch||Math.abs(now.getTime()-lastEpoch)>9000))prepare(now);request();}catch{failed=true;request();}
   },
   centerTarget(){const p=positions.get(selected);if(!p)return;stopFollowing();if(p.alt<=0){$('atlas-status').textContent='This object is below the horizon. The map stays above your horizon.';return;}mode='horizon';camera={az:p.az,alt:Math.min(85,p.alt),fov:60};$('atlas-overview').setAttribute('aria-pressed','false');request();},
-  pose(state){const changed=!!pose?.ready!==!!state.ready;pose=state;$('atlas-follow').disabled=!state.ready;if(!state.ready)stopFollowing();if(following&&state.ready){camera.az=state.current.az;camera.alt=Math.min(85,Math.max(-10,state.current.alt));request();}else if(changed)request();},
+  pose(state){if(isPlanned)state={ready:false};const changed=!!pose?.ready!==!!state.ready;pose=state;$('atlas-follow').disabled=!state.ready;if(!state.ready)stopFollowing();if(following&&state.ready){camera.az=state.current.az;camera.alt=Math.min(85,Math.max(-10,state.current.alt));request();}else if(changed)request();},
   locationChanged(){lastEpoch=0;date=null;stopFollowing();},
   fail(){failed=true;date=null;positions=new Map();stopFollowing();canvas.removeAttribute('data-ready');request();},
   refresh:request

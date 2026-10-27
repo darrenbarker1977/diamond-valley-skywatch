@@ -1,8 +1,11 @@
 import {objectStory,objectVisual} from './object-cards.js?v=atlas-1';
 import {viewingPlan,describe} from './eyepieces.js?v=catalogue-1';
-export function createFinder({onSetup,onSky,getKit}){
- const $=id=>document.getElementById(id);let lastId='';
- $('finder-setup').addEventListener('click',onSetup);$('finder-sky').addEventListener('click',onSky);
+export function createFinder({onSetup,onMode,onStop,onSky,getKit}){
+ const $=id=>document.getElementById(id);let lastId='',preferredMode='mounted';
+ function modeUI(){for(const button of document.querySelectorAll('[data-finder-mode]'))button.setAttribute('aria-pressed',String(button.dataset.finderMode===preferredMode));$('finder-setup').textContent=preferredMode==='mounted'?'⌖ Align on telescope':'⌖ Align handheld';}
+ $('finder-setup').addEventListener('click',()=>onSetup(preferredMode));$('finder-sky').addEventListener('click',onSky);$('finder-stop').addEventListener('click',onStop);
+ for(const button of document.querySelectorAll('[data-finder-mode]'))button.addEventListener('click',()=>{preferredMode=button.dataset.finderMode;onMode(preferredMode);modeUI();});
+ modeUI();
  const set=(id,text)=>{if($(id).textContent!==text)$(id).textContent=text;};
  return {
   target(object,p){
@@ -18,6 +21,8 @@ export function createFinder({onSetup,onSky,getKit}){
    $('finder-setup').disabled=object.id==='Sun';
   },
   pose(state){
+   if(state.listening&&state.mode&&state.mode!==preferredMode){preferredMode=state.mode;modeUI();}
+   $('finder-stop').disabled=!state.listening;
    const ready=!!state.ready;$('finder-arrows').hidden=!ready;$('finder-locked').hidden=ready;
    $('finder-compass').classList.toggle('is-ready',ready);set('finder-guide-text',state.message||'Align your phone before direction arrows appear.');
    set('finder-session',ready?'CHECKED ALIGNMENT · LIVE SENSOR ESTIMATE':'SKY POSITION ONLY · ARROWS LOCKED');
