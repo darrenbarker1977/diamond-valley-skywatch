@@ -1,5 +1,5 @@
 import {createLocation,site,forecastURL,setSite} from './location.js?v=location-1';
-import {createNavigation} from './navigation.js?v=mission-1';
+import {createNavigation} from './navigation.js?v=compass-2';
 import {createEquipment} from './equipment-ui.js?v=catalogue-1';
 import {createPointing} from './pointing.js?v=mission-1';
 import {catalogue} from './catalogue.js?v=catalogue-1';

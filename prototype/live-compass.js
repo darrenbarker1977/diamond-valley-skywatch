@@ -20,7 +20,19 @@ export function compassVisual(){
 }
 
 export function createLiveCompass({env=window,root=document}={}){
- let faces=[],drawn=new WeakSet();
+ let faces=[],drawn=new WeakSet(),headerRequested=false;
+ const header=root.getElementById('compass-launch'),panel=root.getElementById('phone-compass-dialog');
+ if(header&&panel){
+  const face=compassVisual();root.getElementById('header-compass-content').append(face);
+  header.append(face.querySelector('.phone-compass-dial').cloneNode(true));
+  header.addEventListener('click',()=>{headerRequested=true;if(!panel.open)panel.showModal();header.setAttribute('aria-expanded','true');});
+  const close=()=>panel.close();root.getElementById('compass-close').addEventListener('click',close);
+  panel.addEventListener('close',()=>{header.setAttribute('aria-expanded','false');sync();header.focus({preventScroll:true});});
+  root.getElementById('compass-night').addEventListener('click',()=>{root.getElementById('night').click();night();});
+  function night(){root.getElementById('compass-night').setAttribute('aria-pressed',String(root.body.classList.contains('dv-nav-night')));}
+  new MutationObserver(night).observe(root.body,{attributes:true,attributeFilter:['class']});night();
+  root.addEventListener('keydown',event=>{if(panel.open&&event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();close();}},true);
+ }
  const session=new OrientationSession(env,paint);
  const visible=el=>el.checkVisibility?el.checkVisibility({visibilityProperty:true}):!!el.getClientRects().length;
  function paint(){
@@ -31,6 +43,11 @@ export function createLiveCompass({env=window,root=document}={}){
   else if(session.active&&latest){state='waiting';message='Waiting for a fresh reading · heading hidden.';}
   if(state==='off')message='Sensors off. Tap Start compass to read your phone’s heading.';
   const busy=session.active||session.status==='permission';
+  if(header){
+   const label=heading===null?'Open live phone compass':`Phone compass: ${Math.round(heading)%360} degrees · open compass`;
+   header.dataset.state=state;header.setAttribute('aria-label',label);header.title=label;
+   header.querySelector('svg').style.transform=heading===null?'':'rotate('+(-heading)+'deg)';
+  }
   for(const figure of faces){
    figure.dataset.state=state;figure.querySelector('.phone-compass-face').style.transform=heading===null?'':'rotate('+(-heading)+'deg)';
    const set=(selector,text)=>{const el=figure.querySelector(selector);if(el.textContent!==text)el.textContent=text;};
@@ -38,13 +55,13 @@ export function createLiveCompass({env=window,root=document}={}){
    set('.phone-compass-status',message);set('.phone-compass-toggle',busy?'Stop compass':'Start compass');figure.querySelector('button').setAttribute('aria-pressed',String(busy));drawn.add(figure);
   }
  }
- function stop(){session.stop();paint();}
+ function stop(){headerRequested=false;session.stop();paint();}
  function sync(){
   faces=[...root.querySelectorAll('.live-phone-compass')];
-  if(session.active||session.status==='permission'){if(env.document.hidden||!faces.some(visible)){stop();return;}}
+  if(session.active||session.status==='permission'){if(env.document.hidden||!(faces.some(visible)||(headerRequested&&header&&visible(header)))){stop();return;}}
   if(faces.some(figure=>!drawn.has(figure)))paint();
  }
- root.addEventListener('click',event=>{if(!event.target.closest('.phone-compass-toggle'))return;if(session.active||session.status==='permission')stop();else session.start('mounted');});
+ root.addEventListener('click',event=>{if(!event.target.closest('.phone-compass-toggle'))return;if(session.active||session.status==='permission')stop();else{if(panel?.contains(event.target))headerRequested=true;session.start('mounted');}});
  // Watch only placement/visibility changes, not our own heading text updates.
  const observer=new MutationObserver(changes=>{if(changes.some(change=>change.type==='attributes'||[...change.addedNodes,...change.removedNodes].some(el=>el.nodeType===1&&(el.matches('.live-phone-compass')||el.querySelector('.live-phone-compass')))))sync();});
  observer.observe(root.documentElement||root,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open','class']});

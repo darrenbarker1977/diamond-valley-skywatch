@@ -45,3 +45,18 @@ test('continuous sensor updates survive sky refresh and switching target clears 
  await page.locator('#search').fill('Moon');await page.locator('#objects button').click();await expect(page.locator('#detail .live-phone-compass')).toHaveCount(0);
  await page.locator('#search').fill('Polaris');await page.locator('#objects button').click();await expect(compass.locator('.phone-compass-heading')).toHaveText('—');await page.evaluate(()=>clearInterval(window.__compassTestTimer));
 });
+
+test('header compass works across all pages and closing it keeps the live dial running',async({page},info)=>{
+ await page.addInitScript(()=>{for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});
+ await page.clock.install({time:new Date('2026-10-27T03:00Z')});await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.goto('/');
+ const shortcut=page.locator('#compass-launch'),panel=page.locator('#phone-compass-dialog');await expect(shortcut).toBeVisible();await shortcut.click();await expect(panel).toBeVisible();await expect(page.locator('#home-view')).toBeVisible();
+ await panel.locator('.phone-compass-toggle').click();await sample(page);await expect(shortcut).toHaveAttribute('data-state','live');await expect(panel.locator('.phone-compass-heading')).toHaveText('90° E');
+ await page.evaluate(()=>{window.__compassTestTimer=setInterval(()=>{const e=new Event('deviceorientationabsolute');Object.assign(e,{absolute:true,alpha:270,beta:0,gamma:0});window.dispatchEvent(e);},100);});
+ await page.keyboard.press('Escape');await expect(panel).toBeHidden();await expect(shortcut).toBeFocused();await page.clock.runFor(1000);await expect(shortcut).toHaveAttribute('data-state','live');
+ await page.locator('#nav-to-forecast').click();await expect(page.locator('#forecast-view')).toBeVisible();await page.clock.runFor(1000);await expect(shortcut).toHaveAttribute('data-state','live');
+ await shortcut.click();await expect(panel.locator('.phone-compass-heading')).toHaveText('90° E');await page.locator('#compass-night').click();await expect(page.locator('body')).toHaveClass(/dv-nav-night/);await page.locator('#compass-close').click();
+ await page.locator('#launch').click();await expect(page.locator('#navigator')).toBeVisible();await page.clock.runFor(1000);await expect(shortcut).toHaveAttribute('data-state','live');await page.locator('#search').fill('Polaris');await page.locator('#objects button').click();await expect(page.locator('#detail .phone-compass-heading')).toHaveText('90° E');await shortcut.click();await expect(panel.locator('.phone-compass-heading')).toHaveText('90° E');await page.keyboard.press('Escape');await expect(page.locator('#navigator')).toBeVisible();
+ const box=await shortcut.boundingBox(),art=await page.locator('.dv-brand-art').boundingBox();expect(box.width).toBe(44);expect(box.x+box.width<=art.x||box.y>=art.y+art.height).toBe(true);
+ await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:`/tmp/skywatch-${info.project.name}-header-compass.png`});
+ await shortcut.click();await panel.locator('.phone-compass-toggle').click();await expect(shortcut).toHaveAttribute('data-state','off');await expect(panel.locator('.phone-compass-heading')).toHaveText('—');await panel.locator('.phone-compass-toggle').click();await page.clock.runFor(150);await page.locator('#compass-close').click();await page.locator('#app-header [data-app-view=home]').click();await page.clock.runFor(1000);await expect(shortcut).toHaveAttribute('data-state','live');await shortcut.click();await panel.locator('.phone-compass-toggle').click();await page.evaluate(()=>clearInterval(window.__compassTestTimer));
+});
