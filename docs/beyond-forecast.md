@@ -34,7 +34,10 @@ The alignment picker has a typed search and a native touch/keyboard match list.
 "North Star" and "pole star" match Polaris. Search only filters currently
 eligible easy alignment objects; it never creates a custom sky coordinate.
 Daylight, no eligible objects and no matching name have separate visible empty
-states. No selection disables the identification checkbox and capture button.
+states. A prominent daylight notice at the top of Pointing explains that alignment
+is intentionally unavailable until after dusk while browsing, tours and compass
+remain available. The step heading, Record label and Finder message repeat the
+restriction; the notice clears when the actual selected-site sky becomes dark enough. No selection disables the identification checkbox and capture button.
 Filtering or changing a choice clears the previous identification confirmation;
 after capture the filter clears to show candidates for the next optional step.
 Search all observing targets opens the separate full observing catalogue.
