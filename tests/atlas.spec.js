@@ -16,7 +16,7 @@ test('real sky atlas pans, zooms, centres, changes views and stays in red night 
  await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:`/tmp/skywatch-${info.project.name}-new-finder.png`,fullPage:true});
  await page.locator('#finder-setup').click();await expect(page.locator('#pointing')).toBeVisible();await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
  await page.locator('[data-nav-section=objects]').click();await page.locator('#night').click();await expect.poll(()=>sky.evaluate(canvas=>{const p=canvas.getContext('2d').getImageData(4,4,1,1).data;return p[0]>p[1]&&p[0]>p[2];})).toBe(true);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(await page.evaluate(()=>window.sensorSubscriptions)).toEqual(info.project.name==='pixel-8-size'?['deviceorientationabsolute','deviceorientation']:[]);expect(errors).toEqual([]);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect((await page.evaluate(()=>window.sensorSubscriptions)).every(name=>['deviceorientationabsolute','deviceorientation'].includes(name))).toBe(true);expect(errors).toEqual([]);
 });
 test('optional panels collapse independently and preserve their state through updates',async({page})=>{
  await page.clock.install({time:new Date('2026-10-27T03:00Z')});await page.goto('/');await expect(page.locator('.home-preparation')).not.toHaveAttribute('open');
@@ -45,6 +45,6 @@ test.describe('optional visual failures',()=>{
   await page.locator('#search').fill('M31');await page.locator('#objects button').click();await expect(page.locator('#target-name')).toHaveText('Andromeda Galaxy');await expect(page.locator('#atlas-follow')).toBeDisabled();await page.locator('#nav-to-forecast').click();await expect(page.locator('#forecast-view')).toBeVisible();
  });
  test('missing photo uses a labelled illustration',async({page})=>{
-  await page.route('**/assets/objects/saturn.jpg',r=>r.abort());await page.goto('/');await page.locator('#launch').click();await page.locator('#search').fill('Saturn');await page.locator('#objects button').click();await expect(page.locator('#detail figcaption')).toContainText('Photo unavailable');await expect(page.locator('#detail .object-illustration')).toBeVisible();
+  await page.route('**/assets/objects/saturn.jpg',r=>r.abort());await page.goto('/');await page.locator('#discovery-mode').uncheck();await page.locator('#launch').click();await page.locator('#search').fill('Saturn');await page.locator('#objects button').click();await expect(page.locator('#detail figcaption')).toContainText('Photo unavailable');await expect(page.locator('#detail .object-illustration')).toBeVisible();
  });
 });

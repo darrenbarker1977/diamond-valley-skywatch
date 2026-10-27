@@ -24,10 +24,10 @@ test('beginner mounted wizard records two objects, checks a third and loses alig
  await page.locator('#enable-sensors').click();
  await feed(page);await page.locator('#capture-alignment').click();
  await expect(page.locator('#alignment-step')).toContainText('2 ·');
- await expect(page.locator('#guidance')).toContainText('arrows are off');
+ await expect(page.locator('#alignment-feedback')).toContainText('Basic one-target guidance');
  await feed(page);await page.locator('#capture-alignment').click();
  await expect(page.locator('#alignment-step')).toContainText('3 ·');
- await expect(page.locator('#guidance')).toContainText('arrows are off');
+ await expect(page.locator('#alignment-feedback')).toContainText('Two-target guidance');
  await feed(page);await page.locator('#capture-alignment').click();
  await expect(page.locator('#alignment-feedback')).toContainText('check passed');await expect(page.locator('#finder-name')).toHaveText('Moon');
  await expect(page.locator('#measured-direction')).toContainText('Phone-derived tube estimate');
@@ -93,4 +93,10 @@ test('closing during camera permission stops a late camera stream',async({page})
  await page.locator('#close').click();await page.evaluate(()=>window.__cameraResolve());
  await expect.poll(()=>page.evaluate(()=>window.__stoppedTracks)).toBe(1);
  await page.locator('#launch').click();await expect(page.locator('#camera-view')).toBeHidden();
+});
+
+test('one real target starts basic guidance, Polaris works, and a second refines it',async({page})=>{
+ await open(page);await page.locator('#pointing-mode').selectOption('mounted');await page.locator('#mount-confirm').check();await page.locator('#enable-sensors').click();await page.locator('#alignment-target').selectOption('Polaris');await feed(page);await page.locator('#capture-alignment').click();await expect(page.locator('#alignment-feedback')).toContainText('Basic one-target guidance');await expect(page.locator('#measured-direction')).toContainText('One-target basic alignment');await page.locator('#alignment-find').click();await expect(page.locator('#finder-session')).toContainText('ONE-TARGET BASIC');await expect(page.locator('#finder-arrows')).toBeVisible();
+ await page.locator('[data-nav-section=pointing]').click();await feed(page);await page.locator('#capture-alignment').click();await expect(page.locator('#alignment-feedback')).toContainText('Two-target guidance');await page.locator('#alignment-find').click();await expect(page.locator('#finder-session')).toContainText('TWO-TARGET REFINED');await expect(page.locator('#finder-arrows')).toBeVisible();
+ await page.evaluate(()=>clearInterval(window.__testSensorTimer));await page.clock.runFor(2000);await expect(page.locator('#finder-arrows')).toBeHidden();await page.locator('[data-nav-section=pointing]').click();await feed(page);await expect(page.locator('#measured-direction')).toContainText('Two-target refined alignment');
 });

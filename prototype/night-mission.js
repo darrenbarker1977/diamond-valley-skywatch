@@ -3,7 +3,7 @@ import {savedWeather,weatherSnapshot,weatherKey,coordinateKey,assessWeather,weat
 import {localLabel,shortClock,nightDate} from './observing-time.js';
 import {viewingPlan,describe} from './eyepieces.js?v=catalogue-1';
 import {catalogue} from './catalogue.js?v=catalogue-1';
-import {objectStory,objectVisual} from './object-cards.js?v=atlas-1';
+import {objectStory,objectVisual} from './object-cards.js?v=field-1';
 export function createNightMission({A,site,getContext,getKit,ensureForecast,onLive,onPreview,onWeather}){
  const $=id=>document.getElementById(id);let active=false,snapshot=null,siteKey=coordinateKey(site),nightKey='',current='',visited=new Set(),model={steps:[]},failure='',waiting=false,sessionStarted=0,sessionEnd=0,totalStops=0;
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};

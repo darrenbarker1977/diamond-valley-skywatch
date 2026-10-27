@@ -1,7 +1,7 @@
 import {localParts} from './observing-time.js';
 export const weatherKey=site=>site.source==='default'?'dvsky:weather:v5':`dvsky:weather:v6:${site.latitude.toFixed(5)}:${site.longitude.toFixed(5)}`;
 export const coordinateKey=site=>`${site.latitude.toFixed(5)}:${site.longitude.toFixed(5)}`;
-const fields=['cloud_cover','precipitation_probability','snowfall','wind_gusts_10m','temperature_2m'];
+const fields=['cloud_cover','precipitation_probability','snowfall','wind_gusts_10m','temperature_2m','dew_point_2m','relative_humidity_2m'];
 export function weatherSnapshot(message,site,now=Date.now()){
  if(!message||!Number.isFinite(message.latitude)||!Number.isFinite(message.longitude)||Math.abs(message.latitude-site.latitude)>.00001||Math.abs(message.longitude-site.longitude)>.00001)throw Error('Forecast location does not match the selected site.');
  if(!Number.isFinite(message.stamp)||message.stamp>now+300000||now-message.stamp>7*86400000)throw Error('No recent downloaded forecast is available.');

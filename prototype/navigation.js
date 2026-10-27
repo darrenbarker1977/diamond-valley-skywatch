@@ -7,10 +7,10 @@ export function createNavigation({dialog,launch,stopCamera,forecastURL,onSection
   for(const [id,wanted] of [['pointing','pointing'],['equipment','equipment']]){$(id).hidden=name!==wanted;$(id).open=name===wanted;}
   document.querySelector('.dv-nav-content').hidden=!['objects','finder'].includes(name);$('compact-guidance').hidden=name!=='objects';
   document.querySelector('.dv-nav-explore').hidden=name!=='objects';document.querySelector('.dv-nav-browser').hidden=name!=='objects';$('finder-view').hidden=name!=='finder';
-  $('mission-view').hidden=name!=='mission';$('time-planner').hidden=!['objects','mission'].includes(name);
+  $('mission-view').hidden=name!=='mission';$('field-view').hidden=name!=='field';$('time-planner').hidden=!['objects','mission','field'].includes(name);
   document.body.classList.toggle('dv-app-finder-mode',name==='finder');
   for(const button of document.querySelectorAll('[data-nav-section]'))button.setAttribute('aria-pressed',String(button.dataset.navSection===name));
-  if(name!=='pointing')stopCamera();dialog.scrollTop=0;window.scrollTo(0,0);
+  document.querySelector(`[data-nav-section="${name}"]`)?.scrollIntoView({block:'nearest',inline:'nearest'});if(name!=='pointing')stopCamera();dialog.scrollTop=0;window.scrollTo(0,0);
  }
  function show(name){
   if(dialog.open)dialog.close();view=name;$('home-view').hidden=name!=='home';$('forecast-view').hidden=name!=='forecast';document.body.classList.toggle('dv-app-forecast-mode',name==='forecast');

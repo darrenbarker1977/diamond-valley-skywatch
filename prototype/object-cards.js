@@ -1,4 +1,4 @@
-import {compassVisual} from './live-compass.js?v=compass-5';
+import {compassVisual} from './live-compass.js?v=field-1';
 const photos={
  Moon:['moon','PIA00405'],Saturn:['saturn','PIA17172'],Jupiter:['jupiter','PIA22946'],
  M31:['m31','PIA04921'],M42:['m42','PIA04227'],M45:['m45','PIA09262'],NGC5139:['omega-centauri','PIA10372']
@@ -39,6 +39,10 @@ export function objectStory(object){
  if(['Mercury','Uranus','Neptune'].includes(object.id)||(object.magnitude??0)>9||object.type==='Supernova remnant')difficulty='A patient-sky challenge';
  if(object.id==='Sun')difficulty='Specialist solar equipment required';
  return {expect:expectations[object.id]||generic[object.type]||object.note,difficulty};
+}
+export function discoveryNote(object){
+ const facts={'Moon':'Earth’s natural satellite. Its phase and observing times change through the month.','Planet':'A world in our Solar System. Its position changes against the background stars.','Star':'A named star: a useful landmark for learning this part of the sky.','Double star':'A multiple-star target, useful for practising identification and careful focusing.','Open cluster':'A group of stars with a shared origin. A useful target for a low-power start.','Globular cluster':'An ancient, gravitationally bound stellar system.','Galaxy':'A separate stellar system beyond the Milky Way. Prioritize a dark, clear observing window.','Nebula':'A region of interstellar gas and dust. Prefer a dark, clear observing window.','Planetary nebula':'Material shed by an aging star. Careful identification of the surrounding stars helps.','Supernova remnant':'Material left after a stellar explosion. Best saved for a darker observing session.'};
+ return facts[object.type]||'A catalogue target for exploring this region of the sky.';
 }
 export function objectVisual(object,{compass=false}={}){
  if(compass&&['Star','Double star'].includes(object.type))return compassVisual();
