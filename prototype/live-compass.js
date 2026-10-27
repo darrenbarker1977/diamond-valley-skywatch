@@ -49,6 +49,8 @@ export function createLiveCompass({env=window,root=document}={}){
    const label=heading===null?'Open live phone compass':`Phone compass: ${Math.round(heading)%360} degrees · open compass`;
    header.dataset.state=state;header.setAttribute('aria-label',label);header.title=label;
    header.querySelector('svg').style.transform=heading===null?'':'rotate('+(-heading)+'deg)';
+   // Let north travel around the rim while keeping the small N upright.
+   header.querySelector('.compass-north').setAttribute('transform',`rotate(${heading??0} 100 32)`);
   }
   for(const figure of faces){
    figure.dataset.state=state;figure.querySelector('.phone-compass-face').style.transform=heading===null?'':'rotate('+(-heading)+'deg)';
