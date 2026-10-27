@@ -1,0 +1,37 @@
+{
+  "moon": {
+    "nasa_id": "PIA00405",
+    "source": "https://images-assets.nasa.gov/image/PIA00405/PIA00405~small.jpg",
+    "bytes": 62763
+  },
+  "saturn": {
+    "nasa_id": "PIA17172",
+    "source": "https://images-assets.nasa.gov/image/PIA17172/PIA17172~small.jpg",
+    "bytes": 10255
+  },
+  "jupiter": {
+    "nasa_id": "PIA22946",
+    "source": "https://images-assets.nasa.gov/image/PIA22946/PIA22946~small.jpg",
+    "bytes": 26916
+  },
+  "m31": {
+    "nasa_id": "PIA04921",
+    "source": "https://images-assets.nasa.gov/image/PIA04921/PIA04921~small.jpg",
+    "bytes": 50125
+  },
+  "m42": {
+    "nasa_id": "PIA04227",
+    "source": "https://images-assets.nasa.gov/image/PIA04227/PIA04227~small.jpg",
+    "bytes": 22174
+  },
+  "m45": {
+    "nasa_id": "PIA09262",
+    "source": "https://images-assets.nasa.gov/image/PIA09262/PIA09262~small.jpg",
+    "bytes": 50233
+  },
+  "omega-centauri": {
+    "nasa_id": "PIA10372",
+    "source": "https://images-assets.nasa.gov/image/PIA10372/PIA10372~small.jpg",
+    "bytes": 95585
+  }
+}
