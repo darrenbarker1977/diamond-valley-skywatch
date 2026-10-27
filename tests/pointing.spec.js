@@ -74,7 +74,10 @@ test('daylight offers no beginner alignment and rear-camera denial is explicit',
  await open(page);await page.clock.setFixedTime(new Date('2026-10-26T19:00:00Z'));
  await page.locator('#reset-alignment').click();
  await expect(page.locator('#easy-explanation')).toContainText('too bright');
- await expect(page.locator('#alignment-target option')).toHaveCount(0);
+ await expect(page.locator('#alignment-target')).toBeDisabled();
+ await expect(page.locator('#alignment-target')).toContainText('Available after dusk');
+ await expect(page.locator('#object-confirm')).toBeDisabled();
+ await page.locator('#alignment-search').fill('North Star');await expect(page.locator('#alignment-search-status')).toContainText('after dusk');await expect(page.locator('#capture-alignment')).toBeDisabled();
  await page.locator('#camera-toggle').click();await expect(page.locator('#camera-status')).toContainText('Camera unavailable');
  await expect(page.locator('#camera-view')).toBeHidden();
 });
@@ -99,4 +102,20 @@ test('one real target starts basic guidance, Polaris works, and a second refines
  await open(page);await page.locator('#pointing-mode').selectOption('mounted');await page.locator('#mount-confirm').check();await page.locator('#enable-sensors').click();await page.locator('#alignment-target').selectOption('Polaris');await feed(page);await page.locator('#capture-alignment').click();await expect(page.locator('#alignment-feedback')).toContainText('Basic one-target guidance');await expect(page.locator('#measured-direction')).toContainText('One-target basic alignment');await page.locator('#alignment-find').click();await expect(page.locator('#finder-session')).toContainText('ONE-TARGET BASIC');await expect(page.locator('#finder-arrows')).toBeVisible();
  await page.locator('[data-nav-section=pointing]').click();await feed(page);await page.locator('#capture-alignment').click();await expect(page.locator('#alignment-feedback')).toContainText('Two-target guidance');await page.locator('#alignment-find').click();await expect(page.locator('#finder-session')).toContainText('TWO-TARGET REFINED');await expect(page.locator('#finder-arrows')).toBeVisible();
  await page.evaluate(()=>clearInterval(window.__testSensorTimer));await page.clock.runFor(2000);await expect(page.locator('#finder-arrows')).toBeHidden();await page.locator('[data-nav-section=pointing]').click();await feed(page);await expect(page.locator('#measured-direction')).toContainText('Two-target refined alignment');
+});
+
+test('alignment search filters real choices, accepts North Star, and clears for the next stage',async({page},info)=>{
+ await open(page);await page.locator('#pointing-mode').selectOption('mounted');await page.locator('#mount-confirm').check();await page.locator('#enable-sensors').click();
+ const search=page.locator('#alignment-search'),select=page.locator('#alignment-target');
+ await search.fill('north STAR');await expect(select.locator('option')).toHaveCount(1);await expect(select).toHaveValue('Polaris');await expect(page.locator('#identify-help')).toContainText('North Star');
+ await search.scrollIntoViewIfNeeded();await page.screenshot({path:`/tmp/skywatch-${info.project.name}-alignment-search.png`});
+ await feed(page);await page.clock.runFor(11000);await expect(search).toHaveValue('north STAR');await expect(select).toHaveValue('Polaris');
+ await page.locator('#capture-alignment').click();await expect(page.locator('#alignment-feedback')).toContainText('Basic one-target guidance');await expect(search).toHaveValue('');await expect(select).not.toHaveValue('Polaris');await expect(select).toBeEnabled();
+ await search.fill('Not a real star');await expect(select).toBeDisabled();await expect(select).toContainText('No matches');await expect(page.locator('#object-confirm')).toBeDisabled();await expect(page.locator('#capture-alignment')).toBeDisabled();await expect(page.locator('#alignment-find')).toBeVisible();
+ await search.fill('');await expect(select).toBeEnabled();await expect(page.locator('#object-confirm')).not.toBeChecked();
+});
+
+test('changing a typed alignment choice clears confirmation and general search stays available',async({page})=>{
+ await open(page);await expect(page.locator('#alignment-search')).toBeVisible();await expect(page.locator('#capture-alignment')).toBeDisabled();await page.locator('#object-confirm').check();await page.locator('#alignment-search').fill('Polaris');await expect(page.locator('#object-confirm')).not.toBeChecked();await expect(page.locator('#alignment-target')).toHaveValue('Polaris');
+ await page.locator('#alignment-search').fill('Saturn');await expect(page.locator('#alignment-target')).toHaveValue('Saturn');await page.locator('#alignment-browse').click();await expect(page.locator('#object-library')).toHaveAttribute('open');await expect(page.locator('#search')).toBeFocused();await page.locator('#search').fill('M31');await expect(page.locator('#objects button').first()).toContainText('Andromeda');
 });

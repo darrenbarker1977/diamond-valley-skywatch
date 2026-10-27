@@ -14,3 +14,6 @@
 .dv-nav-titlebar{position:sticky;top:0;z-index:3;background:var(--panel);display:flow-root;padding-top:4px}.dv-nav-titlebar .dv-nav-header{position:static;padding-top:0}
 /* One actual page header is shared by Home, Forecast and Navigator. */
 .dv-nav-panel[open]{display:block;position:relative;inset:auto;margin:0 auto;width:100%;max-width:1100px;max-height:none;min-height:calc(100dvh - var(--app-header-height,140px));overflow:visible;border:0;border-radius:0;box-shadow:none}.dv-nav-panel[open].dv-nav-expanded{width:100%;max-width:1280px;max-height:none;height:auto}.dv-nav-page-heading{position:static!important;padding-top:0!important}.dv-app-navigator-mode{overflow:auto}.dv-app-navigator-mode #app-header{z-index:5}
+
+/* Native match list stays reliable with touch, keyboard and screen readers. */
+#alignment-search{font-size:16px;min-height:48px}#alignment-target{font-size:16px;min-height:48px}#alignment-target:disabled{opacity:.7}#alignment-search-status{margin-block:10px;font-size:13px}#alignment-browse{margin-bottom:8px}
