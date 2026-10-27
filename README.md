@@ -125,25 +125,30 @@ offline limits, timezone handling and the unchanged alignment safeguards.
 
 ## Live phone compass
 
-The star and double-star viewing guides replace their decorative star placeholder
-with a brass compass rose, rotating cardinal dial and live top-edge heading.
-Tap Start compass on a supported HTTPS phone browser; no heading appears until
-fresh absolute orientation arrives. It uses the existing OrientationSession
-permission, invalid-sample, abrupt-jump and stale-reading checks. It hides
-bearings near vertical and stops when its guide is hidden or the page is left.
-A small live compass replaces the telescope shortcut beside the three main
-menu buttons on every screen. Open it to start a compass that keeps running
-in the shared header across Home, Forecast and Navigator; Stop compass or
-hiding/leaving the app switches it off. Escape closes just the compass panel
-and restores focus. The Navigator menu button now also owns the original
-Navigator launch action.
+Star and double-star viewing guides show a brass compass rose, rotating cardinal
+dial and live top-edge heading. A small compass beside the three main menu
+buttons shares the same readings, with a readable upright N. The small button
+opens the larger compass on Home, Forecast or Navigator; Escape closes just
+that panel and restores focus. Navigator retains its original launch action.
 
-The compass uses device north, whose magnetic/true reference and accuracy are
-not exposed by the browser. It always measures this physical phone now,
-independent of the selected observing location or planned date. It does not
-unlock telescope arrows, reuse alignment, or claim to measure the telescope.
-The existing checked sky alignment remains required for telescope guidance.
+The compass starts automatically on mobile browsers that allow orientation
+without a gesture. Browsers exposing requestPermission still need an explicit
+Start compass tap; no permission prompt is attempted on page load. Stop compass
+is remembered in local storage (dvsky:compass:auto:v1); Start compass enables
+it again. Enabled phone compasses pause while hidden and resume on return,
+with no saved heading. Desktop starts remain manual. Opening a guide does not
+retry sensor failures automatically; errors remain visible with a manual retry.
+
+No heading appears until fresh absolute orientation arrives. The existing
+OrientationSession permission, invalid-sample, abrupt-jump and stale-reading
+checks still apply. Bearings hide near vertical. Device north's magnetic/true
+reference and accuracy are not exposed by the browser. The compass measures
+the physical phone now, independent of the observing location or planned date.
+Telescope sensors and checked sky alignment remain manual and separate; this
+does not unlock arrows, reuse alignment or claim to measure the telescope.
+
 Compass tips collapse, red mode covers every dial element, and the module is
 included in the offline shell. Run tests/compass.spec.js for synthetic sensor,
-permission, stale, visibility, red-mode and phone-layout checks. A real Pixel 8
-field check remains necessary to assess local magnetic interference.
+auto-start/resume/stop, gesture permissions, stale, visibility, red-mode and
+phone-layout checks. A real Pixel 8 field check remains necessary to assess
+local magnetic interference.
