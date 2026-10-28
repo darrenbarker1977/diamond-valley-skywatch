@@ -32,8 +32,14 @@ A collapsible explanation gives the complete path: after dusk confirm the actual
 site, enable pointing sensors, identify and record at least one object, return to
 the map and explicitly tap Follow aligned phone. Handheld follows the rear-camera
 axis; mounted follows the phone top edge along the tube. Manual panning, centring
-and compass-direction controls exit follow. Loss of usable aligned readings also
-stops follow; its state explains why and prompts re-enabling once stable. Planned
+and compass-direction controls exit follow. Fresh aligned samples move the map even while the phone is moving; the
+steadiness check remains specific to telescope arrows and alignment capture.
+Brief missing/stale samples pause the map while keeping Follow selected. The
+last view is labelled paused and fresh samples resume automatically. Stop remains
+usable while paused. Invalid readings that terminate sensors, expired/reset
+alignment, mode/site/placement changes, planned skies or hiding the app cancel
+Follow and require valid alignment again. The selected observing target does not
+determine whether a fresh aligned map pose is available. Planned
 skies do not follow the phone. No compass values are substituted for aligned pose.
 
 Browser tests use clearly marked local synthetic media and synthetic orientation
