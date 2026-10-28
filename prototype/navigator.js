@@ -14,7 +14,8 @@ import {createLiveCompass} from './live-compass.js?v=field-1';
 import {createDiscovery} from './discovery.js';
 import {createFieldTools} from './field-tools.js';
 import {createStarHops} from './star-hops.js';
-import {createScopeView} from './scope-view.js';
+import {createScopeView} from './scope-view.js?v=awake-1';
+import {createScreenAwake} from './screen-awake.js';
 const requestedQuery=new URLSearchParams(location.search);
 if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has('lon')){
  try{let zone=requestedQuery.get('zone')||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch{zone='UTC';}setSite({latitude:Number(requestedQuery.get('lat')),longitude:Number(requestedQuery.get('lon')),height:0,accuracy:null,source:'coordinates',label:(requestedQuery.get('name')||'Planned location').slice(0,120),clockTimezone:zone,physicalConfirmed:false});}catch{}
@@ -28,6 +29,7 @@ atlas=createSkyAtlas({A,site,catalogue,onSelect:id=>chooseObject(id)});
 function setPointingMode(mode){if($('pointing-mode').value!==mode){$('pointing-mode').value=mode;$('pointing-mode').dispatchEvent(new Event('change'));}}
 finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>{setPointingMode(mode);navigation.section('pointing');},onMode:setPointingMode,onStop:()=>pointing.suspend(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;}});
 hops=createStarHops({catalogue,onRoute:ids=>{planner.now();navigation.section('objects');$('atlas-card').open=true;atlas.showHop(ids);}});
+createScreenAwake();
 const scopeView=createScopeView();
 createLiveCompass();createDiscovery();
 planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,onChange:()=>{
