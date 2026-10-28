@@ -1,7 +1,7 @@
 import {createLocation,site,forecastURL,setSite} from './location.js?v=location-1';
 import {createNavigation} from './navigation.js?v=field-1';
-import {createEquipment} from './equipment-ui.js?v=catalogue-1';
-import {createPointing} from './pointing.js?v=daylight-1';
+import {createEquipment} from './equipment-ui.js?v=folds-1';
+import {createPointing} from './pointing.js?v=folds-1';
 import {catalogue} from './catalogue.js?v=catalogue-1';
 import {position,matches} from './positions.js?v=catalogue-1';
 import {createSkyAtlas} from './sky-atlas.js?v=field-1';
@@ -26,8 +26,8 @@ const equipment=createEquipment(()=>{if(positions.size)render();pointing.refresh
 const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:()=>{if(desiredTarget!=='Sun'&&catalogue.some(o=>o.id===desiredTarget)){selected=desiredTarget;if(positions.size)render();}},allowGuidance:()=>!planner?.planning,onPose:state=>{atlas?.pose(state);finder?.pose(state);hops?.pose(state);}});
 atlas=createSkyAtlas({A,site,catalogue,onSelect:id=>chooseObject(id)});
 function setPointingMode(mode){if($('pointing-mode').value!==mode){$('pointing-mode').value=mode;$('pointing-mode').dispatchEvent(new Event('change'));}}
-finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>{setPointingMode(mode);navigation.section('pointing');},onMode:setPointingMode,onStop:()=>pointing.suspend(),onSky:()=>navigation.section('objects')});
-hops=createStarHops({catalogue,onRoute:ids=>{planner.now();navigation.section('objects');atlas.showHop(ids);}});
+finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>{setPointingMode(mode);navigation.section('pointing');},onMode:setPointingMode,onStop:()=>pointing.suspend(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;}});
+hops=createStarHops({catalogue,onRoute:ids=>{planner.now();navigation.section('objects');$('atlas-card').open=true;atlas.showHop(ids);}});
 const scopeView=createScopeView();
 createLiveCompass();createDiscovery();
 planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,onChange:()=>{
@@ -38,7 +38,7 @@ planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,o
 mission=createNightMission({A,site,getContext:()=>planner.context(),getKit:()=>equipment.current(),ensureForecast:()=>navigation.ensureForecast(),onLive:id=>{
  selected=desiredTarget=id;planner.now();if(dialog.open)update();else $('launch').click();navigation.section('finder');
 },onPreview:(id,time)=>{
- const zone=planner.zone,p=localParts(time,zone);planner.plan(nightDate(time,zone),p.hour*60+p.minute+(p.hour<6?1440:0));selected=desiredTarget=id;update();navigation.section('objects');atlas.centerTarget();$('selected-panel').open=true;
+ const zone=planner.zone,p=localParts(time,zone);planner.plan(nightDate(time,zone),p.hour*60+p.minute+(p.hour<6?1440:0));selected=desiredTarget=id;update();navigation.section('objects');$('atlas-card').open=true;atlas.centerTarget();$('selected-panel').open=true;
 },onWeather:()=>{
  if(mission?.snapshot?.zone)site.clockTimezone=mission.snapshot.zone;locationUI?.display();planner.refresh();field?.refresh();if(dialog.open)update();
 }});
@@ -85,7 +85,7 @@ function render(){
   heading.append(node('p',(planner.planning?'Planned sky · ':'')+availability,'object-availability'),node('p',`${compass(p.az)} · ${degrees(p.alt)} up · ${degrees(p.az)} true azimuth`,'object-position'),node('p',discoveryNote(o),'object-fact'));detail.replaceChildren(hero||objectVisual(o,{compass:true}),heading);
   const stats=node('dl',undefined,'dv-nav-stats');
   for(const [label,value] of [['ALTITUDE',degrees(p.alt)],['TRUE AZIMUTH',`${degrees(p.az)} ${compass(p.az)}`]]){const group=node('div');group.append(node('dt',label),node('dd',value));stats.append(group);}
-  const actions=node('div',undefined,'object-actions'),findButton=node('button',planner.planning?'⌖ Find in the live sky':'⌖ Find this object'),center=node('button','Show on sky map');findButton.id='find-selected';center.id='center-selected';findButton.type=center.type='button';findButton.disabled=o.id==='Sun';findButton.addEventListener('click',()=>navigation.section('finder'));center.addEventListener('click',()=>{atlas.centerTarget();$('atlas-card').scrollIntoView({block:'nearest'});});actions.append(findButton,center);detail.append(actions);
+  const actions=node('div',undefined,'object-actions'),findButton=node('button',planner.planning?'⌖ Find in the live sky':'⌖ Find this object'),center=node('button','Show on sky map');findButton.id='find-selected';center.id='center-selected';findButton.type=center.type='button';findButton.disabled=o.id==='Sun';findButton.addEventListener('click',()=>navigation.section('finder'));center.addEventListener('click',()=>{$('atlas-card').open=true;atlas.centerTarget();$('atlas-card').scrollIntoView({block:'nearest'});});actions.append(findButton,center);detail.append(actions);
   const about=node('details',undefined,'dv-nav-about');about.dataset.detailKey='calculation';about.append(node('summary','Object notes & position details'));about.append(stats,node('p',o.note,'object-spoiler'));
   if(!o.body)about.append(node('p','Precessed J2000 catalogue position. Rounded coordinates; proper motion not applied. Suitable for exploration, not precision alignment.'));
   const advice=equipment.appendAdvice(detail,o,p.alt);advice.querySelector('details').dataset.detailKey='eyepiece';

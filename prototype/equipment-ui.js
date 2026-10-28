@@ -19,7 +19,7 @@ export function createEquipment(onChange){
    const label=element('label'),input=element('input');input.type='checkbox';input.checked=e.enabled;input.setAttribute('aria-label',`Use ${e.name}`);
    const text=element('span');text.append(element('strong',e.name),element('small',e.kind==='zoom'?`${e.min}–${e.max} mm · about ${Math.round(kit.focalLength/e.max)}–${Math.round(kit.focalLength/e.min)}×`:`${e.min} mm · about ${Math.round(kit.focalLength/e.min)}×`));label.append(input,text);
    input.addEventListener('change',()=>{kit.eyepieces.find(item=>item.id===e.id).enabled=input.checked;update();});
-   const remove=element('button','Remove');remove.type='button';remove.setAttribute('aria-label',`Remove ${e.name}`);remove.addEventListener('click',()=>{kit.eyepieces=kit.eyepieces.filter(item=>item.id!==e.id);draw();update();$('new-eyepiece-name').focus();});row.append(label,remove);return row;
+   const remove=element('button','Remove');remove.type='button';remove.setAttribute('aria-label',`Remove ${e.name}`);remove.addEventListener('click',()=>{kit.eyepieces=kit.eyepieces.filter(item=>item.id!==e.id);draw();update();($('kit-list').querySelector('input')||$('eyepiece-add-panel').querySelector('summary')).focus();});row.append(label,remove);return row;
   }));
  }
  $('telescope-focal').addEventListener('input',update);

@@ -65,7 +65,7 @@ test('relative readings, invalid values, mode change and closed panel cannot sup
  await expect(page.locator('#measured-direction')).toHaveText('No measured direction available.');
  await page.evaluate(()=>{const valid=new Event('deviceorientationabsolute');Object.assign(valid,{absolute:true,alpha:0,beta:90,gamma:0});window.dispatchEvent(valid);const e=new Event('deviceorientationabsolute');Object.assign(e,{absolute:true,alpha:null,beta:90,gamma:0});window.dispatchEvent(e);});
  await expect(page.locator('#sensor-status')).toContainText('Invalid or missing');
- await page.locator('#pointing-mode').selectOption('mounted');await expect(page.locator('#capture-alignment')).toBeDisabled();
+ await page.locator('#pointing-setup>summary').click();await page.locator('#pointing-mode').selectOption('mounted');await expect(page.locator('#capture-alignment')).toBeDisabled();
  await page.locator('#close').click();await page.locator('#launch').click();
  await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
 });

@@ -14,7 +14,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  }
  function stopCamera(){cameraGeneration++;if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;$('camera').srcObject=null;$('camera-view').hidden=true;$('camera-toggle').setAttribute('aria-pressed','false');$('camera-toggle').textContent='Show rear-camera aiming view';$('camera-status').textContent='Camera off · nothing recorded or uploaded.';}
  function suspend(message='Sensors stopped. Enable again and repeat alignment before using arrows.'){
-  session.stop();stopCamera();reset(message);paint();
+  session.stop();stopCamera();$('pointing-setup').open=true;reset(message);paint();
  }
  function setup(){
   const mounted=mode()==='mounted';
@@ -90,8 +90,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   $('guidance').textContent=direction;
   $('compact-guidance').textContent=session.active?direction:session.message+'. Open Pointing when you want to align.';
   document.querySelector('.dv-nav-alignment').hidden=verified;
-  if(!session.active)$('pointing-setup').open=true;
-  else if(session.status==='receiving'&&$('pointing-setup').dataset.autoCollapsed!=='true'){$('pointing-setup').open=false;$('pointing-setup').dataset.autoCollapsed='true';}
+  if(session.active&&session.status==='receiving'&&$('pointing-setup').dataset.autoCollapsed!=='true'){$('pointing-setup').open=false;$('pointing-setup').dataset.autoCollapsed='true';}
  }
  $('enable-sensors').addEventListener('click',()=>{if(!allowGuidance()){$('alignment-feedback').textContent='Return to Now before enabling pointing. A planned sky cannot supply live guidance.';return;}if(!site.physicalConfirmed){$('alignment-feedback').textContent='Remote viewing only. Confirm that you are physically at this observing site before enabling pointing.';return;}reset();$('pointing-setup').dataset.autoCollapsed='false';session.start(mode());if($('alignment-target').value)onTargetSelect($('alignment-target').value);});
  window.addEventListener('dvsky-presence-changed',()=>{if(!site.physicalConfirmed)suspend('Physical presence is not confirmed. Remote viewing remains available; pointing is off.');else paint();});
