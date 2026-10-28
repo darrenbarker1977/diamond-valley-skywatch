@@ -4,7 +4,7 @@ import {skyVector,skyAngles,singleAlignment,alignedDirection,solveAlignment,vali
 import {easyTargets,easyObjects} from './easy-targets.js?v=catalogue-1';
 export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},onAligned=()=>{},onPose=()=>{},allowGuidance=()=>true,env=window}){
  const $=id=>document.getElementById(id);
- let samples=[],model=null,verified=false,checkError=null,choices=[],cameraStream=null,cameraGeneration=0,isDaylight=false;
+ let samples=[],model=null,verified=false,checkError=null,choices=[],cameraStream=null,cameraGeneration=0,cameraLive=false,isDaylight=false;
  const session=new OrientationSession(env,()=>paint());
  const mode=()=>$('pointing-mode').value;
  const searchText=value=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
@@ -12,7 +12,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  function reset(message='Alignment cleared. Start with the easiest object you can identify.'){
   samples=[];model=null;verified=false;checkError=null;$('alignment-search').value='';$('object-confirm').checked=false;$('alignment-feedback').textContent=message;refresh();
  }
- function stopCamera(){cameraGeneration++;if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;$('camera').srcObject=null;$('camera-view').hidden=true;$('camera-toggle').setAttribute('aria-pressed','false');$('camera-toggle').textContent='Show rear-camera aiming view';$('camera-status').textContent='Camera off · nothing recorded or uploaded.';}
+ function stopCamera(){cameraGeneration++;if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;cameraLive=false;$('camera').srcObject=null;$('alignment-actions-home').append($('alignment-actions'));if($('camera-view').open)$('camera-view').close();$('camera-view').hidden=true;document.body.classList.remove('dv-camera-aiming');$('camera-toggle').setAttribute('aria-pressed','false');$('camera-toggle').textContent='Show rear-camera aiming view';$('camera-status').textContent='Camera off · nothing recorded or uploaded.';}
  function suspend(message='Sensors stopped. Enable again and repeat alignment before using arrows.'){
   session.stop();stopCamera();$('pointing-setup').open=true;reset(message);paint();
  }
@@ -67,10 +67,13 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   $('alignment-help').textContent=isDaylight?'No setup step is missing. This app waits until after dusk for sky alignment. Browsing and planning remain available.':verified?'Use search to select your destination. Move slowly and confirm through the finder.':stage===0?(session.active?'Identify one bright object, centre it and hold still for about one second. One target starts basic guidance; a second refines it.':'Choose an easy object below. Enable sensors above when you are ready to centre and record it. One target is enough to start.'):stage===1?'You can find targets now. One-target guidance corrects heading and tilt at your chosen object; accuracy elsewhere is not verified. Add a second object 30°–140° away for a fuller alignment.':'You can find targets now. A third object at least 20° from both alignment objects optionally checks the result. It is not required to start.';
   $('capture-alignment').textContent=isDaylight?'Alignment available after dusk':stage===0?'Record first object · start guidance':stage===1?'Add second object · refine alignment':'Check a third object · optional';
   let stable=false;try{stableSample(session.history,session.now());stable=true;}catch{}
-  $('capture-alignment').disabled=verified||!fresh||!stable||!$('object-confirm').checked||!choices.length||(mode()==='mounted'&&!$('mount-confirm').checked);
+  $('capture-alignment').disabled=verified||!fresh||!stable||!$('object-confirm').checked||!choices.length||(mode()==='mounted'&&!$('mount-confirm').checked)||(!!cameraStream&&!cameraLive);
   $('alignment-target').disabled=verified||!choices.length;
   $('object-confirm').disabled=verified||!choices.length;
   $('alignment-search').disabled=verified;
+  const cameraObject=choices.find(o=>o.id===$('alignment-target').value);
+  $('camera-object').textContent=verified?'Alignment checked · you can find your target now':cameraObject?(stage?'Next optional alignment object: ':'Align on: ')+cameraObject.name:'No suitable alignment object selected';
+  $('camera-readiness').textContent=isDaylight?'Daylight alignment is unavailable. Return after dusk.':verified?'Alignment checked. Choose Find my target now when ready.':!session.active?'Close camera to enable pointing sensors. '+session.message:!choices.length?'Close the camera and choose a suitable alignment object.':!cameraLive?'Opening the rear camera…':!fresh||session.status!=='receiving'?'Recording disabled: '+session.message:!stable?'Hold the phone steady until Record becomes available.':!$('object-confirm').checked?(stage?'Guidance is ready. Find your target now, or centre the next optional object and confirm it below.':'Centre the identified object on the crosshair, then tick the confirmation below.'):'Steady readings received. Tap Record while the object is centred.';
   let direction=session.status==='stale'?'Sensor readings are stale; direction arrows are off until fresh samples arrive.':'Direction arrows are off until you align on one identified object.',pose={ready:false};
   if(model&&fresh){
    const recent=session.history.filter(s=>session.now()-s.time<400);
@@ -130,11 +133,17 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
    cameraStream=stream;
    const facing=stream.getVideoTracks()[0]?.getSettings().facingMode;
    if(facing!=='environment')throw Error('A rear-facing camera could not be confirmed. Preview stopped.');
-   cameraStream=stream;$('camera').srcObject=stream;$('camera-view').hidden=false;await $('camera').play();
+   for(const track of stream.getVideoTracks())track.addEventListener?.('ended',()=>{if(generation===cameraGeneration){stopCamera();paint();$('camera-status').textContent='Camera stream ended. Reopen the rear-camera view when available.';}},{once:true});
+   cameraStream=stream;cameraLive=false;$('object-confirm').checked=false;$('camera').srcObject=stream;$('camera-action-slot').append($('alignment-actions'));$('camera-view').hidden=false;$('camera-view').showModal();document.body.classList.add('dv-camera-aiming');paint();await $('camera').play();
    if(generation!==cameraGeneration)return;
-   $('camera-toggle').setAttribute('aria-pressed','true');$('camera-toggle').textContent='Stop rear-camera view';$('camera-status').textContent='Centre the identified object on the crosshair. The view is local; nothing is recorded. Camera-axis accuracy still needs a real-phone check.';
-  }catch(e){if(generation!==cameraGeneration)return;stopCamera();$('camera-status').textContent='Camera unavailable: '+e.message;}
+   cameraLive=true;paint();$('camera-toggle').setAttribute('aria-pressed','true');$('camera-toggle').textContent='Stop rear-camera view';$('camera-status').textContent='Camera aiming has the confirmation and Record controls beside the crosshair. The view is local; nothing is recorded or uploaded. Camera-axis accuracy still needs a real-phone check.';
+  }catch(e){if(generation!==cameraGeneration)return;stopCamera();paint();$('camera-status').textContent='Camera unavailable: '+e.message;}
  });
+ $('camera-exit').addEventListener('click',()=>{stopCamera();paint();$('camera-toggle').focus();});
+ $('camera-change-target').addEventListener('click',()=>{stopCamera();paint();$('alignment-search').focus();});
+ $('camera-view').addEventListener('cancel',event=>{event.preventDefault();event.stopPropagation();stopCamera();paint();$('camera-toggle').focus();});
+ document.addEventListener('keydown',event=>{if($('camera-view').open&&event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();stopCamera();paint();$('camera-toggle').focus();}},true);
+ $('camera-view').addEventListener('close',()=>{if(cameraStream){stopCamera();paint();}});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend('App was hidden. Enable sensors and repeat alignment.');});
  env.addEventListener('pagehide',()=>suspend('Page was left. Repeat alignment on return.'));
  env.screen?.orientation?.addEventListener('change',()=>suspend('Screen orientation changed. Repeat alignment in the new position.'));
