@@ -1,13 +1,13 @@
 import {createLocation,site,forecastURL,setSite} from './location.js?v=location-1';
 import {createNavigation} from './navigation.js?v=field-1';
 import {createEquipment} from './equipment-ui.js?v=folds-1';
-import {createPointing} from './pointing.js?v=folds-1';
+import {createPointing} from './pointing.js?v=aiming-1';
 import {catalogue} from './catalogue.js?v=catalogue-1';
 import {position,matches} from './positions.js?v=catalogue-1';
-import {createSkyAtlas} from './sky-atlas.js?v=field-1';
+import {createSkyAtlas} from './sky-atlas.js?v=aiming-1';
 import {createFinder} from './finder.js?v=field-1';
 import {objectVisual,objectStory,discoveryNote} from './object-cards.js?v=field-1';
-import {createPlanner} from './planner.js';
+import {createPlanner} from './planner.js?v=aiming-1';
 import {createNightMission} from './night-mission.js?v=tour-1';
 import {localParts,nightDate,addDays} from './observing-time.js';
 import {createLiveCompass} from './live-compass.js?v=field-1';
@@ -97,6 +97,7 @@ function render(){
 function drawMap(){atlas?.update(positions,selected,calculationTime,planner.planning);}
 function chooseObject(id){atlas.showHop([]);selected=desiredTarget=id;render();$('object-library').open=false;$('selected-panel').open=true;atlas.centerTarget();}
 $('atlas-center').addEventListener('click',()=>atlas.centerTarget());
+$('atlas-align').addEventListener('click',()=>navigation.section('pointing'));
 $('launch').addEventListener('click',()=>{if(!dialog.open)dialog.show();$('launch').setAttribute('aria-expanded','true');update();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)update();},10000);$('close').focus();});
 $('close').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('close',()=>{clearInterval(timer);$('launch').setAttribute('aria-expanded','false');$('launch').focus();});

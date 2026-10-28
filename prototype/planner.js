@@ -8,7 +8,7 @@ export function createPlanner({getZone,onChange}){
   if(document.activeElement!==$('plan-date'))$('plan-date').value=day;
   $('plan-time').value=String(minute);document.body.classList.toggle('dv-planning-mode',planning);
   $('atlas-title').textContent=planning?'The sky, planned.':'The sky, right now.';
-  $('atlas-live-badge').textContent=planning?'◇ PLAN':'● LIVE';
+  $('atlas-live-badge').textContent=planning?'◇ PLAN':'● LIVE TIME';
   document.querySelector('.dv-nav-live').textContent=planning?'◇ Planned sky · pointing is off':'● Live sky calculations';
   try{const c=context();$('plan-clock').textContent=localLabel(c.instant,c.zone);$('plan-error').hidden=true;}
   catch(error){$('plan-clock').textContent='Choose another local time';$('plan-error').hidden=false;$('plan-error').textContent=error.message;}
