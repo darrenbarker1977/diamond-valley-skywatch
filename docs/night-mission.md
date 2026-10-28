@@ -78,10 +78,12 @@ Full site and Escape leave the overlay. Portrait and landscape layouts, keyboard
 focus containment, and dim red colours are supported. These are UI improvements,
 not a claim that phone sensors have telescope-encoder accuracy.
 
-Keep awake requests the browser Screen Wake Lock API only after a user action
-in Scope view. A visible status reports success or failure. Locks are released
-on exit/page hide and late permission results are released too. An unsupported
-browser, power policy or OS interruption is reported; the app does not claim to
-override those limitations. No photographs, sensor recordings or observations
+Screen hold now uses one foreground-only Screen Wake Lock shared across all
+app views, rather than ending when Scope view closes. It is requested by default,
+with shared controls in the main app, Scope, camera and compass. Explicit off is
+remembered. Holds release while hidden and are requested again on return; late
+or cancelled grants are released. Unsupported/denied/system-released holds report
+their actual status and never claim to prevent timeout. See screen-awake.md.
+No photographs, sensor recordings or observations
 are uploaded or saved by these features. Physical Pixel 8 / Dobsonian performance
 still requires an outdoor field check; automated orientation exists only in tests.
