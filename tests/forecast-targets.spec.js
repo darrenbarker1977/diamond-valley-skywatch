@@ -19,7 +19,7 @@ test('Friday recommendations change by hemisphere, link into Navigator and follo
  await expect(f.locator('#targets [data-id=NGC104]')).toContainText('48×');
  await f.locator('#target-summary').scrollIntoViewIfNeeded();await page.screenshot({path:`/tmp/skywatch-${info.project.name}-global-targets.png`,fullPage:true});
  await f.locator('#targets [data-id=NGC104] .target-find').click();await expect(page.locator('#target-name')).toHaveText('47 Tucanae');await expect(page.locator('#app-header nav')).toBeVisible();
- await page.locator('[data-nav-section=equipment]').click();await page.locator('#new-eyepiece-name').fill('My new 32 mm');await page.locator('#new-eyepiece-min').fill('32');await page.locator('#add-eyepiece-form button[type=submit]').click();
+ await page.locator('[data-nav-section=equipment]').click();await page.locator('#eyepiece-add-panel').evaluate(el=>el.open=true);await page.locator('#new-eyepiece-name').fill('My new 32 mm');await page.locator('#new-eyepiece-min').fill('32');await page.locator('#add-eyepiece-form button[type=submit]').click();
  await page.locator('#nav-to-forecast').click();await expect(f.locator('#targets [data-id=NGC104]')).toContainText('My new 32 mm');await expect(f.locator('#targets [data-id=NGC104]')).toContainText('38×');
  await f.locator('#browse-targets').click();await expect(page.locator('#objects button')).toHaveCount(catalogue.length);await page.locator('#search').fill('M110');await expect(page.locator('#objects button')).toHaveCount(1);
  expect(errors).toEqual([]);

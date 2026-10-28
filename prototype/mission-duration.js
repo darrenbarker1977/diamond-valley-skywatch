@@ -6,7 +6,7 @@ export function createMissionDuration({onChange=()=>{},root=document}={}){
  const total=()=>values.hours*60+values.minutes;
  function paint(){
   for(const {name,el,input} of wheels){el.setAttribute('aria-valuenow',String(values[name]));el.setAttribute('aria-valuetext',`${values[name]} ${name}`);for(const child of el.children)child.classList.toggle('is-selected',Number(child.dataset.value)===values[name]);if(root.activeElement!==input)input.value=values[name];}
-  const h=values.hours,m=values.minutes;$('mission-duration-summary').textContent=total()?`${h?h+' '+(h===1?'hour':'hours'):''}${h&&m?' ':''}${m?m+' '+(m===1?'minute':'minutes'):''} · scroll the wheels or type below`:'Choose at least one minute.';
+  const h=values.hours,m=values.minutes;$('mission-duration-summary').textContent=total()?`${h?h+' '+(h===1?'hour':'hours'):''}${h&&m?' ':''}${m?m+' '+(m===1?'minute':'minutes'):''}`:'Choose at least one minute.';
  }
  function set(name,value){
   const max=name==='hours'?11:59;if(!Number.isInteger(value)||value<0||value>max)return;
