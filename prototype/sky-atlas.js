@@ -74,17 +74,19 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
    if(active){ctx.beginPath();ctx.arc(pixel.x,pixel.y,12,0,Math.PI*2);ctx.stroke();for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){ctx.beginPath();ctx.moveTo(pixel.x+Math.cos(angle)*15,pixel.y+Math.sin(angle)*15);ctx.lineTo(pixel.x+Math.cos(angle)*21,pixel.y+Math.sin(angle)*21);ctx.stroke();}}
    if(active||body||(labels&&camera.fov<45&&mode!=='dome')){const y=pixel.y-18;text(object.name,Math.min(width-65,Math.max(65,pixel.x)),Math.max(14,y),colour,active?12:10);}
   }
-  $('atlas-direction').textContent=mode==='dome'?'All sky · north at top':`${following?'Aligned view':'Map view'} · ${compass(camera.az)} · ${Math.round(camera.az)}° · ${Math.round(camera.alt)}° up`;
+  $('atlas-direction').textContent=following&&!mapReady()?'Follow paused · last map view':mode==='dome'?'All sky · north at top':`${following?'Aligned view':'Map view'} · ${compass(camera.az)} · ${Math.round(camera.az)}° · ${Math.round(camera.alt)}° up`;
   $('atlas-zoom').textContent=mode==='dome'?'Whole sky':Math.round(camera.fov)+'° vertical';
   $('atlas-status').textContent=daylight?'Daylight preview · most stars are hidden to the eye':sun&&sun.alt>-12?'Twilight · brighter objects are easier to see':isPlanned?'Planned sky · drag to explore, tap an object':'Live sky · drag to explore, tap an object';
   canvas.dataset.ready='true';canvas.dataset.starCount=String(stars.length);canvas.dataset.deepStarCount=String(faintStars.length);canvas.dataset.milkyWay=String(deepLoaded);canvas.dataset.view=mode;canvas.dataset.azimuth=String(Math.round(camera.az));canvas.dataset.planned=String(isPlanned);canvas.dataset.epoch=date.toISOString();
  }
+ function mapReady(){const p=pose?.map;return !!p?.calibrated&&p.ready===true&&Number.isFinite(p.current?.az)&&Number.isFinite(p.current?.alt);}
  function followUI(){
-  const state=isPlanned?'planned':failed?'unavailable':following?'following':pose?.ready?'ready':followStopped?'stopped':'manual';
-  const text=isPlanned?'Planned sky · phone follow is off. Return to Now and align before following your phone.':failed?'Sky map unavailable. Object search and Pointing remain available.':following?'Following your aligned phone · move slowly. Dragging the map returns to manual view.':pose?.ready?'Aligned phone ready · tap Follow aligned phone to move this map with your phone.':followStopped?'Phone follow stopped · '+(pose?.message||'Usable aligned readings were lost.')+' Re-enable Follow after readings settle.':'Manual sky map · the compass alone does not move this view. Set up pointing after dusk, then enable Follow.';
+  const available=!!pose?.map?.calibrated;
+  const state=isPlanned?'planned':failed?'unavailable':following?(mapReady()?'following':'paused'):available?(mapReady()?'ready':'waiting'):followStopped?'stopped':'manual';
+  const text=isPlanned?'Planned sky · phone follow is off. Return to Now and align before following your phone.':failed?'Sky map unavailable. Object search and Pointing remain available.':following?(mapReady()?'Following your aligned phone. Dragging the map returns to manual view.':'Phone follow paused · '+(pose?.map?.message||'Waiting for a fresh aligned reading.')+' Resumes automatically when fresh readings return.') :available?(mapReady()?'Aligned phone ready · tap Follow aligned phone to move this map with your phone.':'Alignment retained · waiting for fresh readings. You can enable Follow; it will resume when readings return.'):followStopped?'Phone follow stopped · '+(pose?.map?.message||'Alignment was lost.')+' Repeat alignment before enabling Follow.':'Manual sky map · the compass alone does not move this view. Set up pointing after dusk, then enable Follow.';
   $('atlas-card').dataset.phoneFollow=state;
   if($('atlas-follow-state').textContent!==text)$('atlas-follow-state').textContent=text;
-  $('atlas-follow').textContent=following?'Stop phone follow':'Follow aligned phone';$('atlas-follow').setAttribute('aria-pressed',String(following));$('atlas-follow').disabled=!pose?.ready||isPlanned||failed;
+  $('atlas-follow').textContent=following?'Stop phone follow':'Follow aligned phone';$('atlas-follow').setAttribute('aria-pressed',String(following));$('atlas-follow').disabled=!following&&(!available||isPlanned||failed);
  }
  function stopFollowing(stopped=false){following=false;followStopped=stopped;followUI();}
  function move(dx,dy){if(mode==='dome')return;stopFollowing();camera=moveCamera(camera,dx,dy,width,height);request();}
@@ -107,7 +109,7 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
  $('atlas-lines').addEventListener('click',()=>{lines=!lines;$('atlas-lines').setAttribute('aria-pressed',String(lines));request();});
  $('atlas-labels').addEventListener('click',()=>{labels=!labels;$('atlas-labels').setAttribute('aria-pressed',String(labels));request();});
  $('atlas-overview').addEventListener('click',()=>{stopFollowing();mode=mode==='dome'?'horizon':'dome';$('atlas-overview').setAttribute('aria-pressed',String(mode==='dome'));request();});
- $('atlas-follow').addEventListener('click',()=>{if(!pose?.ready||isPlanned||failed)return;following=!following;followStopped=false;mode='horizon';$('atlas-overview').setAttribute('aria-pressed','false');$('atlas-follow').setAttribute('aria-pressed',String(following));if(following){camera.az=pose.current.az;camera.alt=Math.min(85,Math.max(-10,pose.current.alt));}followUI();request();});
+ $('atlas-follow').addEventListener('click',()=>{if(following){stopFollowing();request();return;}if(!pose?.map?.calibrated||isPlanned||failed)return;following=true;followStopped=false;mode='horizon';$('atlas-overview').setAttribute('aria-pressed','false');if(mapReady()){camera.az=pose.map.current.az;camera.alt=Math.min(85,Math.max(-10,pose.map.current.alt));}followUI();request();});
  const resize=new ResizeObserver(request);resize.observe(canvas);new MutationObserver(request).observe(document.body,{attributes:true,attributeFilter:['class']});followUI();
  return {
   update(nextPositions,id,now=new Date(),planned=false){
@@ -117,7 +119,14 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
    try{if(!A)throw Error('Astronomy library unavailable');if(dataLoaded&&(!lastEpoch||Math.abs(now.getTime()-lastEpoch)>9000))prepare(now);followUI();request();}catch{failed=true;followUI();request();}
   },
   centerTarget(){const p=positions.get(selected);if(!p)return;stopFollowing();if(p.alt<=0){$('atlas-status').textContent='This object is below the horizon. The map stays above your horizon.';return;}mode='horizon';camera={az:p.az,alt:Math.min(85,p.alt),fov:60};$('atlas-overview').setAttribute('aria-pressed','false');request();},
-  pose(state){if(isPlanned)state={ready:false};const changed=!!pose?.ready!==!!state.ready;pose=state;if(!state.ready)stopFollowing(following||followStopped);if(following&&state.ready){camera.az=state.current.az;camera.alt=Math.min(85,Math.max(-10,state.current.alt));request();}else if(changed)request();followUI();},
+  pose(state){
+   if(isPlanned)state={map:{calibrated:false,ready:false}};
+   const wasReady=mapReady();pose=state;
+   if(!state.map?.calibrated)stopFollowing(following||followStopped);
+   if(following&&mapReady()){camera.az=state.map.current.az;camera.alt=Math.min(85,Math.max(-10,state.map.current.alt));request();}
+   else if(wasReady!==mapReady())request();
+   followUI();
+  },
   locationChanged(){lastEpoch=0;date=null;stopFollowing();},
   fail(){failed=true;date=null;positions=new Map();stopFollowing();canvas.removeAttribute('data-ready');request();},
   refresh:request
