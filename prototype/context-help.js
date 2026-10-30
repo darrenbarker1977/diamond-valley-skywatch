@@ -6,6 +6,7 @@ export function createContextHelp({act,getState}){
   for(const [label,action]of items){const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.helpAction=action;button.addEventListener('click',()=>act(action));el.append(button);}
   anchor.after(el);groups.push({el,when});return el;
  }
+ group('time-recovery',$('plan-error'),[['Choose date & time','plan'],['Return to Now','now']],()=>!$('plan-error').hidden);
  const count=$('count');group('search-recovery',count,[['Clear search & filters','clear-search'],['Plan another time','plan']],()=>!$('objects').children.length);
  group('finder-recovery',$('finder-compass'),[['Review pointing setup','align'],['Choose a visible target','pick-target'],['Plan tonight','mission']],s=>!s.pose?.alignment?.calibrated||!s.pose?.alignment?.fresh||s.target?.id==='Sun'||s.position?.alt<=0);
  group('picker-recovery',$('finder-picker-status'),[['Browse the full catalogue','catalogue'],['Plan another time','plan']],()=>!$('finder-target-results').children.length);
@@ -31,7 +32,7 @@ export function createContextHelp({act,getState}){
  function schedule(){if(pending)return;pending=true;queueMicrotask(()=>{pending=false;refresh();});}
  // Watch source statuses rather than the whole page, avoiding recovery UI loops.
  const observer=new MutationObserver(schedule);
- for(const id of ['count','finder-session','finder-guide-text','finder-picker-status','another-status','kit-status','atlas-status','mission-summary','mission-stops','location-status','place-status','sensor-status','error','solar-error','aurora-value','aurora-status','air-value','air-status','iss-status','show-another']){
+ for(const id of ['plan-error','count','finder-session','finder-guide-text','finder-picker-status','another-status','kit-status','atlas-status','mission-summary','mission-stops','location-status','place-status','sensor-status','error','solar-error','aurora-value','aurora-status','air-value','air-status','iss-status','show-another']){
   const target=$(id);if(target)observer.observe(target,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','disabled']});
  }
  refresh();return {refresh};

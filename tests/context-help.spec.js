@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
-async function setup(page,{day=false}={}){
- const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install({time:new Date(day?'2026-10-27T19:00Z':'2026-10-27T03:00Z')});await page.clock.pauseAt(new Date(day?'2026-10-27T19:00:10Z':'2026-10-27T03:00:10Z'));await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.goto('/');return errors;
+async function setup(page,{day=false,mapFailure=false}={}){
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install({time:new Date(day?'2026-10-27T19:00Z':'2026-10-27T03:00Z')});await page.clock.pauseAt(new Date(day?'2026-10-27T19:00:10Z':'2026-10-27T03:00:10Z'));await page.route('https://api.open-meteo.com/**',r=>r.abort());if(mapFailure)await page.route('**/atlas-data.js*',r=>r.abort());await page.goto('/');return errors;
 }
 test('empty searches have working reset and planning shortcuts without enabling sensors',async({page})=>{
  const errors=await setup(page);await page.locator('#launch').click();await page.locator('#search').fill('no-such-object-zz');await expect(page.locator('#search-recovery')).toBeVisible();await page.locator('#search-recovery [data-help-action=clear-search]').click();await expect(page.locator('#search')).toHaveValue('');await expect(page.locator('#search')).toBeFocused();await expect(page.locator('#objects button')).not.toHaveCount(0);await expect(page.locator('#search-recovery')).toBeHidden();await page.locator('#search').fill('another-unknown-zz');await page.locator('#search-recovery [data-help-action=plan]').click();await expect(page.locator('#plan-date')).toBeFocused();await expect(page.locator('#plan-night')).toHaveAttribute('aria-pressed','true');await expect(page.locator('#sensor-status')).toHaveText('Sensors off');expect(errors).toEqual([]);
@@ -25,5 +25,9 @@ test('forecast help buttons stay in the app and open the correct location or cat
 });
 
 test('a failed star-map download leaves a direct route to the working catalogue',async({page})=>{
- const errors=await setup(page);await page.route('**/atlas-data.js*',r=>r.abort());await page.reload();await page.locator('#launch').click();await expect(page.locator('#map-recovery')).toBeVisible();await page.locator('#map-recovery [data-help-action=catalogue]').click();await expect(page.locator('#search')).toBeFocused();await expect(page.locator('#objects button')).not.toHaveCount(0);expect(errors).toEqual([]);
+ const errors=await setup(page,{mapFailure:true});await page.locator('#launch').click();await page.clock.runFor(200);await expect(page.locator('#map-recovery')).toBeVisible();await page.locator('#map-recovery [data-help-action=catalogue]').click();await expect(page.locator('#search')).toBeFocused();await expect(page.locator('#objects button')).not.toHaveCount(0);expect(errors).toEqual([]);
+});
+
+test('an empty planning date keeps the last valid sky and links back to a usable date control',async({page})=>{
+ const errors=await setup(page);await page.locator('.field-home-link').click();await page.locator('#plan-night').click();const prior=await page.locator('#jupiter-moons').getAttribute('data-epoch');await page.locator('#plan-date').fill('');await page.locator('#plan-date').dispatchEvent('change');await expect(page.locator('#plan-error')).toContainText('previous valid time is unchanged');await expect(page.locator('#time-recovery')).toBeVisible();await expect(page.locator('#jupiter-moons')).toHaveAttribute('data-epoch',prior);await page.locator('#time-recovery [data-help-action=plan]').click();await expect(page.locator('#plan-date')).toBeFocused();await page.locator('#plan-date').fill('2026-10-29');await page.locator('#plan-date').dispatchEvent('change');await expect(page.locator('#time-recovery')).toBeHidden();expect(errors).toEqual([]);
 });

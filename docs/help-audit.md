@@ -33,6 +33,10 @@ unchanged.
 - A failed lunar photograph hides its SVG and displays the existing unavailable
   label. Failed solar-system calculations clear the previous phase/rise/set display.
 
+- Invalid or empty planning dates and skipped local clock times retain the last
+  valid selection, show the real validation message, and link to date controls
+  or Now instead of passing an invalid time to other panels.
+
 ## Kept intact
 
 The shared header, brand art, main menu, permanent URL, forecast fetch/refresh code,
