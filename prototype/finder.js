@@ -2,7 +2,7 @@ import {objectStory,objectVisual} from './object-cards.js?v=field-1';
 import {viewingPlan,describe} from './eyepieces.js?v=catalogue-1';
 export function createFinder({onSetup,onMode,onStop,onSky,getKit}){
  const $=id=>document.getElementById(id);let lastId='',preferredMode='mounted';
- function modeUI(){for(const button of document.querySelectorAll('[data-finder-mode]'))button.setAttribute('aria-pressed',String(button.dataset.finderMode===preferredMode));$('finder-setup').textContent=preferredMode==='mounted'?'⌖ Align on telescope':'⌖ Align handheld';}
+ function modeUI(){for(const button of document.querySelectorAll('[data-finder-mode]'))button.setAttribute('aria-pressed',String(button.dataset.finderMode===preferredMode));$('finder-setup').textContent=preferredMode==='mounted'?'⌖ Align on telescope':'⌖ Align handheld';$('finder-mode-hint').textContent=preferredMode==='handheld'?'Point the rear camera at the sky. Follow the arrows; turn vibration on for faster pulses as you get closer.':'Guide with the phone’s top edge along the telescope tube. Follow the arrows; optional vibration helps you approach.';}
  $('finder-setup').addEventListener('click',()=>onSetup(preferredMode));$('finder-sky').addEventListener('click',onSky);$('finder-stop').addEventListener('click',onStop);
  for(const button of document.querySelectorAll('[data-finder-mode]'))button.addEventListener('click',()=>{preferredMode=button.dataset.finderMode;onMode(preferredMode);modeUI();});
  modeUI();

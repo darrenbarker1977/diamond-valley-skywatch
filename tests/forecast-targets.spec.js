@@ -12,7 +12,7 @@ test('Friday recommendations change by hemisphere, link into Navigator and follo
  await page.goto('/');await page.locator('#nav-to-forecast').click();const f=page.frameLocator('#forecast-frame');
  await f.locator('#days .day').filter({hasText:'Fri'}).click();await expect(f.locator('#target-summary')).toContainText(String(catalogue.length));await expect(f.locator('#targets .target')).toHaveCount(6);
  const northern=await f.locator('#targets .target').evaluateAll(els=>els.map(el=>el.dataset.id));
- await page.locator('#app-header [data-app-view=home]').click();await page.locator('.dv-location-search').evaluate(el=>el.open=true);await page.locator('#place-query').fill('Alice Springs');await page.getByRole('button',{name:'Search places',exact:true}).click();await page.locator('#place-results button').click();
+ await page.locator('#app-header [data-app-view=home]').click();await page.locator('#home-location-panel').evaluate(el=>el.open=true);await page.locator('.dv-location-search').evaluate(el=>el.open=true);await page.locator('#place-query').fill('Alice Springs');await page.getByRole('button',{name:'Search places',exact:true}).click();await page.locator('#place-results button').click();
  await page.locator('#nav-to-forecast').click();await f.locator('#days .day').filter({hasText:'Fri'}).click();
  await expect(f.locator('#target-summary')).toContainText('Australia/Darwin');await expect(f.locator('#targets [data-id=NGC104]')).toContainText('47 Tucanae');await expect(f.locator('#targets [data-id=Saturn]')).toBeVisible();
  const southern=await f.locator('#targets .target').evaluateAll(els=>els.map(el=>el.dataset.id));expect(southern).not.toEqual(northern);expect(southern).not.toContain('Polaris');expect(southern).not.toContain('Sun');
