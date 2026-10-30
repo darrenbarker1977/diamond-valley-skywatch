@@ -150,7 +150,7 @@ function readyPointing(mode,step,startSensors=false){
  revealReadyControl(target);
 }
 readyCheck=createReadyCheck({A,site,getContext:()=>planner.context(),getSnapshot:()=>mission.snapshot,getAwake:()=>screenAwake.snapshot,
- onLocation:()=>{document.querySelector('#app-header [data-app-view=home]').click();$('home-location-panel').open=true;revealReadyControl('use-location');},
+ onLocation:()=>{const wasOpen=dialog.open,openLocation=()=>{$('home-location-panel').open=true;revealReadyControl('use-location');};if(wasOpen)dialog.addEventListener('close',openLocation,{once:true});document.querySelector('#app-header [data-app-view=home]').click();if(!wasOpen)openLocation();},
  onPointing:readyPointing,
  onTime:action=>{if(action==='reload'){location.reload();return;}if(action==='now'){planner.now();readyCheck.refresh();return;}if(!dialog.open)$('launch').click();if(action==='tonight'){planner.now();navigation.section('mission');revealReadyControl('mission-title');}else{navigation.section('objects');$('atlas-card').open=true;revealReadyControl('atlas-title');}},
  onFind:()=>{if(!dialog.open)$('launch').click();navigation.section('finder');$('finder-target-picker').open=true;finderTargets?.refresh();revealReadyControl('finder-target-search');},
