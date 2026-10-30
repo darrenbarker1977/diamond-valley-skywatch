@@ -17,14 +17,15 @@ test('worldwide local nights respect UTC offsets and midnight',()=>{
  assert.equal(nightDate(new Date('2026-10-31T16:00Z'),'Australia/Darwin'),'2026-10-31');
  assert.deepEqual(localParts(localInstant('2026-10-30',1530,'Australia/Darwin'),'Australia/Darwin'),{date:'2026-10-31',hour:1,minute:30});
 });
+// Historical transitions keep this regression independent of future timezone-law updates.
 test('clock changes reject missing times and consistently choose an earlier repeated time',()=>{
- assert.throws(()=>localInstant('2026-03-07',1590,'America/Edmonton'),/skipped/);
- assert.equal(localInstant('2026-10-31',1530,'America/Edmonton').toISOString(),'2026-11-01T07:30:00.000Z');
+ assert.throws(()=>localInstant('2025-03-08',1590,'America/Edmonton'),/skipped/);
+ assert.equal(localInstant('2025-11-01',1530,'America/Edmonton').toISOString(),'2025-11-02T07:30:00.000Z');
  assert.throws(()=>localInstant('2026-02-30',1260,'UTC'),/valid/);
 });
 test('a repeated forecast clock hour is left unverified rather than assigned guessed weather',()=>{
- const snap=weatherSnapshot({latitude:north.latitude,longitude:north.longitude,stamp:Date.parse('2026-10-31T20:00Z'),data:{timezone:'America/Edmonton',hourly:{time:['2026-11-01T01:00','2026-11-01T01:00','2026-11-01T02:00'],cloud_cover:[10,90,20]}}},north,Date.parse('2026-10-31T20:00Z'));
- assert.equal(weatherAt(snap,new Date('2026-11-01T07:30Z')),null);assert.equal(weatherAt(snap,new Date('2026-11-01T08:30Z')),null);assert.equal(weatherAt(snap,new Date('2026-11-01T09:30Z')).cloud_cover,20);
+ const snap=weatherSnapshot({latitude:north.latitude,longitude:north.longitude,stamp:Date.parse('2025-11-01T20:00Z'),data:{timezone:'America/Edmonton',hourly:{time:['2025-11-02T01:00','2025-11-02T01:00','2025-11-02T02:00'],cloud_cover:[10,90,20]}}},north,Date.parse('2025-11-01T20:00Z'));
+ assert.equal(weatherAt(snap,new Date('2025-11-02T07:30Z')),null);assert.equal(weatherAt(snap,new Date('2025-11-02T08:30Z')),null);assert.equal(weatherAt(snap,new Date('2025-11-02T09:30Z')).cloud_cover,20);
 });
 test('Friday mission differs by hemisphere and follows actual cloud windows',()=>{
  const n=buildMission(A,{site:north,snapshot:forecast(north,north.clockTimezone),night:'2026-10-30',zone:north.clockTimezone,anchor:localInstant('2026-10-30',1260,north.clockTimezone),live:false,minutes:90});
