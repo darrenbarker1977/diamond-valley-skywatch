@@ -74,26 +74,30 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   const cameraObject=choices.find(o=>o.id===$('alignment-target').value);
   $('camera-object').textContent=verified?'Alignment checked · you can find your target now':cameraObject?(stage?'Next optional alignment object: ':'Align on: ')+cameraObject.name:'No suitable alignment object selected';
   $('camera-readiness').textContent=isDaylight?'Daylight alignment is unavailable. Return after dusk.':verified?'Alignment checked. Choose Find my target now when ready.':!session.active?'Close camera to enable pointing sensors. '+session.message:!choices.length?'Close the camera and choose a suitable alignment object.':!cameraLive?'Opening the rear camera…':!fresh||session.status!=='receiving'?'Recording disabled: '+session.message:!stable?'Hold the phone steady until Record becomes available.':!$('object-confirm').checked?(stage?'Guidance is ready. Find your target now, or centre the next optional object and confirm it below.':'Centre the identified object on the crosshair, then tick the confirmation below.'):'Steady readings received. Tap Record while the object is centred.';
-  let direction=session.status==='stale'?'Sensor readings are stale; direction arrows are off until fresh samples arrive.':'Direction arrows are off until you align on one identified object.',pose={ready:false};
+  let direction=session.status==='stale'?'Sensor readings are stale; direction arrows are off until fresh samples arrive.':'Direction arrows are off until you align on one identified object.',pose={ready:false},hapticPose={ready:false};
   let mapPose={calibrated:!!model&&session.active,ready:false,message:model?'Waiting for fresh aligned sensor readings.':'Align on an identified object in Pointing.'};
   if(model&&fresh&&session.status==='receiving'){
    const recent=session.history.filter(s=>session.now()-s.time<400);
    const quiet=recent.length>=3&&recent.every(s=>angle(s.vector,latest.vector)<4);
+   // A moving phone can guide vibration without pretending it is a steady
+   // telescope reading. Reject fast jumps and zigzag/noisy sample paths.
+   let travel=0;const smooth=recent.length>=3&&recent.slice(1).every((sample,index)=>{const previous=recent[index],delta=angle(previous.vector,sample.vector),dt=sample.time-previous.time;travel+=delta;return dt>0&&delta/dt*1000<=90;})&&travel-angle(recent[0].vector,latest.vector)<=2;
    try {
     const current=alignedDirection(model,latest.vector),now=new Date(),target=getSelected(),p=position(A,target,now),sun=position(A,catalogue.find(o=>o.id==='Sun'),now);
     // Map exploration follows the real aligned sample during movement. Telescope
     // arrows still require the separate quiet/stable check below.
     mapPose={calibrated:true,ready:true,current};
+    if(sun.alt<=-6&&target.id!=='Sun'&&angle(skyVector(p),skyVector(sun))>=30){const result=guidance(current,p);if(!result.blocked&&smooth)hapticPose={ready:true,current,...result};else hapticPose={ready:false,message:result.blocked||'Move smoothly; vibration is paused while the phone readings are noisy or too fast.'};}
     if(!quiet)direction='Hold steady briefly. Direction arrows are paused while readings are moving or noisy.';
     else if(sun.alt>-6)direction='Guidance paused until after dusk.';
     else if(target.id==='Sun'||angle(skyVector(p),skyVector(sun))<30)direction='No guidance toward the Sun or objects within 30° of it.';
     else {const result=guidance(current,p);direction=`${model.kind==='single'?'Basic one-target estimate · ':verified?'Checked alignment · ':'Two-target estimate · '}${target.name}: ${result.blocked||result.text}`;if(!result.blocked)pose={ready:true,current,quality:verified?'checked':model.kind==='single'?'basic':'refined',...result};}
-   }catch{direction='Sky calculation unavailable. Guidance is off.';mapPose={calibrated:!!model&&session.active,ready:false,message:'Aligned direction unavailable. The map is paused.'};}
+   }catch{direction='Sky calculation unavailable. Guidance is off.';hapticPose={ready:false};mapPose={calibrated:!!model&&session.active,ready:false,message:'Aligned direction unavailable. The map is paused.'};}
   }
-  if(!site.physicalConfirmed){direction='Sky viewing only. Confirm you are physically at this observing location before using sensor guidance.';pose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
-  if(!allowGuidance()){direction='Planned sky only. Return to Now and repeat alignment before using direction arrows.';pose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
-  if(isDaylight){direction='Daylight at this observing location. Alignment is paused until after dusk. Sky browsing and tour planning still work.';pose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
-  onPose({...pose,map:mapPose,message:direction,listening:session.active||session.status==='permission',mode:mode()});
+  if(!site.physicalConfirmed){direction='Sky viewing only. Confirm you are physically at this observing location before using sensor guidance.';pose={ready:false};hapticPose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
+  if(!allowGuidance()){direction='Planned sky only. Return to Now and repeat alignment before using direction arrows.';pose={ready:false};hapticPose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
+  if(isDaylight){direction='Daylight at this observing location. Alignment is paused until after dusk. Sky browsing and tour planning still work.';pose={ready:false};hapticPose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
+  onPose({...pose,map:mapPose,haptic:hapticPose,alignment:{calibrated:!!model,quality:verified?'checked':model?.kind==='single'?'basic':model?'refined':null,fresh:!!fresh,sensorStatus:session.status,mountedConfirmed:$('mount-confirm').checked},message:direction,listening:session.active||session.status==='permission',mode:mode()});
   $('guidance').textContent=direction;
   $('compact-guidance').textContent=session.active?direction:session.message+'. Open Pointing when you want to align.';
   document.querySelector('.dv-nav-alignment').hidden=verified;

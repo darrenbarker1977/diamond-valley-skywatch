@@ -10,6 +10,7 @@ export function createScreenAwake({env=window,root=document}={}){
   const label=active?'Screen awake: on':state==='requesting'?'Screen awake: starting…':state==='paused'?'Screen awake: paused':state==='unsupported'?'Screen hold unavailable':state==='blocked'||state==='released'?'Keep awake · retry':'Keep screen awake';
   for(const button of buttons){button.textContent=label;button.setAttribute('aria-pressed',String(active));button.dataset.state=state;button.title=message;}
   for(const el of statuses)if(el.textContent!==message)el.textContent=message;
+  env.dispatchEvent(new env.CustomEvent('dvsky-screen-awake',{detail:{active,state,wanted,message}}));
  }
  function save(){try{env.localStorage.setItem(key,wanted?'on':'off');}catch{}}
  function release(){
@@ -54,5 +55,5 @@ export function createScreenAwake({env=window,root=document}={}){
  function pause(){release();state=wanted?'paused':'off';message=wanted?'Screen hold paused while the app is hidden. It will be requested again when you return.':'Screen hold is off. Your usual timeout applies.';paint();}
  function resume(){if(!env.document.hidden&&wanted){gestureRetried=false;releaseRetries=1;acquire();}}
  env.document.addEventListener('visibilitychange',()=>{if(env.document.hidden)pause();else resume();});env.addEventListener('pagehide',pause);env.addEventListener('pageshow',resume);
- paint();if(wanted)acquire();return {toggle,set};
+ paint();if(wanted)acquire();return {toggle,set,get snapshot(){return {active:!!hold&&!hold.released,state,wanted,message};}};
 }
