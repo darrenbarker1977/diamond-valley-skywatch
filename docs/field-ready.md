@@ -15,6 +15,24 @@ selected pointing mode and mount confirmation. A basic alignment is explicitly
 unverified. Forecast age/coverage and the actual granted screen-hold state are
 reported separately; passing checks never promises visibility or centring.
 
+## Actionable checks
+
+Every Ready check row links to a relevant control. The location action opens the
+saved-site picker or focuses the explicit physical-presence confirmation. Sensor
+controls preserve browsing mode; a labelled Enable/Retry sensors action requests
+permission directly when the site and pointing mode are ready. Alignment links
+focus the missing step: presence, placement, sensors, or the available target
+search. A calibrated phone links straight to Find it without clearing alignment.
+Daylight offers alignment help and Plan tonight; planned time offers Return to
+Now. No shortcut confirms presence, phone placement or an astronomical object
+for the user, and daylight alignment stays disabled.
+
+Forecast opens current conditions or requests a refresh for missing/stale/offline
+weather. Screen settings opens the existing wake-lock controls when a hold is
+already granted; it does not issue a duplicate request or release the hold.
+Destinations unfold the actual controls and focus/scroll them into view so users
+do not have to hunt for the relevant step below an expanded readiness box.
+
 ## Vibration
 
 Find it has an off-by-default, session-only vibration toggle next to the guidance.

@@ -16,7 +16,7 @@ import {createFieldTools} from './field-tools.js?v=ready-1';
 import {createStarHops} from './star-hops.js';
 import {createScopeView} from './scope-view.js?v=awake-1';
 import {createScreenAwake} from './screen-awake.js?v=ready-1';
-import {createReadyCheck} from './ready-check.js';
+import {createReadyCheck} from './ready-check.js?v=shortcuts-1';
 import {createNextTarget} from './next-target.js';
 import {createFinderTargets} from './finder-targets.js';
 import {createHapticGuide} from './haptic-guide.js';
@@ -25,11 +25,11 @@ if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has(
  try{let zone=requestedQuery.get('zone')||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch{zone='UTC';}setSite({latitude:Number(requestedQuery.get('lat')),longitude:Number(requestedQuery.get('lon')),height:0,accuracy:null,source:'coordinates',label:(requestedQuery.get('name')||'Planned location').slice(0,120),clockTimezone:zone,physicalConfirmed:false});}catch{}
 }
 const $=id=>document.getElementById(id), dialog=$('navigator');
-let readyCheck=null,nextTarget=null,haptics=null,finderTargets=null;
+let readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null;
 let selected='Moon',desiredTarget='Moon',filter='all',timer,positions=new Map(),livePositions=new Map(),atlas=null,finder=null,planner=null,mission=null,locationUI=null,field=null,hops=null,lastDetail='',calculationTime=new Date();
 const A=globalThis.Astronomy;
 const equipment=createEquipment(()=>{if(positions.size)render();pointing.refresh();mission?.refresh();nextTarget?.refresh();readyCheck?.refresh();});
-const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:()=>{if(desiredTarget!=='Sun'&&catalogue.some(o=>o.id===desiredTarget)){selected=desiredTarget;if(positions.size)render();}},allowGuidance:()=>!planner?.planning,onPose:state=>{atlas?.pose(state);finder?.pose(state);hops?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
+const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:()=>{if(desiredTarget!=='Sun'&&catalogue.some(o=>o.id===desiredTarget)){selected=desiredTarget;if(positions.size)render();}},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;atlas?.pose(state);finder?.pose(state);hops?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
 atlas=createSkyAtlas({A,site,catalogue,onSelect:id=>chooseObject(id)});
 function setPointingMode(mode){if($('pointing-mode').value!==mode){$('pointing-mode').value=mode;$('pointing-mode').dispatchEvent(new Event('change'));}}
 finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>{setPointingMode(mode);navigation.section('pointing');},onMode:setPointingMode,onStop:()=>pointing.suspend(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;}});
@@ -41,7 +41,7 @@ createLiveCompass();createDiscovery();
 planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,onChange:()=>{
  if(planner.planning)pointing.suspend('Planned sky only. Return to Now and repeat alignment before using direction arrows.');
  if(mission?.active||planner.planning)mission?.activate();
- if(dialog.open)update();field?.refresh();
+ if(dialog.open)update();field?.refresh();readyCheck?.refresh();
 }});
 mission=createNightMission({A,site,getContext:()=>planner.context(),getKit:()=>equipment.current(),ensureForecast:()=>navigation.ensureForecast(),onLive:id=>{
  selected=desiredTarget=id;planner.now();if(dialog.open)update();else $('launch').click();navigation.section('finder');
@@ -124,7 +124,40 @@ const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>poin
 }});
 locationUI=createLocation(()=>{pointing.suspend('Observing location changed. Repeat alignment at this location.');atlas.locationChanged();navigation.locationChanged();mission.locationChanged();field.locationChanged();planner.refresh();readyCheck?.refresh();nextTarget?.refresh();haptics?.reset();if(dialog.open)update();});
 
-readyCheck=createReadyCheck({A,site,getContext:()=>planner.context(),getSnapshot:()=>mission.snapshot,getAwake:()=>screenAwake.snapshot,onLocation:()=>{document.querySelector('#app-header [data-app-view=home]').click();$('home-location-panel').open=true;$('home-location-panel').scrollIntoView({block:'center'});},onPointing:mode=>{if(!dialog.open)$('launch').click();navigation.section('pointing');setPointingMode(mode);},onWeather:()=>$('nav-to-forecast').click(),onAwake:()=>screenAwake.set(true)});
+function revealReadyControl(id){
+ const control=$(id);if(!control||control.hidden)return;
+ if(!control.matches('button,input,select,a[href]'))control.tabIndex=-1;
+ control.focus({preventScroll:true});control.scrollIntoView({block:'center'});
+}
+function readyPointing(mode,step,startSensors=false){
+ if(!dialog.open)$('launch').click();navigation.section('pointing');if(mode)setPointingMode(mode);
+ $('pointing-setup').open=true;let target='pointing-mode';
+ if(step==='location')target='location-present';
+ else if(step==='daylight')target=$('alignment-daylight').hidden?'alignment-help':'alignment-daylight';
+ else if(step==='placement')target=$('pointing-mode').value==='mounted'?'mount-confirm':'setup-help';
+ else if(step==='sensors'){
+  if(!site.physicalConfirmed)target='location-present';
+  else if(startSensors&&!$('enable-sensors').disabled){$('enable-sensors').click();$('pointing-setup').open=true;target='sensor-status';}
+  else target=$('enable-sensors').disabled?'sensor-status':'enable-sensors';
+ }else if(step==='alignment'){
+  if(!site.physicalConfirmed)target='location-present';
+  else if(!$('alignment-daylight').hidden)target='alignment-daylight';
+  else if($('pointing-mode').value==='mounted'&&!$('mount-confirm').checked)target='mount-confirm';
+  else if(!currentPointing?.alignment?.fresh||currentPointing.alignment.sensorStatus!=='receiving')target=$('enable-sensors').disabled?'sensor-status':'enable-sensors';
+  else if(document.querySelector('.dv-nav-alignment').hidden)target='guidance';
+  else target=$('alignment-target').disabled?'alignment-help':'alignment-search';
+ }
+ revealReadyControl(target);
+}
+readyCheck=createReadyCheck({A,site,getContext:()=>planner.context(),getSnapshot:()=>mission.snapshot,getAwake:()=>screenAwake.snapshot,
+ onLocation:()=>{const wasOpen=dialog.open,openLocation=()=>{$('home-location-panel').open=true;revealReadyControl('use-location');};if(wasOpen)dialog.addEventListener('close',openLocation,{once:true});document.querySelector('#app-header [data-app-view=home]').click();if(!wasOpen)openLocation();},
+ onPointing:readyPointing,
+ onTime:action=>{if(action==='reload'){location.reload();return;}if(action==='now'){planner.now();readyCheck.refresh();return;}if(!dialog.open)$('launch').click();if(action==='tonight'){planner.now();navigation.section('mission');revealReadyControl('mission-title');}else{navigation.section('objects');$('atlas-card').open=true;revealReadyControl('atlas-title');}},
+ onFind:()=>{if(!dialog.open)$('launch').click();navigation.section('finder');$('finder-target-picker').open=true;finderTargets?.refresh();revealReadyControl('finder-target-search');},
+ onWeather:refresh=>{$('nav-to-forecast').click();const frame=$('forecast-frame');if(refresh)frame.contentWindow?.postMessage({type:'dvsky-weather-refresh'},location.origin);},
+ onAwake:action=>{if(action==='settings'){$('screen-awake-info').open=true;revealReadyControl('screen-awake-auto');}else screenAwake.set(true);}
+});
+if(currentPointing)readyCheck.pose(currentPointing);
 function findLiveTarget(id){haptics.reset();selected=desiredTarget=id;planner.now();update();navigation.section('finder');}
 finderTargets=createFinderTargets({A,site,getSelected:()=>selected,onSelect:findLiveTarget});
 nextTarget=createNextTarget({A,site,getKit:()=>equipment.current(),getSelected:()=>selected,getSnapshot:()=>mission.snapshot,onSelect:findLiveTarget});
