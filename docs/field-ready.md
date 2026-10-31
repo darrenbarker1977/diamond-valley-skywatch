@@ -35,14 +35,17 @@ do not have to hunt for the relevant step below an expanded readiness box.
 
 ## Vibration
 
-Find it has an off-by-default, session-only vibration toggle next to the guidance.
+Find it starts vibration automatically after a successful alignment when supported.
+Its toggle is next to the guidance, and an explicit off choice is saved locally
+and respected on target changes, later visits and reloads. A setup checkbox can
+change this preference too. No saved preference restores an alignment.
 It works for handheld and mounted pointing in browsers supporting Vibration API.
 Only a fresh, safe aligned haptic pose can trigger a pulse; the compass alone
 cannot. Sensor noise/staleness, daylight, invalid alignment, Sun separation,
 overhead/below-horizon restrictions and remote/planning contexts retain their
 existing guidance guards. Leaving Find it, hiding the app or turning the toggle
-off cancels vibration. Smooth moving samples can drive haptics while telescope arrows retain their
-separate steady-reading guard. The haptic sample path needs at least three
+off cancels vibration. Arrows and haptics share the smooth-motion guard;
+alignment capture retains its separate one-second steady hold. The guidance path needs at least three
 fresh samples, no segment faster than 90°/second, and no more than 2° of
 zigzag excess over direct displacement. No timer extrapolates missing measurements.
 

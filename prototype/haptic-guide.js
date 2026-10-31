@@ -4,7 +4,9 @@ export function warmth(error){
 }
 export function createHapticGuide({env=window,root=document}={}){
  const button=root.getElementById('finder-vibration'),status=root.getElementById('vibration-status');let enabled=false,active=false,pose=null,last=-Infinity,buzzing=false,anchor=null,trend='';
- const supported=typeof env.navigator.vibrate==='function';
+ const supported=typeof env.navigator.vibrate==='function',autoControl=root.getElementById('guidance-vibration-auto'),preferenceKey='dvsky:vibration:auto:v1';let automatic=true;try{automatic=env.localStorage.getItem(preferenceKey)!=='off';}catch{}
+ if(autoControl)autoControl.checked=automatic;
+ function saveAutomatic(value){automatic=value;if(autoControl)autoControl.checked=value;try{env.localStorage.setItem(preferenceKey,value?'on':'off');}catch{}}
  const text=value=>{if(status.textContent!==value)status.textContent=value;};
  function stop(){if(buzzing){try{env.navigator.vibrate(0);}catch{}}buzzing=false;last=-Infinity;anchor=null;trend='';}
  function paint(){button.setAttribute('aria-pressed',String(enabled));button.textContent=enabled?'Vibration guidance: on':'Vibration guidance: off';button.disabled=!supported;}
@@ -19,9 +21,11 @@ export function createHapticGuide({env=window,root=document}={}){
   try{if(env.navigator.vibrate(band.pattern)===false)throw Error('Vibration was refused.');last=now;buzzing=true;}
   catch{enabled=false;stop();paint();text('Vibration unavailable or blocked by this phone. Direction arrows remain available.');}
  }
- button.addEventListener('click',()=>{enabled=!enabled;paint();stop();if(!enabled)text('Vibration is off. Direction arrows still work.');else update();});
+ button.addEventListener('click',()=>{enabled=!enabled;saveAutomatic(enabled);paint();stop();if(!enabled)text('Vibration is off. Direction arrows still work.');else update();});
+ autoControl?.addEventListener('change',()=>{saveAutomatic(autoControl.checked);if(!automatic){enabled=false;stop();paint();text('Vibration is off. Direction arrows still work.');}});
+ function start(){if(!automatic||!supported)return;enabled=true;paint();update();}
  env.document.addEventListener('visibilitychange',()=>{if(env.document.hidden){stop();pose=null;if(enabled)text('Vibration paused while the app is hidden. Fresh alignment is required on return.');}});
  env.addEventListener('pagehide',()=>{stop();pose=null;});
  paint();text(supported?'Optional · faster pulses mean closer to the aligned phone estimate. No vibration until guidance is ready.':'This browser does not support vibration. Direction arrows still work.');
- return {pose:update,activate(value){active=value;if(!active){stop();pose=null;if(enabled)text('Vibration paused outside Find it.');}},reset(){stop();pose=null;}};
+ return {start,pose:update,activate(value){active=value;if(!active){stop();pose=null;if(enabled)text('Vibration paused outside Find it.');}},reset(){stop();pose=null;}};
 }
