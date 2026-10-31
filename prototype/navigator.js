@@ -125,8 +125,9 @@ const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>poin
  if(name!=='finder')scopeView.exit();
  readyCheck?.place(dialog.open);haptics?.activate(name==='finder'&&dialog.open);
  if(['finder','pointing'].includes(name)&&planner.planning)planner.now();
+ if(name==='pointing')$('pointing-destination').textContent='Your destination: '+catalogue.find(o=>o.id===desiredTarget).name+'. Align on one known bright object, then return here to find your destination.';
  if(name==='finder'&&selected!==desiredTarget){selected=desiredTarget;if(positions.size)render();}
- if(name==='finder'&&currentPointing?.alignment?.calibrated){haptics?.start();atlas?.follow();}
+ if(name==='finder'){if(currentPointing?.alignment?.calibrated){haptics?.start();atlas?.follow();}else atlas?.centerTarget();}
  if(name==='mission')mission.activate();if(name==='field')field.activate();else field.deactivate();
 }});
 locationUI=createLocation(()=>{pointing.suspend('Observing location changed. Repeat alignment at this location.');atlas.locationChanged();navigation.locationChanged();mission.locationChanged();field.locationChanged();planner.refresh();readyCheck?.refresh();nextTarget?.refresh();haptics?.reset();if(dialog.open)update();});

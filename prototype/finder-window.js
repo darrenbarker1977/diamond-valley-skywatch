@@ -13,7 +13,7 @@ export function createFinderWindow({onExpand,onClose,env=window,root=document}){
   if(cameraPending)say('Requesting the rear camera… You can keep using Live sky.');
   else if(cameraError)say(cameraError+' Live sky and setup remain available.');
   else if(view==='camera')say('Local rear camera with coarse sensor guidance. The app does not recognise objects or verify centring. Nothing is recorded or uploaded.');
-  else say(pose?.mode==='mounted'?'Live sky follows the phone’s top edge along the telescope after alignment. Use the finder and eyepiece to confirm the object.':aligned?'Live sky follows the aligned rear-camera direction. Rear camera is optional; arrows and pulses use the same checked phone readings.':'Choose a target, then align on one known bright object. The preview is not a measured phone direction.');
+  else say(pose?.mode==='mounted'?'Mounted guidance follows the phone’s top edge along the tube. Rear camera is for handheld mode; use the telescope finder and eyepiece to confirm the object.':aligned?'Live sky follows the aligned rear-camera direction. Rear camera is optional; arrows and pulses use the same checked phone readings.':'Choose a target, then align on one known bright object. The preview is not a measured phone direction.');
  }
  function stopCamera(message=''){
   generation++;cameraPending=false;if(stream)stream.getTracks().forEach(track=>track.stop());stream=null;video.srcObject=null;view='sky';cameraError=message;paint();
@@ -43,7 +43,7 @@ export function createFinderWindow({onExpand,onClose,env=window,root=document}){
    else{stopCamera();home.insertBefore(stage,anchor);canvas.tabIndex=0;canvas.setAttribute('aria-label',originalLabel);}
    paint();
   },
-  pose(state){pose=state;if((state.mode==='mounted'||!state.listening)&&(stream||cameraPending))stopCamera();else paint();},
+  pose(state){const changed=pose&&state.mode!==pose.mode;pose=state;if(changed||(!state.listening&&(stream||cameraPending||cameraError)))stopCamera();else paint();},
   stopCamera
  };
 }

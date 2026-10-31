@@ -1,7 +1,7 @@
 import {objectStory,objectVisual} from './object-cards.js?v=field-1';
 import {viewingPlan,describe} from './eyepieces.js?v=catalogue-1';
 export function createFinder({onSetup,onMode,onStop,onSky,onAdvance,onPick,getKit}){
- const $=id=>document.getElementById(id);let lastId='',preferredMode='mounted';
+ const $=id=>document.getElementById(id);let lastId='',preferredMode=$('pointing-mode').value;
  function modeUI(){for(const button of document.querySelectorAll('[data-finder-mode]'))button.setAttribute('aria-pressed',String(button.dataset.finderMode===preferredMode));$('finder-setup').textContent=preferredMode==='mounted'?'⌖ Align on telescope':'⌖ Align handheld';$('finder-mode-hint').textContent=(preferredMode==='handheld'?'Point the rear camera at the sky.':'Guide with the phone’s top edge along the telescope tube.')+(typeof navigator.vibrate==='function'?' Follow the arrows; optional vibration gives faster pulses as you get closer.':' Follow the arrows; vibration is unavailable in this browser.');}
  $('finder-setup').addEventListener('click',()=>onSetup(preferredMode));$('finder-sky').addEventListener('click',onSky);$('finder-stop').addEventListener('click',onStop);
  for(const button of document.querySelectorAll('[data-finder-mode]'))button.addEventListener('click',()=>{preferredMode=button.dataset.finderMode;onMode(preferredMode);modeUI();});
@@ -23,7 +23,7 @@ export function createFinder({onSetup,onMode,onStop,onSky,onAdvance,onPick,getKi
    $('finder-setup').disabled=object.id==='Sun';
   },
   pose(state){
-   if(state.listening&&state.mode&&state.mode!==preferredMode){preferredMode=state.mode;modeUI();}
+   if(state.mode&&state.mode!==preferredMode){preferredMode=state.mode;modeUI();}
    $('finder-stop').disabled=!state.listening;
    const ready=!!state.ready,aligned=!!state.alignment?.calibrated,quality=state.alignment?.quality||state.quality;
    $('finder-arrows').hidden=!ready;$('finder-locked').hidden=ready;
@@ -31,7 +31,7 @@ export function createFinder({onSetup,onMode,onStop,onSky,onAdvance,onPick,getKi
    const level=quality==='basic'?'ONE-TARGET BASIC · ACCURACY UNVERIFIED':quality==='refined'?'TWO-TARGET REFINED · CHECK OPTIONAL':'CHECKED ALIGNMENT · LIVE SENSOR ESTIMATE';
    set('finder-session',aligned?(ready?'LIVE GUIDANCE · ':'ALIGNMENT RETAINED · PAUSED · ')+level:state.listening?'SENSORS ON · ONE OBJECT STILL NEEDED':'LIVE SKY · POINTING SETUP REQUIRED');
    const reason=state.guidanceStatus;
-   const primary=reason==='daylight'?'Plan tonight · alignment after dusk':aligned?(['live','below-horizon','overhead','unsafe'].includes(reason)?'Choose a visible target':'Resume sensor readings'):reason==='presence'?'Confirm this observing location':!state.listening?'Set up sensors & one-object alignment':'Record one bright object · start finding';
+   const primary=reason==='daylight'?'Plan tonight · alignment after dusk':aligned?(['live','below-horizon','overhead','unsafe'].includes(reason)?'Choose a visible target':reason==='noisy'?'Check sensor readings':'Resume sensor readings'):reason==='presence'?'Confirm this observing location':!state.listening?'Set up sensors & one-object alignment':'Record one bright object · start finding';
    set('finder-primary',primary);
    $('finder-reticle').hidden=!ready;$('finder-turn-arrow').hidden=!ready||state.error<=3;
    if(ready){const x=state.azDelta*Math.cos((state.current?.alt||0)*Math.PI/180),y=state.altDelta;$('finder-turn-arrow').style.transform=`rotate(${Math.atan2(x,y)*180/Math.PI}deg)`;}
