@@ -1,4 +1,4 @@
-import {buildMission,targetAssessment,missionStopCount} from './mission-engine.js?v=tour-1';
+import {buildMission,targetAssessment,missionStopCount} from './mission-engine.js?v=twilight-1';
 import {createMissionDuration} from './mission-duration.js';
 import {savedWeather,weatherSnapshot,weatherKey,coordinateKey,assessWeather,weatherAt} from './mission-weather.js';
 import {localLabel,shortClock,nightDate} from './observing-time.js';
@@ -35,13 +35,15 @@ export function createNightMission({A,site,getContext,getKit,ensureForecast,onLi
    if(choice&&plan.steps[1])item.append(node('p','Find it first with '+describe(plan.steps[0].choice)+'.','mission-position'));
    const compass=['N','NE','E','SE','S','SW','W','NW'][Math.round(step.az/45)%8];
    item.append(node('p',`${compass} · ${Math.round(step.alt)}° up at this stop`,'mission-position'));
+   const light=step.sunAltitude>-10?'Twilight · bright Moon or planet stop':step.sunAltitude>-12?'Late twilight · bright-star stop':step.sunAltitude>-18?'Fading twilight · sky still darkening':'After twilight · Moon and local lights still affect darkness';
+   const sky=node('p','Sky at this scheduled stop: '+light,'mission-position mission-light');sky.dataset.sunAltitude=String(step.sunAltitude);item.append(sky);
    const outlook=assessWeather(step.weather);item.dataset.weather=outlook.known?(outlook.usable?'suitable':'caution'):'unknown';item.append(node('p',outlook.known?outlook.reason:'Weather unavailable for this stop · visibility unconfirmed.',outlook.usable?'mission-position':'mission-wait'));
    const extra=node('details',undefined,'mission-object-notes');extra.dataset.object=object.id;extra.open=openIds.has(object.id);extra.append(node('summary','What to look for'),objectVisual(object),node('p',objectStory(object).expect));item.append(extra);
    const controls=node('div',undefined,'mission-stop-actions'),find=node('button','⌖ Find now'),preview=node('button','Preview this sky');find.type=preview.type='button';
    const state=assessment(object.id);find.disabled=!state.usable;find.title=state.usable?'Use current sky positions. '+state.reason:state.reason;
    find.dataset.missionAction='live';preview.dataset.missionAction='preview';find.dataset.object=preview.dataset.object=object.id;
    find.addEventListener('click',()=>choose(object.id));preview.addEventListener('click',()=>onPreview(object.id,step.date));controls.append(find,preview);item.append(controls);
-   if(!state.usable)item.append(node('p','Find now is unavailable: '+state.reason,'mission-wait'));
+   if(!state.usable)item.append(node('p',`Find now checks the live sky (${shortClock(new Date(),c.zone)}): ${state.reason} The time above is the scheduled tour stop.`,'mission-wait'));
    items.push(item);
   }
   $('mission-stops').replaceChildren(...items);

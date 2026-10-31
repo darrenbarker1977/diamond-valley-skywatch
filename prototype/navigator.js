@@ -12,7 +12,7 @@ import {createFinderWindow} from './finder-window.js?v=practice-1';
 import {createFinder} from './finder.js?v=practice-1';
 import {objectVisual,objectStory,discoveryNote} from './object-cards.js?v=field-1';
 import {createPlanner} from './planner.js?v=aiming-1';
-import {createNightMission} from './night-mission.js?v=tour-1';
+import {createNightMission} from './night-mission.js?v=twilight-1';
 import {localParts,nightDate,addDays} from './observing-time.js';
 import {createLiveCompass} from './live-compass.js?v=field-1';
 import {createDiscovery} from './discovery.js';
