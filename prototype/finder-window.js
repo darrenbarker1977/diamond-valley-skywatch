@@ -1,5 +1,5 @@
 // One shared atlas, moved into the finder. No simulated pose or camera fallback.
-export function createFinderWindow({onExpand,onClose,env=window,root=document}){
+export function createFinderWindow({onExpand,onClose,getContext=()=>null,env=window,root=document}){
  const $=id=>root.getElementById(id),stage=root.querySelector('.atlas-stage'),home=stage.parentElement,anchor=stage.nextSibling,canvas=$('sky-canvas'),video=$('finder-live-camera');
  const originalLabel=canvas.getAttribute('aria-label');let active=false,pose=null,stream=null,generation=0,cameraPending=false,view='sky',cameraError='';
  function say(text){if($('finder-view-status').textContent!==text)$('finder-view-status').textContent=text;}
@@ -9,7 +9,8 @@ export function createFinderWindow({onExpand,onClose,env=window,root=document}){
   $('finder-view-camera').disabled=cameraPending||pose?.practice||pose?.mode==='mounted';
   $('finder-map-slot').hidden=view==='camera';video.hidden=view!=='camera';
   $('finder-live-stage').dataset.view=view;$('finder-live-stage').dataset.tracking=aligned&&measured?'live':aligned?'paused':'preview';
-  $('finder-view-badge').textContent=pose?.practice?'PRACTICE SKY · ASSUMED REFERENCE':view==='camera'?'Rear camera · phone estimate':aligned?(measured?'Live aligned sky':'Paused · last sky view'):'Calculated sky preview · align to follow';
+  const context=getContext(),practiceClock=context?.practice?new Intl.DateTimeFormat('en-CA',{timeZone:context.zone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(context.instant):'';
+  $('finder-view-badge').textContent=pose?.practice?'PRACTICE · ASSUMED · '+practiceClock:view==='camera'?'Rear camera · phone estimate':aligned?(measured?'Live aligned sky':'Paused · last sky view'):'Calculated sky preview · align to follow';
   if(cameraPending)say('Requesting the rear camera… You can keep using Live sky.');
   else if(cameraError)say(cameraError+' Live sky and setup remain available.');
   else if(view==='camera')say('Local rear camera with coarse sensor guidance. The app does not recognise objects or verify centring. Nothing is recorded or uploaded.');

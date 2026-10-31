@@ -11,7 +11,7 @@ export function createFinder({onSetup,onMode,onStop,onSky,onAdvance,onPick,getKi
  return {get mode(){return preferredMode;},
   target(object,p,context={}){
    if(lastId!==object.id){$('finder-photo').replaceChildren(objectVisual(object));lastId=object.id;}
-   set('finder-tracking-label','Target: '+object.name+(context.practice?' · PRACTICE · '+new Intl.DateTimeFormat('en-CA',{timeZone:context.zone,dateStyle:'short',timeStyle:'short'}).format(context.instant):' · live sky'));
+   set('finder-tracking-label','Target: '+object.name+(context.practice?' · PRACTICE sky':' · live sky'));
    set('finder-name',object.name);set('finder-type',object.id===object.name?object.type:object.id+' · '+object.type);
    const compass=['N','NE','E','SE','S','SW','W','NW'][Math.round(p.az/45)%8];
    set('finder-destination',object.id==='Sun'?'Solar target · telescope guidance disabled':p.alt>0?`Look toward ${compass} · ${p.alt.toFixed(0)}° above the horizon`:'Below the horizon at this observing location');

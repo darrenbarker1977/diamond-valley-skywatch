@@ -44,7 +44,7 @@ hops=createStarHops({catalogue,onRoute:ids=>{planner.now();navigation.section('o
 const screenAwake=createScreenAwake();
 haptics=createHapticGuide();
 const scopeView=createScopeView();
-liveWindow=createFinderWindow({onExpand:()=>$('finder-scope-view').click(),onClose:()=>$('finder-sky').click()});
+liveWindow=createFinderWindow({getContext:()=>practice?.context(),onExpand:()=>$('finder-scope-view').click(),onClose:()=>$('finder-sky').click()});
 createLiveCompass();createDiscovery();
 planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,onChange:()=>{
  if(planner.planning)practice?.stop();
