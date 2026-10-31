@@ -35,7 +35,7 @@ export function createNightMission({A,site,getContext,getKit,ensureForecast,onLi
    if(choice&&plan.steps[1])item.append(node('p','Find it first with '+describe(plan.steps[0].choice)+'.','mission-position'));
    const compass=['N','NE','E','SE','S','SW','W','NW'][Math.round(step.az/45)%8];
    item.append(node('p',`${compass} · ${Math.round(step.alt)}° up at this stop`,'mission-position'));
-   const light=step.sunAltitude>-10?'Twilight · bright Moon or planet stop':step.sunAltitude>-12?'Late twilight · bright-star stop':step.sunAltitude>-18?'Fading twilight · sky still darkening':'After twilight · Moon and local lights still affect darkness';
+   const light=step.sunAltitude>-10?'Twilight · bright Moon or planet stop':step.sunAltitude>-12?'Dim twilight · some daylight remains':step.sunAltitude>-18?'Faint twilight · some daylight remains':'No twilight · Moon and local lights still affect darkness';
    const sky=node('p','Sky at this scheduled stop: '+light,'mission-position mission-light');sky.dataset.sunAltitude=String(step.sunAltitude);item.append(sky);
    const outlook=assessWeather(step.weather);item.dataset.weather=outlook.known?(outlook.usable?'suitable':'caution'):'unknown';item.append(node('p',outlook.known?outlook.reason:'Weather unavailable for this stop · visibility unconfirmed.',outlook.usable?'mission-position':'mission-wait'));
    const extra=node('details',undefined,'mission-object-notes');extra.dataset.object=object.id;extra.open=openIds.has(object.id);extra.append(node('summary','What to look for'),objectVisual(object),node('p',objectStory(object).expect));item.append(extra);
