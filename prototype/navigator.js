@@ -21,7 +21,7 @@ import {createScreenAwake} from './screen-awake.js?v=dismiss-1';
 import {createReadyCheck} from './ready-check.js?v=window-1';
 import {createNextTarget} from './next-target.js';
 import {createFinderTargets} from './finder-targets.js';
-import {createHapticGuide} from './haptic-guide.js?v=window-1';
+import {createHapticGuide} from './haptic-guide.js?v=pulse-1';
 import {createContextHelp} from './context-help.js';
 const requestedQuery=new URLSearchParams(location.search);
 if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has('lon')){

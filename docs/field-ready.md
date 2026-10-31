@@ -52,8 +52,23 @@ zigzag excess over direct displacement. No timer extrapolates missing measuremen
 Distance bands are above 30°, 15–30°, 7–15°, 3–7°, and within the coarse 3°
 estimate. Pulses get faster through the first four bands. A gentle double pulse
 near the target means check the finder; it is never labelled a lock or a centred
-object. Browser refusal turns vibration off with an explicit message. Physical
+object. Browser refusal pauses requests with an explicit blocked message while preserving
+the chosen on/off preference. A user-tapped Test pulse can retry it. Physical
 phone vibration and sensor interference must still be checked outdoors.
+
+The live window has a mirrored toggle, current pulse status and Test pulse button.
+The setup checkbox enables the setting immediately when switched on. Normal
+pulses are 60–90 ms, with a 75/100/75 ms near-target double pulse. The rate still
+gets faster through the first four bands. Android controls actual motor strength.
+
+Test pulse is independent of target guidance: it requests 160/100/160 ms, labels
+it as a phone check, and does not enable guidance or change an off preference.
+Normal pose updates cannot cancel the test midway. Leaving/hiding the view or
+turning guidance off cancels it. After 460 ms, actual safe guidance may resume.
+The status distinguishes API refusal, unsupported browsers and accepted requests;
+it never claims physical vibration is verified. Silent/DND and system vibration
+settings can suppress hardware despite a successful request. See the folded
+phone/browser help. Source: MDN Navigator.vibrate documentation.
 
 ## Show me another
 
