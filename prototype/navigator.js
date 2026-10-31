@@ -52,7 +52,7 @@ planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,o
  if(mission?.active||planner.planning)mission?.activate();
  if(dialog.open)update();field?.refresh();readyCheck?.refresh();
 }});
-practice=createPractice({getZone:()=>site.clockTimezone,sunAltitude:time=>position(A,catalogue.find(o=>o.id==='Sun'),time).alt,onChange:()=>{if(practice.active)setPointingMode('handheld');pointing.suspend('Sky time changed. Practice alignment is cleared; repeat setup for this clock.');haptics.reset();if(practice.active)planner.now();if(dialog.open)update();},onSetup:()=>openWalkthrough()});
+practice=createPractice({getZone:()=>site.clockTimezone,sunAltitude:time=>position(A,catalogue.find(o=>o.id==='Sun'),time).alt,onChange:()=>{if(practice.active)setPointingMode('handheld');pointing.suspend('Sky time changed. Practice alignment is cleared; repeat setup for this clock.');haptics.reset();if(practice.active)planner.now();if(dialog.open)update();},onSetup:()=>openWalkthrough('sensors')});
 mission=createNightMission({A,site,getContext:()=>planner.context(),getKit:()=>equipment.current(),ensureForecast:()=>navigation.ensureForecast(),onLive:id=>{
  setTransition('');selected=desiredTarget=id;planner.now();if(currentPointing?.alignment?.calibrated)startLiveGuidance();else openWalkthrough('capture');
 },onPreview:(id,time)=>{

@@ -22,5 +22,5 @@ export function createPractice({getZone,sunAltitude,onChange,onSetup}){
  function open(){ $('practice-settings').open=true;$('practice-date').focus();$('practice-settings').scrollIntoView({block:'center'}); }
  $('practice-start').addEventListener('click',start);$('practice-live').addEventListener('click',stop);$('practice-finder-live').addEventListener('click',stop);$('walk-practice').addEventListener('click',open);
  $('practice-dark').addEventListener('click',()=>{try{const time=findDarkTime(input(),sunAltitude);if(!time)throw Error('No dark interval found here in the next 48 hours. Try another season or location.');const p=localParts(time,getZone());$('practice-date').value=p.date;$('practice-time').value=String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');$('practice-error').textContent='Dark sky time selected. This is an astronomy check, not a weather recommendation. Tap Start to apply it.';}catch(error){$('practice-error').textContent=error.message;}});
- paint();return {stop,open,get active(){return active;},context(){return {practice:active,instant:active?new Date(instant):new Date()};}};
+ paint();return {stop,open,get active(){return active;},context(){return {practice:active,zone:getZone(),instant:active?new Date(instant):new Date()};}};
 }
