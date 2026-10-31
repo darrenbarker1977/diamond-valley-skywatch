@@ -8,7 +8,7 @@ const duskObjects=new Set(['Moon','Venus','Jupiter','Saturn','Mars','Mercury']);
 // Tour recommendations wait for easier beginner conditions. Manual finding
 // retains the existing live-sky checks, so these are not alignment permissions.
 function tourCandidates(A,site,time){
- return rankTargets(A,site,[time]).filter(item=>item.sunAltitude<=(duskObjects.has(item.object.id)?-6:['Star','Double star'].includes(item.object.type)?-10:-12));
+ return rankTargets(A,site,[time]).filter(item=>item.alt<=80&&item.sunAltitude<=(duskObjects.has(item.object.id)?-6:['Star','Double star'].includes(item.object.type)?-10:-12));
 }
 export function missionStopCount(minutes){
  if(!Number.isInteger(minutes)||minutes<1||minutes>719)throw Error('Choose a duration of at least one minute, up to 11 hours 59 minutes.');
@@ -23,7 +23,7 @@ export function targetAssessment(A,site,snapshot,id,time){
  const object=catalogue.find(o=>o.id===id);if(!object)return {usable:false,reason:'Choose a catalogue object.'};
  const position=positionFor(A,object,new Date(time),site),sun=positionFor(A,{body:'Sun'},new Date(time),site),weather=localWeather(snapshot,site,time),outlook=assessWeather(weather);
  const candidate=rankTargets(A,site,[new Date(time)]).find(item=>item.object.id===id);
- return {usable:!!candidate,position,weather,outlook,reason:candidate?outlook.reason:sun.alt>-6?'It is still daylight or bright twilight at this location.':position.alt<=0?'This target is now below your horizon.':position.alt<20?'This target is now too low for a beginner tour.':'Moon interference or Sun-separation checks make another target a better choice.'};
+ return {usable:!!candidate&&position.alt<=80,position,weather,outlook,reason:sun.alt>-6?'It is still daylight or bright twilight at this location.':position.alt>80?'This target is too close to overhead for reliable left/right guidance. Choose a lower target or wait.':candidate?outlook.reason:position.alt<=0?'This target is now below your horizon.':position.alt<20?'This target is now too low for a beginner tour.':'Moon interference or Sun-separation checks make another target a better choice.'};
 }
 export function buildMission(A,{site,snapshot,night,anchor,zone,live=true,minutes=90,excluded=[],endAt=null,maxStops=5}){
  if(!A)throw Error('The astronomy library did not load.');

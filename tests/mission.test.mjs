@@ -33,7 +33,7 @@ test('Friday mission differs by hemisphere and follows actual cloud windows',()=
  assert.ok(n.steps.length>=3&&s.steps.length>=3);assert.notDeepEqual(n.steps.map(t=>t.object.id),s.steps.map(t=>t.object.id));
  assert.ok(!n.steps.some(t=>['NGC104','PGC17223'].includes(t.object.id)));
  assert.ok(s.steps.some(t=>t.object.id==='NGC104'));
- for(const plan of [n,s]){assert.ok(plan.steps.length<=5);assert.equal(new Set(plan.steps.map(t=>t.object.id)).size,plan.steps.length);for(const stop of plan.steps){assert.ok(stop.alt>=20);assert.notEqual(stop.object.id,'Sun');}}
+ for(const plan of [n,s]){assert.ok(plan.steps.length<=5);assert.equal(new Set(plan.steps.map(t=>t.object.id)).size,plan.steps.length);for(const stop of plan.steps){assert.ok(stop.alt>=20&&stop.alt<=80);assert.notEqual(stop.object.id,'Sun');}}
  const cloudy=buildMission(A,{site:north,snapshot:forecast(north,north.clockTimezone,95),night:'2026-10-30',zone:north.clockTimezone,anchor:localInstant('2026-10-30',1260,north.clockTimezone),live:false,minutes:90});assert.ok(cloudy.steps.length>=3);assert.equal(cloudy.weatherCaution,true);assert.ok(cloudy.steps.every(s=>s.weather.cloud_cover===95));
 });
 test('unknown weather, wrong locations and uncovered nights keep real sky tours without invented conditions',()=>{
@@ -88,4 +88,9 @@ test('beginner tours wait for dimmer twilight for stars while retaining dusk pla
  // bright double star manually once the ordinary dusk checks are met.
  assert.equal(targetAssessment(A,site,null,'Albireo',localInstant(night,1145,zone)).usable,true);
  assert.match(targetAssessment(A,site,null,'Albireo',localInstant(night,1054,zone)).reason,/daylight or bright twilight/);
+});
+
+test('tour candidates stay out of the finder overhead exclusion zone',()=>{
+ const time=new Date('2026-11-01T01:36:00Z'),state=targetAssessment(A,north,null,'M39',time);assert.ok(state.position.alt>80);assert.equal(state.usable,false);assert.match(state.reason,/overhead/);
+ const tour=buildMission(A,{site:north,night:'2026-10-31',zone:'UTC',anchor:time,live:false,minutes:90,snapshot:null});assert.ok(tour.steps.length>0);assert.ok(tour.steps.every(step=>step.alt<=80));
 });
