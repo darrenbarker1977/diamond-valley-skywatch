@@ -48,7 +48,7 @@ test('wrong independent object never unlocks arrows',async({page})=>{
  for(let i=0;i<2;i++){await feed(page,{mode:'handheld'});await page.locator('#capture-alignment').click();}
  await feed(page,{mode:'handheld',wrong:true});await page.locator('#capture-alignment').click();
  await expect(page.locator('#alignment-feedback')).toContainText('Guidance remains off');
- await expect(page.locator('#finder-arrows')).toBeHidden();
+ await expect(page.locator('#finder-arrows')).toHaveAttribute('hidden');
 });
 test('denied permission and missing absolute events give actionable errors',async({page})=>{
  await page.addInitScript(()=>{window.DeviceOrientationEvent.requestPermission=async()=> 'denied';});
@@ -204,10 +204,10 @@ for(const mode of ['handheld','mounted'])test(`${mode} alignment opens live guid
 
 test('alignment replaces an unsuitable old destination and explains below-horizon pauses honestly',async({page})=>{
  await open(page);await page.locator('[data-nav-section=objects]').click();
- const below=await page.evaluate(async()=>{const {catalogue}=await import('/prototype/catalogue.js');const {position}=await import('/prototype/positions.js');return catalogue.find(o=>o.id!=='Sun'&&position(window.Astronomy,o,new Date()).alt< -10).id;});
+ const below=await page.evaluate(async()=>{const {catalogue}=await import('/prototype/catalogue.js');const {position}=await import('/prototype/positions.js');const {skyVector,angle}=await import('/prototype/alignment.js');const sun=position(window.Astronomy,catalogue.find(o=>o.id==='Sun'),new Date());return catalogue.find(o=>{const p=position(window.Astronomy,o,new Date());return o.id!=='Sun'&&p.alt< -10&&angle(skyVector(p),skyVector(sun))>=30;}).id;});
  await page.locator('#search').fill(below);await page.locator(`#objects button[data-id='${below}']`).click();
  await page.locator('[data-nav-section=pointing]').click();await page.locator('#enable-sensors').click();await page.locator('#alignment-target').selectOption('Polaris');await feed(page,{mode:'handheld'});await page.locator('#capture-alignment').click();await expect(page.locator('#finder-name')).toHaveText('Polaris');await expect(page.locator('#finder-arrows')).toBeVisible();await expect(page.locator('#guidance-transition-status')).toContainText('previous target is not suitable');
- await page.locator('[data-nav-section=objects]').click();await page.locator('#search').fill(below);await page.locator(`#objects button[data-id='${below}']`).click();await expect(page.locator('#finder-view')).toBeVisible();await expect(page.locator('#finder-state-title')).toHaveText('That target is below your horizon');await expect(page.locator('#finder-session')).toContainText('ALIGNMENT RETAINED');await expect(page.locator('#finder-arrows')).toBeHidden();
+ await page.locator('[data-nav-section=objects]').click();await page.locator('#search').fill(below);await page.locator(`#objects button[data-id='${below}']`).click();await expect(page.locator('#finder-view')).toBeVisible();await expect(page.locator('#finder-state-title')).toHaveText('That target is below your horizon');await expect(page.locator('#guidance-transition-status')).toBeHidden();await expect(page.locator('#finder-session')).toContainText('ALIGNMENT RETAINED');await expect(page.locator('#finder-arrows')).toBeHidden();
  await page.locator('#finder-recovery [data-help-action=pick-target]').click();await page.locator('#finder-target-search').fill('Polaris');await page.locator('#finder-target-results button[data-target=Polaris]').click();await expect(page.locator('#finder-arrows')).toBeVisible();await expect(page.locator('#finder-session')).toContainText('ONE-TARGET BASIC');
 });
 

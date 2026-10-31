@@ -46,7 +46,7 @@ planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,o
  if(dialog.open)update();field?.refresh();readyCheck?.refresh();
 }});
 mission=createNightMission({A,site,getContext:()=>planner.context(),getKit:()=>equipment.current(),ensureForecast:()=>navigation.ensureForecast(),onLive:id=>{
- selected=desiredTarget=id;planner.now();if(dialog.open)update();else $('launch').click();navigation.section('finder');
+ setTransition('');selected=desiredTarget=id;planner.now();if(dialog.open)update();else $('launch').click();navigation.section('finder');
 },onPreview:(id,time)=>{
  const zone=planner.zone,p=localParts(time,zone);planner.plan(nightDate(time,zone),p.hour*60+p.minute+(p.hour<6?1440:0));selected=desiredTarget=id;update();navigation.section('objects');$('atlas-card').open=true;atlas.centerTarget();$('selected-panel').open=true;
 },onWeather:()=>{
@@ -105,7 +105,7 @@ function render(){
   finder.target(o,livePositions.get(selected));nextTarget?.refresh();finderTargets?.refresh();hops.update(livePositions,selected);drawMap();pointing.paint();contextHelp?.refresh();
 }
 function drawMap(){atlas?.update(positions,selected,calculationTime,planner.planning);}
-function chooseObject(id){atlas.showHop([]);selected=desiredTarget=id;render();$('object-library').open=false;$('selected-panel').open=true;if(id!=='Sun'&&!planner.planning&&currentPointing?.alignment?.calibrated)startLiveGuidance();else atlas.centerTarget();}
+function chooseObject(id){setTransition('');atlas.showHop([]);selected=desiredTarget=id;render();$('object-library').open=false;$('selected-panel').open=true;if(id!=='Sun'&&!planner.planning&&currentPointing?.alignment?.calibrated)startLiveGuidance();else atlas.centerTarget();}
 $('atlas-center').addEventListener('click',()=>atlas.centerTarget());
 $('atlas-align').addEventListener('click',()=>readyPointing(null,'alignment'));
 $('launch').addEventListener('click',()=>{if(!dialog.open)dialog.show();$('launch').setAttribute('aria-expanded','true');update();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)update();},10000);$('close').focus();});
@@ -167,6 +167,7 @@ nextTarget=createNextTarget({A,site,getKit:()=>equipment.current(),getSelected:(
 
 function setTransition(text){$('guidance-transition-status').textContent=text;$('guidance-transition-status').hidden=!text;}
 function updateHomeSession(state){
+ if(!state?.alignment?.calibrated)setTransition('');
  const visible=!!state?.listening||!!state?.alignment?.calibrated;$('observing-session').hidden=!visible;if(!visible)return;
  const aligned=!!state.alignment?.calibrated,receiving=state.alignment?.fresh&&state.alignment?.sensorStatus==='receiving';
  $('observing-session-status').textContent=aligned?(receiving?'Your alignment is retained · live pointing sensors are on.':'Alignment retained · waiting for fresh phone readings.'):(receiving?'Sensors are on · next, centre and record one bright object.':'Pointing sensors are starting or waiting for readings.');
@@ -229,6 +230,7 @@ contextHelp=createContextHelp({act:appHelpAction,getState:()=>({pose:currentPoin
 
 window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close();}});
 function openTarget(id){
+ setTransition('');
  if(id&&!catalogue.some(object=>object.id===id))return;
  if(id)selected=desiredTarget=id;
  planner.now();
