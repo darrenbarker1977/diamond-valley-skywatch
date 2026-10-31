@@ -1,12 +1,13 @@
 import {createLocation,site,forecastURL,setSite} from './location.js?v=location-1';
-import {createNavigation} from './navigation.js?v=field-1';
+import {createNavigation} from './navigation.js?v=window-1';
 import {createEquipment} from './equipment-ui.js?v=folds-1';
-import {createPointing} from './pointing.js?v=flow-1';
+import {createPointing} from './pointing.js?v=window-1';
 import {catalogue} from './catalogue.js?v=catalogue-1';
 import {skyVector,angle} from './alignment.js?v=field-1';
 import {position,matches} from './positions.js?v=catalogue-1';
-import {createSkyAtlas} from './sky-atlas.js?v=flow-1';
-import {createFinder} from './finder.js?v=flow-1';
+import {createSkyAtlas} from './sky-atlas.js?v=window-1';
+import {createFinderWindow} from './finder-window.js?v=window-1';
+import {createFinder} from './finder.js?v=window-1';
 import {objectVisual,objectStory,discoveryNote} from './object-cards.js?v=field-1';
 import {createPlanner} from './planner.js?v=aiming-1';
 import {createNightMission} from './night-mission.js?v=tour-1';
@@ -15,30 +16,31 @@ import {createLiveCompass} from './live-compass.js?v=field-1';
 import {createDiscovery} from './discovery.js';
 import {createFieldTools} from './field-tools.js?v=ready-1';
 import {createStarHops} from './star-hops.js';
-import {createScopeView} from './scope-view.js?v=awake-1';
+import {createScopeView} from './scope-view.js?v=window-1';
 import {createScreenAwake} from './screen-awake.js?v=dismiss-1';
-import {createReadyCheck} from './ready-check.js?v=flow-1';
+import {createReadyCheck} from './ready-check.js?v=window-1';
 import {createNextTarget} from './next-target.js';
 import {createFinderTargets} from './finder-targets.js';
-import {createHapticGuide} from './haptic-guide.js?v=flow-1';
+import {createHapticGuide} from './haptic-guide.js?v=window-1';
 import {createContextHelp} from './context-help.js';
 const requestedQuery=new URLSearchParams(location.search);
 if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has('lon')){
  try{let zone=requestedQuery.get('zone')||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch{zone='UTC';}setSite({latitude:Number(requestedQuery.get('lat')),longitude:Number(requestedQuery.get('lon')),height:0,accuracy:null,source:'coordinates',label:(requestedQuery.get('name')||'Planned location').slice(0,120),clockTimezone:zone,physicalConfirmed:false});}catch{}
 }
 const $=id=>document.getElementById(id), dialog=$('navigator');
-let readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null,contextHelp=null;
+let liveWindow=null,readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null,contextHelp=null;
 let selected='Moon',desiredTarget='Moon',filter='all',timer,positions=new Map(),livePositions=new Map(),atlas=null,finder=null,planner=null,mission=null,locationUI=null,field=null,hops=null,lastDetail='',calculationTime=new Date();
 const A=globalThis.Astronomy;
 const equipment=createEquipment(()=>{if(positions.size)render();pointing.refresh();mission?.refresh();nextTarget?.refresh();readyCheck?.refresh();});
-const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:result=>completeAlignment(result),onNext:step=>{if(step==='guidance')startLiveGuidance();else if(step==='daylight')appHelpAction('mission');else readyPointing(null,step,step==='sensors'&&!currentPointing?.listening);},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;updateHomeSession(state);atlas?.pose(state);finder?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
+const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:result=>completeAlignment(result),onNext:step=>{if(step==='guidance')startLiveGuidance();else if(step==='daylight')appHelpAction('mission');else readyPointing(null,step,step==='sensors'&&!currentPointing?.listening);},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;updateHomeSession(state);atlas?.pose(state);finder?.pose(state);liveWindow?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
 atlas=createSkyAtlas({A,site,catalogue,onSelect:id=>chooseObject(id)});
 function setPointingMode(mode){if($('pointing-mode').value!==mode){$('pointing-mode').value=mode;$('pointing-mode').dispatchEvent(new Event('change'));}}
-finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>readyPointing(mode,'alignment'),onMode:setPointingMode,onStop:()=>pointing.suspend(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;if(currentPointing?.alignment?.calibrated)atlas.follow();revealReadyControl('atlas-title');}});
+finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>readyPointing(mode,'alignment'),onMode:setPointingMode,onStop:()=>pointing.suspend(),onAdvance:()=>advanceFinder(),onPick:()=>pickFinderTarget(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;if(currentPointing?.alignment?.calibrated)atlas.follow();revealReadyControl('atlas-title');}});
 hops=createStarHops({catalogue,onRoute:ids=>{planner.now();navigation.section('objects');$('atlas-card').open=true;atlas.showHop(ids);},onVibration:()=>appHelpAction('vibration')});
 const screenAwake=createScreenAwake();
 haptics=createHapticGuide();
 const scopeView=createScopeView();
+liveWindow=createFinderWindow({onExpand:()=>$('finder-scope-view').click(),onClose:()=>$('finder-sky').click()});
 createLiveCompass();createDiscovery();
 planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,onChange:()=>{
  if(planner.planning)pointing.suspend('Planned sky only. Return to Now and repeat alignment before using direction arrows.');
@@ -118,10 +120,12 @@ for(const button of document.querySelectorAll('[data-filter]'))button.addEventLi
 document.addEventListener('visibilitychange',()=>{if(dialog.open&&!document.hidden)update();});
 window.addEventListener('pageshow',()=>{if(dialog.open)update();});
 
-const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL,onSection:name=>{
+const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL,onShown:name=>{if(name==='finder'&&dialog.open){revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}},onSection:name=>{
+ liveWindow?.activate(name==='finder'&&dialog.open);
  if(name!=='finder')scopeView.exit();
  readyCheck?.place(dialog.open);haptics?.activate(name==='finder'&&dialog.open);
  if(['finder','pointing'].includes(name)&&planner.planning)planner.now();
+ if(name==='finder'&&selected!==desiredTarget){selected=desiredTarget;if(positions.size)render();}
  if(name==='finder'&&currentPointing?.alignment?.calibrated){haptics?.start();atlas?.follow();}
  if(name==='mission')mission.activate();if(name==='field')field.activate();else field.deactivate();
 }});
@@ -134,6 +138,7 @@ function revealReadyControl(id){
 }
 function readyPointing(mode,step,startSensors=false){
  if(!dialog.open)$('launch').click();navigation.section('pointing');if(mode)setPointingMode(mode);
+ $('pointing-destination').textContent='Your destination: '+catalogue.find(o=>o.id===desiredTarget).name+'. First align on one bright object you can identify; then this destination opens with live guidance.';
  $('pointing-setup').open=true;let target='pointing-mode';
  if(step==='location')target='location-present';
  else if(step==='daylight')target=$('alignment-daylight').hidden?'alignment-help':'alignment-daylight';
@@ -186,9 +191,22 @@ function startLiveGuidance({pick=false}={}){
  planner.now();if(!dialog.open)$('launch').click();else update();navigation.section('finder');
  if(currentPointing?.alignment?.calibrated){atlas.follow();haptics.start();}
  if(pick){$('finder-target-picker').open=true;finderTargets?.refresh();revealReadyControl('finder-target-search');}
- else{$('finder-target-picker').open=false;revealReadyControl('finder-compass');}
+ else{$('finder-target-picker').open=false;revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}
+}
+function pickFinderTarget(){
+ $('finder-target-picker').open=true;finderTargets?.refresh();revealReadyControl('finder-target-search');
+}
+function advanceFinder(){
+ const state=currentPointing||{},reason=state.guidanceStatus;
+ if(reason==='daylight'){appHelpAction('mission');return;}
+ if(state.alignment?.calibrated){
+  if(['below-horizon','unsafe','overhead','live'].includes(reason)){pickFinderTarget();return;}
+  readyPointing(null,'sensors');return;
+ }
+ readyPointing(finder.mode,'alignment');
 }
 $('observing-session-next').addEventListener('click',()=>{if(currentPointing?.alignment?.calibrated)startLiveGuidance();else readyPointing(null,'alignment');});
+$('pointing-return-target').addEventListener('click',()=>{selected=desiredTarget;startLiveGuidance();});
 $('observing-session-stop').addEventListener('click',()=>pointing.suspend('Pointing stopped. Enable sensors and align when you want to resume.'));
 
 function openAppSection(name){if(!dialog.open)$('launch').click();navigation.section(name);}
@@ -236,7 +254,7 @@ function openTarget(id){
  planner.now();
  $('search').value='';filter='all';for(const button of document.querySelectorAll('[data-filter]'))button.setAttribute('aria-pressed',String(button.dataset.filter==='all'));
  $('launch').click();
- if(id){$('selected-panel').open=true;if(id!=='Sun'&&currentPointing?.alignment?.calibrated)startLiveGuidance();else atlas.centerTarget();}else $('object-library').open=true;
+ if(id){$('selected-panel').open=true;if(id!=='Sun')startLiveGuidance();else atlas.centerTarget();}else $('object-library').open=true;
 }
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==$('forecast-frame').contentWindow)return;
