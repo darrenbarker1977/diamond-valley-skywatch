@@ -17,7 +17,7 @@ export function createReadyCheck({A,site,getContext,getSnapshot,getAwake,onLocat
   const snapshot=getSnapshot()||savedWeather(site),same=snapshot?.coordinateKey===coordinateKey(site),row=same?weatherAt(snapshot,now):null,outlook=assessWeather(row),age=same?Math.max(0,Math.floor((Date.now()-snapshot.stamp)/60000)):null;
   const wrongMode=pose.mode!==purpose,mountedOkay=purpose!=='mounted'||p.mountedConfirmed,pointingOkay=skyOkay&&site.physicalConfirmed&&!c.planning&&dark&&p.calibrated&&p.fresh&&p.sensorStatus==='receiving'&&!wrongMode&&mountedOkay;
   box.dataset.state=browsing?(skyOkay?'browse':'attention'):pointingOkay?'checked':'attention';set('ready-mark',box.dataset.state==='checked'?'✓':box.dataset.state==='attention'?'!':'◇');
-  set('ready-summary',browsing?(skyOkay?'Browse freely · setup is optional':'Sky calculations unavailable'):pointingOkay?'Pointing checks passed · verify your sky':c.planning?'Planning ahead · pointing setup waits':!dark?'Waiting for dusk · browsing works':'Pointing setup needs attention');
+  set('ready-summary',browsing?(skyOkay?'Browse freely · setup is optional':'Sky calculations unavailable'):pointingOkay?'Pointing checks passed · verify your sky':c.planning?'Planning ahead · pointing setup waits':!dark?'Waiting for dusk · browsing works':p.calibrated&&!p.fresh?'Alignment retained · waiting for readings':'Pointing setup needs attention');
   set('ready-location',site.label+(site.physicalConfirmed?' · physical presence confirmed':' · selected viewing site; physical presence unconfirmed'));
   set('ready-time',!skyOkay?'Sky calculations unavailable.':c.planning?'Planned sky. Live pointing is off; return to Now to align.':dark?'Live sky · after dusk.':'Daylight or bright twilight. Alignment opens after dusk; browsing works now.');
   set('ready-sensors',browsing?'Optional for browsing. '+(p.fresh?'Fresh pointing readings are available.':'No pointing sensors needed.'):(p.sensorStatus==='receiving'&&p.fresh?'Fresh pointing sensor readings.':pose.listening?'Waiting for fresh usable readings.':!site.physicalConfirmed?'Confirm this is your observing site before enabling pointing sensors.':'Pointing sensors are off. Enable them when ready; the compass is separate.'));
@@ -38,7 +38,8 @@ export function createReadyCheck({A,site,getContext,getSnapshot,getAwake,onLocat
   else if(!dark)action('alignment','Alignment help',pointing('daylight'));
   else if(!site.physicalConfirmed)action('alignment','Confirm location',pointing('location'));
   else if(wrongMode||!mountedOkay)action('alignment','Check placement',pointing('placement'));
-  else if(!p.calibrated||!p.fresh)action('alignment','Begin alignment',pointing('alignment'));
+  else if(p.calibrated&&!p.fresh)action('alignment','Resume sensor readings',pointing('sensors'));
+  else if(!p.calibrated)action('alignment','Begin alignment',pointing('alignment'));
   else action('alignment','Find a target',onFind);
   const refreshWeather=!same||age>=30||snapshot?.offline;
   action('weather',refreshWeather?'Refresh weather':outlook.known&&!outlook.usable?'See other nights':'View forecast',()=>onWeather(refreshWeather));

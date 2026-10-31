@@ -16,6 +16,8 @@ destination with an explanation and a visible-target picker. Second/third object
 remain optional refinements, not prerequisites.
 
 Finder distinguishes sensors-only from alignment retained but temporarily paused.
+Ready check routes a retained alignment with stale samples to Resume sensor
+readings, keeping the alignment instead of labelling it Begin alignment.
 Below-horizon targets, unsafe Sun separation, overhead directions, stale readings,
 noise and missing alignment have separate messages. Arrows and haptics share a
 smooth-motion check on actual fresh samples (at least three within 400 ms,
