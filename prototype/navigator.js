@@ -15,7 +15,7 @@ import {createDiscovery} from './discovery.js';
 import {createFieldTools} from './field-tools.js?v=ready-1';
 import {createStarHops} from './star-hops.js';
 import {createScopeView} from './scope-view.js?v=awake-1';
-import {createScreenAwake} from './screen-awake.js?v=ready-1';
+import {createScreenAwake} from './screen-awake.js?v=dismiss-1';
 import {createReadyCheck} from './ready-check.js?v=shortcuts-1';
 import {createNextTarget} from './next-target.js';
 import {createFinderTargets} from './finder-targets.js';
