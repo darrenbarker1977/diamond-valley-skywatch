@@ -1,4 +1,4 @@
-export function createNavigation({dialog,launch,stopCamera,forecastURL,onSection=()=>{},onShown=()=>{}}){
+export function createNavigation({dialog,launch,stopCamera,forecastURL,onSection=()=>{},onShown=()=>{},getEntrySection=()=>'objects'}){
  const $=id=>document.getElementById(id);let view='home';
  const menus=[...document.querySelectorAll('[data-app-view]')];
  function mark(){for(const button of document.querySelectorAll('.dv-app-header button')){const active=dialog.open?button.hasAttribute('data-open-section'):button.dataset.appView===view;if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}}
@@ -7,6 +7,7 @@ export function createNavigation({dialog,launch,stopCamera,forecastURL,onSection
   for(const [id,wanted] of [['pointing','pointing'],['equipment','equipment']]){$(id).hidden=name!==wanted;$(id).open=name===wanted;}
   document.querySelector('.dv-nav-content').hidden=!['objects','finder'].includes(name);$('compact-guidance').hidden=name!=='objects';
   document.querySelector('.dv-nav-explore').hidden=name!=='objects';document.querySelector('.dv-nav-browser').hidden=name!=='objects';$('finder-view').hidden=name!=='finder';
+  $('walkthrough-view').hidden=name!=='walkthrough';
   $('mission-view').hidden=name!=='mission';$('field-view').hidden=name!=='field';$('time-planner').hidden=!['objects','mission','field'].includes(name);
   document.body.classList.toggle('dv-app-finder-mode',name==='finder');
   for(const button of document.querySelectorAll('[data-nav-section]'))button.setAttribute('aria-pressed',String(button.dataset.navSection===name));
@@ -29,7 +30,7 @@ export function createNavigation({dialog,launch,stopCamera,forecastURL,onSection
  for(const button of menus)button.addEventListener('click',()=>show(button.dataset.appView));
  for(const button of document.querySelectorAll('[data-open-section]'))if(button!==launch)button.addEventListener('click',()=>{if(!dialog.open)launch.click();section(button.dataset.openSection);mark();});
  for(const button of document.querySelectorAll('[data-nav-section]'))button.addEventListener('click',()=>section(button.dataset.navSection));
- launch.addEventListener('click',()=>{$('home-view').hidden=true;$('forecast-view').hidden=true;document.body.classList.remove('dv-app-forecast-mode');document.body.classList.add('dv-app-navigator-mode');section('objects');mark();window.scrollTo(0,0);});
+ launch.addEventListener('click',()=>{$('home-view').hidden=true;$('forecast-view').hidden=true;document.body.classList.remove('dv-app-forecast-mode');document.body.classList.add('dv-app-navigator-mode');section(getEntrySection());mark();});
  dialog.addEventListener('close',()=>{$('home-view').hidden=view!=='home';$('forecast-view').hidden=view!=='forecast';document.body.classList.remove('dv-app-navigator-mode');document.body.classList.toggle('dv-app-forecast-mode',view==='forecast');section('objects');mark();});
  const height=()=>document.documentElement.style.setProperty('--app-header-height',$('app-header').getBoundingClientRect().height+'px');
  if(globalThis.ResizeObserver)new ResizeObserver(height).observe($('app-header'));height();

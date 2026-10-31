@@ -5,7 +5,7 @@ test('open, search, select, filter, expand, red mode and close',async({page},tes
  await page.addInitScript(()=>{window.sensorSubscriptions=[];const original=window.addEventListener;window.addEventListener=function(name,...args){if(['deviceorientation','deviceorientationabsolute','devicemotion'].includes(name))window.sensorSubscriptions.push(name);return original.call(this,name,...args);};});
  await page.clock.setFixedTime(new Date('2026-10-27T03:00:00Z'));
  await page.goto('/prototype/');
- await page.getByRole('button',{name:'Sky Navigator',exact:true}).click();
+ await page.getByRole('button',{name:'Sky Navigator',exact:true}).click();await page.locator('[data-nav-section=objects]').click();
  await expect(page.getByRole('dialog')).toBeVisible();
  await expect(page.locator('#objects button')).toHaveCount(catalogue.length);
  await page.locator('#search').fill('m 31');
@@ -38,19 +38,19 @@ test('open, search, select, filter, expand, red mode and close',async({page},tes
  expect((await page.evaluate(()=>window.sensorSubscriptions)).every(name=>['deviceorientationabsolute','deviceorientation'].includes(name))).toBe(true);
  await page.getByRole('button',{name:'Close Navigator'}).click();
  await expect(page.locator('#launch')).toBeFocused();
- await page.locator('#launch').click();await page.keyboard.press('Escape');
+ await page.locator('#launch').click();await page.locator('[data-nav-section=objects]').click();await page.keyboard.press('Escape');
  await expect(page.getByRole('dialog')).not.toBeVisible();
  expect(errors).toEqual([]);
 });
 test('library failure gives an honest error and no positions',async({page})=>{
  await page.route('**/vendor/astronomy.browser.min.js',route=>route.abort());
- await page.goto('/prototype/');await page.locator('#launch').click();
+ await page.goto('/prototype/');await page.locator('#launch').click();await page.locator('[data-nav-section=objects]').click();
  await expect(page.getByRole('alert')).toContainText('astronomy library did not load');
  await expect(page.locator('#objects button')).toHaveCount(0);
  await expect(page.locator('#detail')).toBeEmpty();
 });
 test('keyboard navigation and timer retain search focus',async({page})=>{
- await page.clock.install();await page.goto('/prototype/');await page.locator('#launch').click();
+ await page.clock.install();await page.goto('/prototype/');await page.locator('#launch').click();await page.locator('[data-nav-section=objects]').click();
  await page.locator('#search').focus();await page.clock.fastForward(11000);
  await expect(page.locator('#search')).toBeFocused();
  await page.locator('#close').focus();await page.keyboard.press('Tab');
