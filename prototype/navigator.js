@@ -144,7 +144,7 @@ function exploreSky(){
  if(!dialog.open)$('launch').click();navigation.section('objects');$('atlas-card').open=true;if(currentPointing?.alignment?.calibrated)atlas.follow();revealReadyControl('atlas-title');
 }
 function openWalkthrough(step){
- planner.now();if(!dialog.open)$('launch').click();navigation.section('walkthrough');if(step)walkthrough?.go(step);
+ planner.now();if(!dialog.open)$('launch').click();else update();navigation.section('walkthrough');if(step)walkthrough?.go(step);
 }
 function guidedPointing(mode,step,startSensors=false){
  if(mode){setPointingMode(mode);walkthrough?.confirmMode();}$('pointing-setup').open=true;openWalkthrough(step||'capture');
