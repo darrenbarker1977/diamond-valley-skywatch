@@ -1,10 +1,11 @@
 // Component fixtures do not supply production sensor or hardware fallbacks.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createHapticGuide} from '../prototype/haptic-guide.js';
-function fixture({off=false,supported=true}={}){
+import {createHapticGuide,pulsePattern} from '../prototype/haptic-guide.js';
+function fixture({off=false,supported=true,level=null}={}){
  let time=0,nextTimer=1,response=true;const timers=new Map(),calls=[],saved=new Map(off?[['dvsky:vibration:auto:v1','off']]:[]),events=new Map(),docEvents=new Map();
- const ids=['finder-vibration','finder-vibration-quick','vibration-status','vibration-window-status','finder-vibration-test','vibration-test-status','guidance-vibration-auto','vibration-phone-checks','vibration-help'];
+ if(level!==null)saved.set('dvsky:vibration:level:v1',String(level));
+ const ids=['vibration-intensity','vibration-intensity-value','finder-vibration','finder-vibration-quick','vibration-status','vibration-window-status','finder-vibration-test','vibration-test-status','guidance-vibration-auto','vibration-phone-checks','vibration-help'];
  const elements=new Map(ids.map(id=>[id,{id,textContent:'',disabled:false,hidden:false,attrs:{},listeners:{},setAttribute(key,value){this.attrs[key]=value;},addEventListener(name,fn){this.listeners[name]=fn;},fire(name='click'){this.listeners[name]?.();},scrollIntoView(){},querySelector(){return {focus(){}};}}]));
  const env={performance:{now:()=>time},navigator:supported?{vibrate:pattern=>{calls.push(pattern);if(response instanceof Error)throw response;return response;}}:{},localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)},document:{hidden:false,addEventListener:(name,fn)=>docEvents.set(name,fn)},addEventListener:(name,fn)=>events.set(name,fn),setTimeout:(fn,delay)=>{const id=nextTimer++;timers.set(id,{fn,at:time+delay});return id;},clearTimeout:id=>timers.delete(id)};
  const guide=createHapticGuide({env,root:{getElementById:id=>elements.get(id)||null}}),el=id=>elements.get(id);
@@ -38,4 +39,18 @@ test('guidance rate limits pulse requests and cancels immediately on unsafe or s
  const f=fixture();f.guide.activate(true);f.guide.pose(aligned(40));f.guide.start();assert.equal(f.calls.length,1);
  for(let i=0;i<100;i++){f.run(20);f.guide.pose(aligned(40));}assert.equal(f.calls.length,1);f.run(200);f.guide.pose(aligned(40));assert.equal(f.calls.length,2);
  f.guide.pose({haptic:{ready:false,message:'Target below horizon'}});assert.equal(f.calls.at(-1),0);const count=f.calls.length;for(let i=0;i<20;i++){f.run(100);f.guide.pose({haptic:{ready:false,message:'Stale samples'}});}assert.equal(f.calls.length,count);assert.match(f.el('vibration-window-status').textContent,/Stale samples/);
+});
+
+test('pulse feel scales vibration segments, preserves pauses and bounds duration',()=>{
+ const values=[1,2,3,4,5].map(level=>pulsePattern(90,level));assert.ok(values.every((v,i)=>i===0||v>values[i-1]));assert.equal(values[2],90);assert.ok(values.at(-1)<550);
+ for(let level=1;level<=5;level++){const p=pulsePattern([160,100,160],level);assert.equal(p[1],100);assert.equal(p[0],p[2]);assert.ok(p[0]>=20&&p[0]<=320);assert.ok(p.reduce((a,b)=>a+b,0)<1000);}
+ assert.deepEqual(pulsePattern([75,100,75],99),pulsePattern([75,100,75],3));
+});
+test('saved pulse feel and slider changes do not turn an off preference on',()=>{
+ const f=fixture({off:true,level:5});assert.equal(f.el('vibration-intensity').value,'5');assert.equal(f.el('vibration-intensity-value').textContent,'Strong');f.guide.activate(true);f.guide.pose(aligned());f.el('vibration-intensity').value='1';f.el('vibration-intensity').fire('input');assert.deepEqual(f.calls,[]);assert.equal(f.saved.get('dvsky:vibration:level:v1'),'1');assert.equal(f.saved.get('dvsky:vibration:auto:v1'),'off');assert.equal(f.el('vibration-intensity-value').textContent,'Light');
+ f.el('finder-vibration-test').fire();assert.deepEqual(f.calls.at(-1),pulsePattern([160,100,160],1));f.run(299);assert.equal(f.el('finder-vibration-test').disabled,true);f.run(1);assert.equal(f.el('finder-vibration-test').disabled,false);
+ const bad=fixture({level:'bad'});assert.equal(bad.el('vibration-intensity').value,'3');assert.equal(bad.el('vibration-intensity-value').textContent,'Standard');
+});
+test('a strong test is not interrupted before its longer pattern completes',()=>{
+ const f=fixture({off:true,level:5});f.guide.activate(true);f.el('finder-vibration-test').fire();assert.deepEqual(f.calls.at(-1),[320,100,320]);f.run(700);f.guide.pose({haptic:{ready:false,message:'No alignment'}});assert.equal(f.calls.length,1);assert.equal(f.el('finder-vibration-test').disabled,true);f.run(80);assert.equal(f.el('finder-vibration-test').disabled,false);assert.equal(f.calls.length,1);
 });

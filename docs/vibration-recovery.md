@@ -30,3 +30,16 @@ unsupported API, explicit test isolation/cancellation and rate/safety guards.
 Browser coverage uses test-only vibration/orientation fixtures through the actual
 pointing pipeline. These tests verify requests and application states, not a
 physical motor. A Pixel hardware check with Test pulse remains necessary.
+
+## Pulse feel slider
+
+A folded Pulse feel control in the live window saves one of five levels (Light,
+Gentle, Standard, Firm, Strong) under dvsky:vibration:level:v1. Standard preserves
+the existing durations. It scales vibration segments by 0.5, 0.75, 1, 1.5 or 2;
+pauses and distance-based repeat intervals stay unchanged. This changes perceived
+feel through pulse length, not the motor amplitude controlled by Android.
+
+The same level applies to guidance and Test pulse. Test completion waits for the
+scaled pattern plus 40 ms, so a stronger test is not truncated. Changes do not
+turn an off preference on, trigger an unaligned guidance pulse or modify alignment.
+Invalid stored values fall back to Standard. Unsupported browsers disable it.
