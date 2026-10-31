@@ -81,7 +81,8 @@ test('beginner tours wait for dimmer twilight for stars while retaining dusk pla
  assert.ok(tour.steps.length>0);const stars=tour.steps.filter(s=>['Star','Double star'].includes(s.object.type));assert.ok(stars.length>0);
  for(const stop of stars){assert.ok(stop.sunAltitude<=-10);assert.ok(stop.date>localInstant(night,1128,zone),'star recommendation must be later than the photographed 6:48 twilight slot');}
  for(const stop of tour.steps)if(!['Moon','Venus','Jupiter','Saturn','Mars','Mercury'].includes(stop.object.id)&&!['Star','Double star'].includes(stop.object.type))assert.ok(stop.sunAltitude<=-12);
- const twilight=localInstant('2026-12-01',1050,zone),planets=buildMission(A,{site,night:'2026-12-01',zone,anchor:twilight,live:false,minutes:1,snapshot:null});
+ // Fix the astronomical instant; future local timezone-law data can differ between runtimes.
+ const twilight=new Date('2026-12-02T00:30:00Z'),planets=buildMission(A,{site,night:'2026-12-01',zone:'UTC',anchor:twilight,live:false,minutes:1,snapshot:null});
  assert.ok(planets.steps.length>0);assert.ok(planets.steps.every(s=>['Moon','Venus','Jupiter','Saturn','Mars','Mercury'].includes(s.object.id)));assert.ok(planets.steps[0].sunAltitude>-10);
  // The stricter tour preference must not block experienced users from trying a
  // bright double star manually once the ordinary dusk checks are met.
