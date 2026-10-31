@@ -16,6 +16,6 @@ export function moonPhoto({phase,fraction,latitude=0,name='Moon'}={}){
  const image=make('image',{href:new URL('../assets/objects/moon.jpg',import.meta.url).href,x:0,y:0,width:100,height:100,'clip-path':`url(#${id})`});
  // The source disk nearly fills its square. A circular outer clip hides corners.
  const surface=make('g',{'clip-path':`url(#${id}-disk)`});surface.append(image);group.append(surface);svg.append(group);figure.append(svg);
- const error=document.createElement('span');error.className='moon-photo-error';error.hidden=true;error.textContent='Moon photograph unavailable';image.addEventListener('error',()=>{svg.hidden=true;error.hidden=false;});figure.append(error);return figure;
+ const error=document.createElement('span');error.className='moon-photo-error';error.hidden=true;error.textContent='Moon photograph unavailable';image.addEventListener('error',()=>{svg.style.display='none';error.hidden=false;});figure.append(error);return figure;
 }
 export const moonCredit='NASA/JPL Galileo photographic composite with calculated phase shading. Phase reference, not a live photograph. North up in the north; south up in the south. The tilt at your horizon and telescope orientation vary.';

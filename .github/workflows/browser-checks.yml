@@ -21,7 +21,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - name: Phone, telescope and weather regression checks
-        run: npx playwright test tests/pointing.spec.js tests/field-ready.spec.js tests/location.spec.js tests/navigation.spec.js tests/main-menu.spec.js tests/live-entry.spec.js tests/field.spec.js tests/screen-awake.spec.js tests/scope-view.spec.js --workers=2 --reporter=line
+        run: npx playwright test tests/context-help.spec.js tests/pointing.spec.js tests/field-ready.spec.js tests/equipment.spec.js tests/compass.spec.js tests/atlas.spec.js tests/forecast-targets.spec.js tests/night-mission.spec.js tests/location.spec.js tests/navigation.spec.js tests/main-menu.spec.js tests/live-entry.spec.js tests/field.spec.js tests/screen-awake.spec.js tests/scope-view.spec.js --workers=2 --reporter=line
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

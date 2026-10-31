@@ -20,20 +20,21 @@ import {createReadyCheck} from './ready-check.js?v=shortcuts-1';
 import {createNextTarget} from './next-target.js';
 import {createFinderTargets} from './finder-targets.js';
 import {createHapticGuide} from './haptic-guide.js';
+import {createContextHelp} from './context-help.js';
 const requestedQuery=new URLSearchParams(location.search);
 if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has('lon')){
  try{let zone=requestedQuery.get('zone')||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch{zone='UTC';}setSite({latitude:Number(requestedQuery.get('lat')),longitude:Number(requestedQuery.get('lon')),height:0,accuracy:null,source:'coordinates',label:(requestedQuery.get('name')||'Planned location').slice(0,120),clockTimezone:zone,physicalConfirmed:false});}catch{}
 }
 const $=id=>document.getElementById(id), dialog=$('navigator');
-let readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null;
+let readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null,contextHelp=null;
 let selected='Moon',desiredTarget='Moon',filter='all',timer,positions=new Map(),livePositions=new Map(),atlas=null,finder=null,planner=null,mission=null,locationUI=null,field=null,hops=null,lastDetail='',calculationTime=new Date();
 const A=globalThis.Astronomy;
 const equipment=createEquipment(()=>{if(positions.size)render();pointing.refresh();mission?.refresh();nextTarget?.refresh();readyCheck?.refresh();});
-const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:()=>{if(desiredTarget!=='Sun'&&catalogue.some(o=>o.id===desiredTarget)){selected=desiredTarget;if(positions.size)render();}},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;atlas?.pose(state);finder?.pose(state);hops?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
+const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:()=>{if(desiredTarget!=='Sun'&&catalogue.some(o=>o.id===desiredTarget)){selected=desiredTarget;if(positions.size)render();}},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;atlas?.pose(state);finder?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
 atlas=createSkyAtlas({A,site,catalogue,onSelect:id=>chooseObject(id)});
 function setPointingMode(mode){if($('pointing-mode').value!==mode){$('pointing-mode').value=mode;$('pointing-mode').dispatchEvent(new Event('change'));}}
-finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>{setPointingMode(mode);navigation.section('pointing');},onMode:setPointingMode,onStop:()=>pointing.suspend(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;}});
-hops=createStarHops({catalogue,onRoute:ids=>{planner.now();navigation.section('objects');$('atlas-card').open=true;atlas.showHop(ids);}});
+finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>readyPointing(mode,'alignment'),onMode:setPointingMode,onStop:()=>pointing.suspend(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;}});
+hops=createStarHops({catalogue,onRoute:ids=>{planner.now();navigation.section('objects');$('atlas-card').open=true;atlas.showHop(ids);},onVibration:()=>appHelpAction('vibration')});
 const screenAwake=createScreenAwake();
 haptics=createHapticGuide();
 const scopeView=createScopeView();
@@ -89,23 +90,23 @@ function render(){
   const focusElement=detail.contains(document.activeElement)?document.activeElement:null,focusId=focusElement?.id;
   const hero=same?detail.querySelector(':scope > .object-visual'):null;
   const heading=node('div',undefined,'object-caption');heading.append(node('span',o.type.toUpperCase(),'dv-nav-eyebrow'),node('span',story.difficulty,'object-difficulty'),Object.assign(node('h3',o.name),{id:'target-name'}));
-  const sun=positions.get('Sun');const availability=o.id==='Sun'?'Solar observing requires specialist protection':p.alt<=0?'Below the horizon · plan for another time':sun?.alt>0?'Daylight · sky positions shown for planning':p.alt<20?'Low in the sky · watch for obstacles':'Above the horizon · check your actual sky';
+  const sun=positions.get('Sun');const availability=o.id==='Sun'?'Solar observing requires specialist protection':p.alt<=0?'Below the horizon · plan for another time':sun?.alt>-6?'Daylight or bright twilight · sky positions shown for planning':p.alt<20?'Low in the sky · watch for obstacles':'Above the horizon · check your actual sky';
   heading.append(node('p',(planner.planning?'Planned sky · ':'')+availability,'object-availability'),node('p',`${compass(p.az)} · ${degrees(p.alt)} up · ${degrees(p.az)} true azimuth`,'object-position'),node('p',discoveryNote(o),'object-fact'));detail.replaceChildren(hero||objectVisual(o,{compass:true}),heading);
   const stats=node('dl',undefined,'dv-nav-stats');
   for(const [label,value] of [['ALTITUDE',degrees(p.alt)],['TRUE AZIMUTH',`${degrees(p.az)} ${compass(p.az)}`]]){const group=node('div');group.append(node('dt',label),node('dd',value));stats.append(group);}
-  const actions=node('div',undefined,'object-actions'),findButton=node('button',planner.planning?'⌖ Find in the live sky':'⌖ Find this object'),center=node('button','Show on sky map');findButton.id='find-selected';center.id='center-selected';findButton.type=center.type='button';findButton.disabled=o.id==='Sun';findButton.addEventListener('click',()=>navigation.section('finder'));center.addEventListener('click',()=>{$('atlas-card').open=true;atlas.centerTarget();$('atlas-card').scrollIntoView({block:'nearest'});});actions.append(findButton,center);detail.append(actions);
+  const actions=node('div',undefined,'object-actions'),findButton=node('button',planner.planning?'⌖ Find in the live sky':'⌖ Find this object'),center=node('button','Show on sky map');findButton.id='find-selected';center.id='center-selected';findButton.type=center.type='button';findButton.disabled=o.id==='Sun';findButton.addEventListener('click',()=>navigation.section('finder'));center.addEventListener('click',()=>{$('atlas-card').open=true;atlas.centerTarget();$('atlas-card').scrollIntoView({block:'nearest'});});actions.append(findButton,center);if(p.alt<=0||sun?.alt>-6){const plan=node('button','Plan another time');plan.type='button';plan.id='plan-selected';plan.addEventListener('click',()=>appHelpAction('plan'));actions.append(plan);}const kitLink=node('button','My eyepieces');kitLink.type='button';kitLink.id='object-kit-link';kitLink.addEventListener('click',()=>appHelpAction(equipment.current()?'kit':'telescope'));actions.append(kitLink);detail.append(actions);
   const about=node('details',undefined,'dv-nav-about');about.dataset.detailKey='calculation';about.append(node('summary','Object notes & position details'));about.append(stats,node('p',o.note,'object-spoiler'));
   if(!o.body)about.append(node('p','Precessed J2000 catalogue position. Rounded coordinates; proper motion not applied. Suitable for exploration, not precision alignment.'));
   const advice=equipment.appendAdvice(detail,o,p.alt);advice.querySelector('details').dataset.detailKey='eyepiece';
   const expect=node('details',undefined,'object-expect');expect.dataset.detailKey='expect';expect.append(node('summary','What will I see through the eyepiece?'),node('p',story.expect),node('p','Space images can use enhanced colour and non-visible wavelengths. Expect subtler colours and less detail through an eyepiece.','dv-nav-fine'));detail.append(expect,about);
   for(const extra of detail.querySelectorAll('details'))if(openKeys.includes(extra.dataset.detailKey))extra.open=true;
   if(focusElement?.isConnected)focusElement.focus({preventScroll:true});else if(focusId)document.getElementById(focusId)?.focus({preventScroll:true});lastDetail=selected;
-  finder.target(o,livePositions.get(selected));nextTarget?.refresh();finderTargets?.refresh();hops.update(livePositions,selected);drawMap();pointing.paint();
+  finder.target(o,livePositions.get(selected));nextTarget?.refresh();finderTargets?.refresh();hops.update(livePositions,selected);drawMap();pointing.paint();contextHelp?.refresh();
 }
 function drawMap(){atlas?.update(positions,selected,calculationTime,planner.planning);}
 function chooseObject(id){atlas.showHop([]);selected=desiredTarget=id;render();$('object-library').open=false;$('selected-panel').open=true;atlas.centerTarget();}
 $('atlas-center').addEventListener('click',()=>atlas.centerTarget());
-$('atlas-align').addEventListener('click',()=>navigation.section('pointing'));
+$('atlas-align').addEventListener('click',()=>readyPointing(null,'alignment'));
 $('launch').addEventListener('click',()=>{if(!dialog.open)dialog.show();$('launch').setAttribute('aria-expanded','true');update();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)update();},10000);$('close').focus();});
 $('close').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('close',()=>{clearInterval(timer);$('launch').setAttribute('aria-expanded','false');$('launch').focus();});
@@ -162,6 +163,43 @@ function findLiveTarget(id){haptics.reset();selected=desiredTarget=id;planner.no
 finderTargets=createFinderTargets({A,site,getSelected:()=>selected,onSelect:findLiveTarget});
 nextTarget=createNextTarget({A,site,getKit:()=>equipment.current(),getSelected:()=>selected,getSnapshot:()=>mission.snapshot,onSelect:findLiveTarget});
 
+function openAppSection(name){if(!dialog.open)$('launch').click();navigation.section(name);}
+function openAppLocation(action){
+ const wasOpen=dialog.open,show=()=>{$('home-location-panel').open=true;if(action==='place'||action==='coordinates')document.querySelector('.dv-location-search').open=true;if(action==='coordinates')$('coordinate-form').closest('details').open=true;revealReadyControl(action==='place'?'place-query':action==='coordinates'?'site-latitude':'use-location');};
+ if(wasOpen)dialog.addEventListener('close',show,{once:true});document.querySelector('#app-header [data-app-view=home]').click();if(!wasOpen)show();
+}
+function appHelpAction(action){
+ switch(action){
+ case 'reload':location.reload();break;
+ case 'clear-search':$('search').value='';filter='all';for(const button of document.querySelectorAll('[data-filter]'))button.setAttribute('aria-pressed',String(button.dataset.filter==='all'));openAppSection('objects');if(positions.size)render();$('object-library').open=true;revealReadyControl('search');break;
+ case 'catalogue':openAppSection('objects');$('object-library').open=true;revealReadyControl('search');break;
+ case 'pick-target':openAppSection('finder');$('finder-target-picker').open=true;finderTargets?.refresh();revealReadyControl('finder-target-search');break;
+ case 'align':readyPointing(null,'alignment');break;
+ case 'sensors':readyPointing(null,'sensors');break;
+ case 'sensor-help':openAppSection('pointing');$('pointing-troubleshooting').open=true;revealReadyControl('pointing-troubleshooting');break;
+ case 'camera-help':openAppSection('pointing');$('pointing-troubleshooting').open=true;revealReadyControl('pointing-troubleshooting');break;
+ case 'without-camera':pointing.hideCamera();readyPointing(null,'alignment');break;
+ case 'vibration':openAppSection('finder');revealReadyControl('finder-vibration');break;
+ case 'fitted':openAppSection('finder');$('fitted-panel').open=true;revealReadyControl(!$('fitted-zoom-label').hidden&&$('fitted-eyepiece').value?'fitted-zoom':'fitted-eyepiece');break;
+ case 'kit':openAppSection('equipment');revealReadyControl('kit-list');break;
+ case 'telescope':openAppSection('equipment');$('telescope-settings').open=true;revealReadyControl('telescope-focal');break;
+ case 'enable-eyepiece':openAppSection('equipment');if(!equipment.current()){appHelpAction('telescope');break;}const input=$('kit-list').querySelector('input');if(input){input.focus();input.scrollIntoView({block:'center'});}else appHelpAction('add-eyepiece');break;
+ case 'add-eyepiece':if(!equipment.current()){appHelpAction('telescope');break;}openAppSection('equipment');$('eyepiece-add-panel').open=true;revealReadyControl('new-eyepiece-name');break;
+ case 'plan':openAppSection('objects');if(!planner.planning)planner.plan();$('planner-settings').open=true;revealReadyControl('plan-date');break;
+ case 'duration':openAppSection('mission');$('mission-duration-panel').open=true;document.querySelector('.mission-duration-entry').open=true;revealReadyControl('mission-minutes-input');break;
+ case 'mission':openAppSection('mission');revealReadyControl('mission-title');break;
+ case 'now':planner.now();field?.refresh();contextHelp?.refresh();break;
+ case 'forecast':$('nav-to-forecast').click();break;
+ case 'location':openAppLocation();break;
+ case 'place':openAppLocation('place');break;
+ case 'coordinates':openAppLocation('coordinates');break;
+ case 'location-help':location.href=new URL('../field-check.html#permissions',import.meta.url).href;break;
+ case 'guide':location.href=new URL('../field-check.html',import.meta.url).href;break;
+ case 'retry-aurora':case 'retry-air':case 'retry-iss':field.retry(action.slice(6));break;
+ }
+}
+contextHelp=createContextHelp({act:appHelpAction,getState:()=>({pose:currentPointing,kit:equipment.current(),target:catalogue.find(o=>o.id===selected),position:livePositions.get(selected)})});
+
 window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close();}});
 function openTarget(id){
  if(id&&!catalogue.some(object=>object.id===id))return;
@@ -173,6 +211,7 @@ function openTarget(id){
 }
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==$('forecast-frame').contentWindow)return;
+ if(event.data?.type==='dvsky-open-help'&&['location','catalogue','guide'].includes(event.data.action)){appHelpAction(event.data.action);return;}
  if(event.data?.type==='dvsky-night-mission'){startMission(event.data.date,event.data.start);return;}
  if(event.data?.type==='dvsky-select-target'&&typeof event.data.id==='string')openTarget(event.data.id);
 });
@@ -181,3 +220,6 @@ function startMission(date,minute){
 }
 if(requestedQuery.has('target')||requestedQuery.has('navigator'))openTarget(requestedQuery.get('target')||'');
 if(requestedQuery.has('mission'))startMission(requestedQuery.get('night'),Number(requestedQuery.get('at')||1260));
+
+const sectionLink=requestedQuery.get('section');
+if(['objects','finder','pointing','equipment','mission','field'].includes(sectionLink)){openAppSection(sectionLink);if(sectionLink==='pointing')readyPointing(null,'alignment');}
