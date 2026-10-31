@@ -1,10 +1,10 @@
 export function createScopeView(){
  const $=id=>document.getElementById(id),view=$('finder-view');let active=false,scroll=0;
  function exit(){
-  if(!active)return;active=false;document.body.classList.remove('dv-scope-view');view.removeAttribute('aria-modal');view.removeAttribute('role');view.removeAttribute('tabindex');$('finder-scope-view').setAttribute('aria-expanded','false');window.scrollTo(0,scroll);$('finder-scope-view').focus({preventScroll:true});
+  if(!active)return;active=false;document.body.classList.remove('dv-scope-view');view.removeAttribute('aria-modal');view.removeAttribute('role');view.removeAttribute('tabindex');$('finder-scope-view').setAttribute('aria-expanded','false');$('finder-window-expand').setAttribute('aria-expanded','false');$('finder-window-expand').setAttribute('aria-label','Expand live guidance window');window.scrollTo(0,scroll);$('finder-scope-view').focus({preventScroll:true});
  }
  $('finder-scope-view').addEventListener('click',()=>{
-  if(active){exit();return;}active=true;scroll=window.scrollY;document.body.classList.add('dv-scope-view');view.setAttribute('role','dialog');view.setAttribute('aria-modal','true');view.setAttribute('tabindex','-1');$('finder-scope-view').setAttribute('aria-expanded','true');$('scope-exit').focus({preventScroll:true});
+  if(active){exit();return;}active=true;scroll=window.scrollY;document.body.classList.add('dv-scope-view');view.setAttribute('role','dialog');view.setAttribute('aria-modal','true');view.setAttribute('tabindex','-1');$('finder-scope-view').setAttribute('aria-expanded','true');$('finder-window-expand').setAttribute('aria-expanded','true');$('finder-window-expand').setAttribute('aria-label','Exit full-screen guidance');$('scope-exit').focus({preventScroll:true});
  });
  $('scope-exit').addEventListener('click',exit);
  $('scope-night').addEventListener('click',()=>$('night').click());
