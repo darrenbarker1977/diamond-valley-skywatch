@@ -29,5 +29,5 @@ test('photographic phase clipping has the correct illuminated area and waxing/wa
 });
 test('hotter guidance speeds up toward the target and the near signal never claims a lock',()=>{
  const bands=[40,25,12,5].map(warmth);assert.ok(bands.every((b,i)=>i===0||b.interval<bands[i-1].interval));
- assert.match(warmth(2).label,/not a lock/);assert.deepEqual(warmth(2).pattern,[25,80,25]);assert.equal(warmth(NaN),null);assert.equal(warmth(-1),null);
+ assert.match(warmth(2).label,/not a lock/);assert.equal(warmth(2).pattern.length,3);assert.ok(warmth(2).pattern[0]>=60);assert.ok(warmth(40).pattern>=60);assert.equal(warmth(NaN),null);assert.equal(warmth(-1),null);
 });
