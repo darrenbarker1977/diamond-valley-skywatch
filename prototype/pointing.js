@@ -2,7 +2,7 @@ import {site} from './location.js?v=location-1';
 import {OrientationSession} from './sensors.js';
 import {skyVector,skyAngles,singleAlignment,alignedDirection,solveAlignment,validateAlignment,applyRotation,stableSample,guidance,angle} from './alignment.js?v=field-1';
 import {easyTargets,easyObjects} from './easy-targets.js?v=catalogue-1';
-export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},onAligned=()=>{},onPose=()=>{},allowGuidance=()=>true,env=window}){
+export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},onAligned=()=>{},onNext=()=>{},onPose=()=>{},allowGuidance=()=>true,env=window}){
  const $=id=>document.getElementById(id);
  let samples=[],model=null,verified=false,checkError=null,choices=[],cameraStream=null,cameraGeneration=0,cameraLive=false,isDaylight=false;
  const session=new OrientationSession(env,()=>paint());
@@ -67,42 +67,46 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   $('alignment-help').textContent=isDaylight?'No setup step is missing. This app waits until after dusk for sky alignment. Browsing and planning remain available.':verified?'Use search to select your destination. Move slowly and confirm through the finder.':stage===0?(session.active?'Identify one bright object, centre it and hold still for about one second. One target starts basic guidance; a second refines it.':'Choose an easy object below. Enable sensors above when you are ready to centre and record it. One target is enough to start.'):stage===1?'You can find targets now. One-target guidance corrects heading and tilt at your chosen object; accuracy elsewhere is not verified. Add a second object 30°–140° away for a fuller alignment.':'You can find targets now. A third object at least 20° from both alignment objects optionally checks the result. It is not required to start.';
   $('capture-alignment').textContent=isDaylight?'Alignment available after dusk':stage===0?'Record first object · start guidance':stage===1?'Add second object · refine alignment':'Check a third object · optional';
   let stable=false;try{stableSample(session.history,session.now());stable=true;}catch{}
-  $('capture-alignment').disabled=verified||!fresh||!stable||!$('object-confirm').checked||!choices.length||(mode()==='mounted'&&!$('mount-confirm').checked)||(!!cameraStream&&!cameraLive);
+  $('capture-alignment').disabled=verified||isDaylight||!site.physicalConfirmed||!allowGuidance()||!fresh||!stable||!$('object-confirm').checked||!choices.length||(mode()==='mounted'&&!$('mount-confirm').checked)||(!!cameraStream&&!cameraLive);
   $('alignment-target').disabled=verified||!choices.length;
   $('object-confirm').disabled=verified||!choices.length;
   $('alignment-search').disabled=verified;
   const cameraObject=choices.find(o=>o.id===$('alignment-target').value);
   $('camera-object').textContent=verified?'Alignment checked · you can find your target now':cameraObject?(stage?'Next optional alignment object: ':'Align on: ')+cameraObject.name:'No suitable alignment object selected';
   $('camera-readiness').textContent=isDaylight?'Daylight alignment is unavailable. Return after dusk.':verified?'Alignment checked. Choose Find my target now when ready.':!session.active?'Close camera to enable pointing sensors. '+session.message:!choices.length?'Close the camera and choose a suitable alignment object.':!cameraLive?'Opening the rear camera…':!fresh||session.status!=='receiving'?'Recording disabled: '+session.message:!stable?'Hold the phone steady until Record becomes available.':!$('object-confirm').checked?(stage?'Guidance is ready. Find your target now, or centre the next optional object and confirm it below.':'Centre the identified object on the crosshair, then tick the confirmation below.'):'Steady readings received. Tap Record while the object is centred.';
-  let direction=session.status==='stale'?'Sensor readings are stale; direction arrows are off until fresh samples arrive.':'Direction arrows are off until you align on one identified object.',pose={ready:false},hapticPose={ready:false};
+  const quality=verified?'checked':model?.kind==='single'?'basic':model?'refined':null;
+  let guidanceStatus=!session.active?'off':!model?'needs-alignment':'waiting',direction=!session.active?'Enable pointing sensors, then centre and record one identified bright object.':!model?'Sensors are on. Next, centre and record one bright object to align the phone.':'Waiting for fresh aligned sensor readings.',pose={ready:false},hapticPose={ready:false};
   let mapPose={calibrated:!!model&&session.active,ready:false,message:model?'Waiting for fresh aligned sensor readings.':'Align on an identified object in Pointing.'};
+  if(model&&(!fresh||session.status!=='receiving')){guidanceStatus='stale';direction='Alignment retained. Waiting for fresh sensor readings; guidance resumes when they return.';}
   if(model&&fresh&&session.status==='receiving'){
    const recent=session.history.filter(s=>session.now()-s.time<400);
-   const quiet=recent.length>=3&&recent.every(s=>angle(s.vector,latest.vector)<4);
-   // A moving phone can guide vibration without pretending it is a steady
-   // telescope reading. Reject fast jumps and zigzag/noisy sample paths.
+   // Guidance follows actual, smooth moving samples. Recording an alignment
+   // still requires the separate one-second stableSample check above.
    let travel=0;const smooth=recent.length>=3&&recent.slice(1).every((sample,index)=>{const previous=recent[index],delta=angle(previous.vector,sample.vector),dt=sample.time-previous.time;travel+=delta;return dt>0&&delta/dt*1000<=90;})&&travel-angle(recent[0].vector,latest.vector)<=2;
    try {
     const current=alignedDirection(model,latest.vector),now=new Date(),target=getSelected(),p=position(A,target,now),sun=position(A,catalogue.find(o=>o.id==='Sun'),now);
-    // Map exploration follows the real aligned sample during movement. Telescope
-    // arrows still require the separate quiet/stable check below.
     mapPose={calibrated:true,ready:true,current};
-    if(sun.alt<=-6&&target.id!=='Sun'&&angle(skyVector(p),skyVector(sun))>=30){const result=guidance(current,p);if(!result.blocked&&smooth)hapticPose={ready:true,current,...result};else hapticPose={ready:false,message:result.blocked||'Move smoothly; vibration is paused while the phone readings are noisy or too fast.'};}
-    if(!quiet)direction='Hold steady briefly. Direction arrows are paused while readings are moving or noisy.';
-    else if(sun.alt>-6)direction='Guidance paused until after dusk.';
-    else if(target.id==='Sun'||angle(skyVector(p),skyVector(sun))<30)direction='No guidance toward the Sun or objects within 30° of it.';
-    else {const result=guidance(current,p);direction=`${model.kind==='single'?'Basic one-target estimate · ':verified?'Checked alignment · ':'Two-target estimate · '}${target.name}: ${result.blocked||result.text}`;if(!result.blocked)pose={ready:true,current,quality:verified?'checked':model.kind==='single'?'basic':'refined',...result};}
-   }catch{direction='Sky calculation unavailable. Guidance is off.';hapticPose={ready:false};mapPose={calibrated:!!model&&session.active,ready:false,message:'Aligned direction unavailable. The map is paused.'};}
+    const result=guidance(current,p);
+    if(sun.alt>-6){guidanceStatus='daylight';direction='Alignment retained. Guidance is paused until after dusk.';}
+    else if(target.id==='Sun'||angle(skyVector(p),skyVector(sun))<30){guidanceStatus='unsafe';direction='Choose a different target. Guidance is unavailable toward the Sun or within 30° of it.';}
+    else if(result.blocked){guidanceStatus=p.alt<=0?'below-horizon':'overhead';direction=result.blocked+' Alignment is retained; choose another visible target.';}
+    else if(!smooth){guidanceStatus='noisy';direction='Alignment retained. Move smoothly; guidance pauses for noisy or excessively fast readings.';}
+    else{guidanceStatus='live';direction=`${model.kind==='single'?'Basic one-target estimate · ':verified?'Checked alignment · ':'Two-target estimate · '}${target.name}: ${result.text}`;pose={ready:true,current,quality,...result};hapticPose={...pose};}
+    if(!hapticPose.ready)hapticPose={ready:false,message:direction};
+   }catch{guidanceStatus='calculation-error';direction='Aligned direction unavailable. Check the sky calculations or realign nearby.';hapticPose={ready:false,message:direction};mapPose={calibrated:!!model&&session.active,ready:false,message:direction};}
   }
-  if(!site.physicalConfirmed){direction='Sky viewing only. Confirm you are physically at this observing location before using sensor guidance.';pose={ready:false};hapticPose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
-  if(!allowGuidance()){direction='Planned sky only. Return to Now and repeat alignment before using direction arrows.';pose={ready:false};hapticPose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
-  if(isDaylight){direction='Daylight at this observing location. Alignment is paused until after dusk. Sky browsing and tour planning still work.';pose={ready:false};hapticPose={ready:false};mapPose={calibrated:false,ready:false,message:direction};}
-  onPose({...pose,map:mapPose,haptic:hapticPose,alignment:{calibrated:!!model,quality:verified?'checked':model?.kind==='single'?'basic':model?'refined':null,fresh:!!fresh,sensorStatus:session.status,mountedConfirmed:$('mount-confirm').checked},message:direction,listening:session.active||session.status==='permission',mode:mode()});
+  if(!site.physicalConfirmed){guidanceStatus='presence';direction='Confirm you are physically at this observing location before using live pointing.';pose={ready:false};hapticPose={ready:false,message:direction};mapPose={calibrated:false,ready:false,message:direction};}
+  if(!allowGuidance()){guidanceStatus='planning';direction='Planned sky only. Return to Now and align before using live direction arrows.';pose={ready:false};hapticPose={ready:false,message:direction};mapPose={calibrated:false,ready:false,message:direction};}
+  if(isDaylight){guidanceStatus='daylight';direction='Daylight at this observing location. Alignment is paused until after dusk. Sky browsing and tour planning still work.';pose={ready:false};hapticPose={ready:false,message:direction};mapPose={calibrated:false,ready:false,message:direction};}
+  const next=$('pointing-next');let nextStep=!site.physicalConfirmed?'location':mode()==='mounted'&&!$('mount-confirm').checked?'placement':!session.active?'sensors':isDaylight?'daylight':!fresh||session.status!=='receiving'?'sensors':!model?'alignment':'guidance';
+  next.dataset.step=nextStep;next.disabled=session.status==='permission';next.textContent=nextStep==='location'?'Next · confirm this observing location':nextStep==='placement'?'Next · confirm phone placement':nextStep==='sensors'?(session.active?'Review sensor readings':'Next · enable pointing sensors'):nextStep==='daylight'?'Plan tonight · alignment starts after dusk':nextStep==='alignment'?'Next · centre and record one bright object':'Find target · live arrows & pulses';
+  onPose({...pose,guidanceStatus,map:mapPose,haptic:hapticPose,alignment:{calibrated:!!model,quality:verified?'checked':model?.kind==='single'?'basic':model?'refined':null,fresh:!!fresh,sensorStatus:session.status,mountedConfirmed:$('mount-confirm').checked},message:direction,listening:session.active||session.status==='permission',mode:mode()});
   $('guidance').textContent=direction;
   $('compact-guidance').textContent=session.active?direction:session.message+'. Open Pointing when you want to align.';
   document.querySelector('.dv-nav-alignment').hidden=verified;
   if(session.active&&session.status==='receiving'&&$('pointing-setup').dataset.autoCollapsed!=='true'){$('pointing-setup').open=false;$('pointing-setup').dataset.autoCollapsed='true';}
  }
+ $('pointing-next').addEventListener('click',()=>onNext($('pointing-next').dataset.step));
  $('enable-sensors').addEventListener('click',()=>{if(!allowGuidance()){$('alignment-feedback').textContent='Return to Now before enabling pointing. A planned sky cannot supply live guidance.';return;}if(!site.physicalConfirmed){$('alignment-feedback').textContent='Remote viewing only. Confirm that you are physically at this observing site before enabling pointing.';return;}reset();$('pointing-setup').dataset.autoCollapsed='false';session.start(mode());if($('alignment-target').value)onTargetSelect($('alignment-target').value);});
  window.addEventListener('dvsky-presence-changed',()=>{if(!site.physicalConfirmed)suspend('Physical presence is not confirmed. Remote viewing remains available; pointing is off.');else paint();});
  $('stop-sensors').addEventListener('click',()=>suspend());
@@ -115,7 +119,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  $('alignment-browse').addEventListener('click',()=>{document.querySelector('[data-nav-section=objects]').click();$('object-library').open=true;$('search').focus();});
  $('alignment-target').addEventListener('change',()=>{$('object-confirm').checked=false;if($('alignment-target').value)onTargetSelect($('alignment-target').value);identify();paint();});
  $('capture-alignment').addEventListener('click',()=>{
-  let accepted=false;
+  let accepted=false,completed=null;
   try {
    if(!session.active||session.status!=='receiving')throw Error('Enable fresh absolute sensor readings first.');
    if(!$('object-confirm').checked||(mode()==='mounted'&&!$('mount-confirm').checked))throw Error('Confirm the object and phone placement first.');
@@ -124,11 +128,12 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
    if(!object)throw Error('That object is no longer suitable. Refresh the suggestions and choose another.');
    const measured=stableSample(session.history,session.now()),sample={id:object.id,measured,target:skyVector(positions.get(object.id)),time:session.now()};
    accepted=true;
-   if(samples.length===0){samples.push(sample);model={...singleAlignment(sample),created:session.now()};$('alignment-feedback').textContent=`${object.name} recorded. Basic one-target guidance is ready. Accuracy is not verified; confirm through the finder. Add another object whenever you like.`;onAligned();}
-   else if(samples.length===1){model={...solveAlignment(samples[0],sample),kind:'two',created:session.now()};samples.push(sample);$('alignment-feedback').textContent=`Two-target guidance is ready; fit residual ${model.residual.toFixed(1)}°. A third-object check is optional, not an accuracy guarantee.`;onAligned();}
-   else {checkError=validateAlignment(model,samples,sample);verified=true;model.created=session.now();$('alignment-feedback').textContent=`Third-object check passed within ${checkError.toFixed(1)}°. This is a coarse estimate; confirm targets in the eyepiece.`;onAligned();}
-   $('alignment-search').value='';$('object-confirm').checked=false;refresh();
+   if(samples.length===0){samples.push(sample);model={...singleAlignment(sample),created:session.now()};$('alignment-feedback').textContent=`${object.name} recorded. Basic one-target guidance is ready. Accuracy is not verified; confirm through the finder. Add another object whenever you like.`;}
+   else if(samples.length===1){model={...solveAlignment(samples[0],sample),kind:'two',created:session.now()};samples.push(sample);$('alignment-feedback').textContent=`Two-target guidance is ready; fit residual ${model.residual.toFixed(1)}°. A third-object check is optional, not an accuracy guarantee.`;}
+   else {checkError=validateAlignment(model,samples,sample);verified=true;model.created=session.now();$('alignment-feedback').textContent=`Third-object check passed within ${checkError.toFixed(1)}°. This is a coarse estimate; confirm targets in the eyepiece.`;}
+   $('alignment-search').value='';$('object-confirm').checked=false;refresh();completed={id:object.id,stage:samples.length,quality:verified?'checked':model.kind==='single'?'basic':'refined'};
   }catch(e){if(accepted){samples=[];model=null;verified=false;}$('alignment-feedback').textContent=e.message;refresh();}
+  if(completed)onAligned(completed);
  });
  $('camera-toggle').addEventListener('click',async()=>{
   if(cameraStream){stopCamera();return;}
@@ -155,9 +160,9 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend('App was hidden. Enable sensors and repeat alignment.');});
  env.addEventListener('pagehide',()=>suspend('Page was left. Repeat alignment on return.'));
  env.screen?.orientation?.addEventListener('change',()=>suspend('Screen orientation changed. Repeat alignment in the new position.'));
- $('close').addEventListener('click',()=>suspend());
- $('navigator').addEventListener('cancel',()=>suspend());
- $('navigator').addEventListener('close',()=>suspend());
+ $('close').addEventListener('click',stopCamera);
+ $('navigator').addEventListener('cancel',stopCamera);
+ $('navigator').addEventListener('close',stopCamera);
  $('camera-tools').addEventListener('toggle',()=>{if(!$('camera-tools').open)stopCamera();});
  setup();refresh();return {refresh,paint,suspend,hideCamera:stopCamera};
 }

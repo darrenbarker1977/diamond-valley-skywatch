@@ -109,9 +109,10 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
  $('atlas-lines').addEventListener('click',()=>{lines=!lines;$('atlas-lines').setAttribute('aria-pressed',String(lines));request();});
  $('atlas-labels').addEventListener('click',()=>{labels=!labels;$('atlas-labels').setAttribute('aria-pressed',String(labels));request();});
  $('atlas-overview').addEventListener('click',()=>{stopFollowing();mode=mode==='dome'?'horizon':'dome';$('atlas-overview').setAttribute('aria-pressed',String(mode==='dome'));request();});
- $('atlas-follow').addEventListener('click',()=>{if(following){stopFollowing();request();return;}if(!pose?.map?.calibrated||isPlanned||failed)return;following=true;followStopped=false;mode='horizon';$('atlas-overview').setAttribute('aria-pressed','false');if(mapReady()){camera.az=pose.map.current.az;camera.alt=Math.min(85,Math.max(-10,pose.map.current.alt));}followUI();request();});
+ function follow(){if(!pose?.map?.calibrated||isPlanned||failed)return false;following=true;followStopped=false;mode='horizon';$('atlas-overview').setAttribute('aria-pressed','false');if(mapReady()){camera.az=pose.map.current.az;camera.alt=Math.min(85,Math.max(-10,pose.map.current.alt));}followUI();request();return true;}
+ $('atlas-follow').addEventListener('click',()=>{if(following){stopFollowing();request();}else follow();});
  const resize=new ResizeObserver(request);resize.observe(canvas);new MutationObserver(request).observe(document.body,{attributes:true,attributeFilter:['class']});followUI();
- return {
+ return {follow,get following(){return following;},
   update(nextPositions,id,now=new Date(),planned=false){
    isPlanned=planned;if(isPlanned){stopFollowing();$('atlas-follow').disabled=true;}
    const first=!date;positions=nextPositions;selected=id;date=now;failed=dataFailed;

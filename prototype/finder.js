@@ -10,6 +10,7 @@ export function createFinder({onSetup,onMode,onStop,onSky,getKit}){
  return {
   target(object,p){
    if(lastId!==object.id){$('finder-photo').replaceChildren(objectVisual(object));lastId=object.id;}
+   set('finder-tracking-label','Target: '+object.name+' · live sky');
    set('finder-name',object.name);set('finder-type',object.id===object.name?object.type:object.id+' · '+object.type);
    const compass=['N','NE','E','SE','S','SW','W','NW'][Math.round(p.az/45)%8];
    set('finder-destination',object.id==='Sun'?'Solar target · telescope guidance disabled':p.alt>0?`Look toward ${compass} · ${p.alt.toFixed(0)}° above the horizon`:'Below the horizon at this observing location');
@@ -23,9 +24,16 @@ export function createFinder({onSetup,onMode,onStop,onSky,getKit}){
   pose(state){
    if(state.listening&&state.mode&&state.mode!==preferredMode){preferredMode=state.mode;modeUI();}
    $('finder-stop').disabled=!state.listening;
-   const ready=!!state.ready;$('finder-arrows').hidden=!ready;$('finder-locked').hidden=ready;
-   $('finder-compass').classList.toggle('is-ready',ready);set('finder-guide-text',state.message||'Align your phone before direction arrows appear.');
-   set('finder-session',ready?(state.quality==='basic'?'ONE-TARGET BASIC · ACCURACY UNVERIFIED':state.quality==='refined'?'TWO-TARGET REFINED · CHECK OPTIONAL':'CHECKED ALIGNMENT · LIVE SENSOR ESTIMATE'):'SKY POSITION ONLY · ARROWS LOCKED');
+   const ready=!!state.ready,aligned=!!state.alignment?.calibrated,quality=state.alignment?.quality||state.quality;
+   $('finder-arrows').hidden=!ready;$('finder-locked').hidden=ready;
+   $('finder-compass').classList.toggle('is-ready',ready);set('finder-guide-text',state.message||'Enable sensors, then align on one identified object.');
+   const level=quality==='basic'?'ONE-TARGET BASIC · ACCURACY UNVERIFIED':quality==='refined'?'TWO-TARGET REFINED · CHECK OPTIONAL':'CHECKED ALIGNMENT · LIVE SENSOR ESTIMATE';
+   set('finder-session',aligned?(ready?'LIVE GUIDANCE · ':'ALIGNMENT RETAINED · PAUSED · ')+level:state.listening?'SENSORS ON · ONE OBJECT STILL NEEDED':'LIVE SKY · POINTING SETUP REQUIRED');
+   const reason=state.guidanceStatus;
+   set('finder-state-title',aligned?(reason==='below-horizon'?'That target is below your horizon':reason==='overhead'?'Choose a target away from overhead':reason==='stale'?'Waiting for fresh readings':reason==='noisy'?'Move smoothly':reason==='unsafe'?'Choose another target':'Alignment retained · guidance paused'):reason==='daylight'?'Waiting for dusk':state.listening?'Sensors are on · align one object':'Start live pointing');
+   set('finder-state-help',aligned?(state.message||'Your alignment is retained. Follow the next step below.'):reason==='daylight'?'Browse or plan now; identify and record an alignment object after dusk.':state.listening?'Next, centre one bright object you can identify and tap Record. Sensor permission alone does not align the phone.':'Enable sensors, then centre and record one identified bright object. Guidance opens automatically after that.');
+   $('finder-setup').textContent=aligned?'Refine alignment · optional':preferredMode==='mounted'?'⌖ Align on telescope':'⌖ Align handheld';
+   $('finder-sky').textContent=aligned?'Open live sky map':'Browse the sky map';
    if(!ready){set('finder-horizontal','');set('finder-vertical','');set('finder-error','');return;}
    set('finder-horizontal',Math.abs(state.azDelta)<2?'↔ Azimuth close':`${state.azDelta>0?'→ Right':'← Left'} ${Math.abs(state.azDelta).toFixed(1)}°`);
    set('finder-vertical',Math.abs(state.altDelta)<2?'↕ Height close':`${state.altDelta>0?'↑ Raise':'↓ Lower'} ${Math.abs(state.altDelta).toFixed(1)}°`);
