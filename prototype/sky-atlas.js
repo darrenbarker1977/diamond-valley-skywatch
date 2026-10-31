@@ -76,7 +76,7 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
   }
   $('atlas-direction').textContent=following&&!mapReady()?'Follow paused · last map view':mode==='dome'?'All sky · north at top':`${following?'Aligned view':'Map view'} · ${compass(camera.az)} · ${Math.round(camera.az)}° · ${Math.round(camera.alt)}° up`;
   $('atlas-zoom').textContent=mode==='dome'?'Whole sky':Math.round(camera.fov)+'° vertical';
-  $('atlas-status').textContent=daylight?'Daylight preview · most stars are hidden to the eye':sun&&sun.alt>-12?'Twilight · brighter objects are easier to see':isPlanned?'Planned sky · drag to explore, tap an object':'Live sky · drag to explore, tap an object';
+  $('atlas-status').textContent=pose?.practice?'PRACTICE sky · temporary time, assumed reference':daylight?'Daylight preview · most stars are hidden to the eye':sun&&sun.alt>-12?'Twilight · brighter objects are easier to see':isPlanned?'Planned sky · drag to explore, tap an object':'Live sky · drag to explore, tap an object';
   canvas.dataset.ready='true';canvas.dataset.starCount=String(stars.length);canvas.dataset.deepStarCount=String(faintStars.length);canvas.dataset.milkyWay=String(deepLoaded);canvas.dataset.view=mode;canvas.dataset.azimuth=String(Math.round(camera.az));canvas.dataset.planned=String(isPlanned);canvas.dataset.epoch=date.toISOString();
  }
  function mapReady(){const p=pose?.map;return !!p?.calibrated&&p.ready===true&&Number.isFinite(p.current?.az)&&Number.isFinite(p.current?.alt);}
@@ -85,8 +85,8 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
   const state=isPlanned?'planned':failed?'unavailable':following?(mapReady()?'following':'paused'):available?(mapReady()?'ready':'waiting'):followStopped?'stopped':'manual';
   const text=isPlanned?'Planned sky · phone follow is off. Return to Now and align before following your phone.':failed?'Sky map unavailable. Object search and Pointing remain available.':following?(mapReady()?'Following your aligned phone. Dragging the map returns to manual view.':'Phone follow paused · '+(pose?.map?.message||'Waiting for a fresh aligned reading.')+' Resumes automatically when fresh readings return.') :available?(mapReady()?'Aligned phone ready · tap Follow aligned phone to move this map with your phone.':'Alignment retained · waiting for fresh readings. You can enable Follow; it will resume when readings return.'):followStopped?'Phone follow stopped · '+(pose?.map?.message||'Alignment was lost.')+' Repeat alignment before enabling Follow.':'Manual sky map · the compass alone does not move this view. Set up pointing after dusk, then enable Follow.';
   $('atlas-card').dataset.phoneFollow=state;
-  if($('atlas-follow-state').textContent!==text)$('atlas-follow-state').textContent=text;
-  $('atlas-follow').textContent=following?'Stop phone follow':'Follow aligned phone';$('atlas-follow').setAttribute('aria-pressed',String(following));$('atlas-follow').disabled=!following&&(!available||isPlanned||failed);
+  const description=(pose?.practice?'PRACTICE · assumed reference. ':'')+text;if($('atlas-follow-state').textContent!==description)$('atlas-follow-state').textContent=description;
+  $('atlas-follow').textContent=pose?.practice?(following?'Stop practice phone follow':'Follow practice phone'):following?'Stop phone follow':'Follow aligned phone';$('atlas-follow').setAttribute('aria-pressed',String(following));$('atlas-follow').disabled=!following&&(!available||isPlanned||failed);
  }
  function stopFollowing(stopped=false){following=false;followStopped=stopped;followUI();}
  function move(dx,dy){if(mode==='dome')return;stopFollowing();camera=moveCamera(camera,dx,dy,width,height);request();}

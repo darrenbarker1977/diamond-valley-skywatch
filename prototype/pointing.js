@@ -2,11 +2,13 @@ import {site} from './location.js?v=location-1';
 import {OrientationSession} from './sensors.js';
 import {skyVector,skyAngles,singleAlignment,alignedDirection,solveAlignment,validateAlignment,applyRotation,stableSample,guidance,angle} from './alignment.js?v=field-1';
 import {easyTargets,easyObjects} from './easy-targets.js?v=catalogue-1';
-export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},onAligned=()=>{},onNext=()=>{},onPose=()=>{},allowGuidance=()=>true,env=window}){
+export function createPointing({A,catalogue,position,getSelected,getAlignmentEyepiece=()=>'',onTargetSelect=()=>{},onAligned=()=>{},onNext=()=>{},onPose=()=>{},getTimeContext=()=>({practice:false,instant:new Date()}),allowGuidance=()=>true,env=window}){
  const $=id=>document.getElementById(id);
  let samples=[],model=null,verified=false,checkError=null,choices=[],cameraStream=null,cameraGeneration=0,cameraLive=false,isDaylight=false;
  const session=new OrientationSession(env,()=>paint());
- const mode=()=>$('pointing-mode').value;
+ const mode=()=>practiceMode()?'handheld':$('pointing-mode').value;
+ const practiceMode=()=>!!getTimeContext().practice,skyTime=()=>getTimeContext().instant;
+ const timeKey=()=>practiceMode()?skyTime().toISOString():'live';
  const searchText=value=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
  const matchesSearch=object=>{const text=searchText(`${object.id} ${object.name} ${object.id==='Polaris'?'North Star pole star':''}`);return searchText($('alignment-search').value).split(' ').every(word=>text.includes(word));};
  function reset(message='Alignment cleared. Start with the easiest object you can identify.'){
@@ -19,14 +21,14 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  function setup(){
   const mounted=mode()==='mounted';
   $('setup-help').textContent=mounted?'Strap the phone securely along the outside of the tube, screen facing out. Its physical top edge (opposite the charging port) must point toward the open end; keep its long edges parallel to the tube. Tighten the straps without obstructing movement. The guide uses that top-edge direction. Refit and start again if it slips.':'Hold the phone so its rear camera points at the sky. The aiming axis is out of the back of the phone, not the top of the screen. An optional camera crosshair can help you centre a bright object.';
-  $('mount-confirm-label').hidden=!mounted;$('camera-tools').hidden=mounted;
+  $('mount-confirm-label').hidden=!mounted;$('camera-tools').hidden=mounted||practiceMode();
  }
- function currentPositions(){const now=new Date();return new Map(catalogue.map(o=>[o.id,position(A,o,now)]));}
+ function currentPositions(){const now=skyTime();return new Map(catalogue.map(o=>[o.id,position(A,o,now)]));}
  function refresh(){
   if(!A){choices=[];isDaylight=false;paint();return;}
   try {
    const positions=currentPositions(),sun=positions.get('Sun');
-   const phase=A.Illumination('Moon',new Date()).phase_fraction;
+   const phase=A.Illumination('Moon',skyTime()).phase_fraction;
    const available=easyTargets(catalogue,positions,samples,phase),daylight=sun.alt>-6;
    isDaylight=daylight;
    choices=available.filter(matchesSearch);
@@ -34,7 +36,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
    if(select.dataset.ids!==ids){select.replaceChildren(...choices.map(o=>{const option=document.createElement('option'),p=positions.get(o.id);option.value=o.id;option.textContent=`${o.name} · ${p.alt.toFixed(0)}° up · ${Math.round(p.az)}° true azimuth`;return option;}));select.dataset.ids=ids;if(choices.some(o=>o.id===prior))select.value=prior;else $('object-confirm').checked=false;}
    else if(choices.length)for(const option of select.options){const o=catalogue.find(o=>o.id===option.value),p=positions.get(o.id),text=`${o.name} · ${p.alt.toFixed(0)}° up · ${Math.round(p.az)}° true azimuth`;if(option.textContent!==text)option.textContent=text;}
    if(!choices.length){const text=daylight?'Available after dusk':available.length?'No matches · clear or change your search':'No suitable alignment objects right now';if(select.options[0]?.textContent!==text){const option=document.createElement('option');option.value='';option.textContent=text;select.replaceChildren(option);}$('object-confirm').checked=false;}
-   $('easy-explanation').textContent=daylight?'It is too bright for this beginner alignment. This list opens after dusk; daylight alignment is disabled. You can still search all observing targets below.':available.length?'Suggested for right now, not a weather report. Clouds, trees and buildings may hide them. Type a name to filter this list, then choose the object you can confidently identify.':'No suitable easy object is available for this step right now. Wait for another time; do not guess at a faint object.';
+   $('easy-explanation').textContent=practiceMode()?'These objects suit your temporary night sky. Choose one to assume as the practice reference; do not try to find it in daylight.':daylight?'It is too bright for this beginner alignment. This list opens after dusk; daylight alignment is disabled. You can still search all observing targets below.':available.length?'Suggested for right now, not a weather report. Clouds, trees and buildings may hide them. Type a name to filter this list, then choose the object you can confidently identify.':'No suitable easy object is available for this step right now. Wait for another time; do not guess at a faint object.';
    $('alignment-search-status').textContent=daylight?'Alignment search is ready; matching choices become available after dusk.':!available.length?'No easy objects meet the height, Sun distance and alignment separation requirements right now.':choices.length?`${choices.length} available ${choices.length===1?'match':'matches'}. The selected object is shown below.`:'No available match. Try another name or clear the search. This list contains easy alignment objects, not every observing target.';
    if(session.active&&!model&&select.value&&prior!==select.value)onTargetSelect(select.value);
    identify();paint();
@@ -42,9 +44,12 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
  }
  function identify(){
   const object=choices.find(o=>o.id===$('alignment-target').value);
-  $('identify-help').textContent=object?easyObjects[object.id].hint+' Its map position is selected for you when sensors are enabled. A fist at arm’s length spans roughly 10° of sky. Never aim at or near the Sun. '+(mode()==='mounted'?getAlignmentEyepiece():''):'';
+  $('identify-help').textContent=practiceMode()?'Practice reference only: hold the phone still in any comfortable direction and confirm the assumption. Real alignment after dusk requires identifying and centring the actual object.':object?easyObjects[object.id].hint+' Its map position is selected for you when sensors are enabled. A fist at arm’s length spans roughly 10° of sky. Never aim at or near the Sun. '+(mode()==='mounted'?getAlignmentEyepiece():''):'';
  }
  function paint(){
+  if(model&&model.clock!==timeKey()){samples=[];model=null;verified=false;}
+  $('pointing-mode').disabled=practiceMode();$('camera-tools').hidden=practiceMode()||mode()==='mounted';
+  $('object-confirm-text').textContent=practiceMode()?' I am holding the phone still and assuming this practice reference. I have not identified this object in the daytime sky.':' I have positively identified this object and centred it (camera crosshair in my hand; low-power eyepiece on the telescope).';
   $('alignment-daylight').hidden=!isDaylight;
   if(!session.active||['unreliable','denied','unsupported'].includes(session.status)){
    if(samples.length||model){samples=[];model=null;verified=false;$('alignment-feedback').textContent='Sensor continuity was lost. Repeat alignment.';}
@@ -61,15 +66,16 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
    measured=`Measured ${mode()==='mounted'?'phone top-edge':'rear-camera'} tilt: ${raw.alt.toFixed(1)}°. North heading is uncalibrated.`;
    if(model){try{const p=alignedDirection(model,latest.vector);measured=`${mode()==='mounted'?'Phone-derived tube estimate':'Aligned rear-camera estimate'}: ${p.alt.toFixed(1)}° up · ${p.az.toFixed(1)}° true azimuth. ${verified?'Third-object check '+checkError.toFixed(1)+'°':model.kind==='single'?'One-target basic alignment; accuracy not measured':'Two-target refined alignment; no independent check'}; sensor accuracy unknown.`;}catch{measured='Fresh sensor values received, but this alignment correction is outside its usable range. Realign nearby.';}}
   }
-  $('measured-direction').textContent=measured;
+  $('measured-direction').textContent=practiceMode()?(model?'PRACTICE: assumed orientation offsets applied to real phone movement. No telescope direction has been measured.':measured):measured;
   const stage=samples.length;$('alignment-find').hidden=!model;
   $('alignment-step').textContent=isDaylight?'Waiting for dusk · alignment is paused':verified?'Alignment checked for this session':stage===0?'1 · Start with something easy':stage===1?'2 · Basic guidance ready · add another object if you like':'3 · Refined guidance ready · optional independent check';
-  $('alignment-help').textContent=isDaylight?'No setup step is missing. This app waits until after dusk for sky alignment. Browsing and planning remain available.':verified?'Use search to select your destination. Move slowly and confirm through the finder.':stage===0?(session.active?'Identify one bright object, centre it and hold still for about one second. One target starts basic guidance; a second refines it.':'Choose an easy object below. Enable sensors above when you are ready to centre and record it. One target is enough to start.'):stage===1?'You can find targets now. One-target guidance corrects heading and tilt at your chosen object; accuracy elsewhere is not verified. Add a second object 30°–140° away for a fuller alignment.':'You can find targets now. A third object at least 20° from both alignment objects optionally checks the result. It is not required to start.';
-  $('capture-alignment').textContent=isDaylight?'Alignment available after dusk':stage===0?'Record first object · start guidance':stage===1?'Add second object · refine alignment':'Check a third object · optional';
+  $('alignment-help').textContent=practiceMode()?'PRACTICE: hold the phone comfortably still, choose a nighttime reference and confirm the assumption below. You do not need to see the star. Keep the telescope parked and covered; this practice will be discarded on return to real time.':isDaylight?'No setup step is missing. This app waits until after dusk for sky alignment. Browsing and planning remain available.':verified?'Use search to select your destination. Move slowly and confirm through the finder.':stage===0?(session.active?'Identify one bright object, centre it and hold still for about one second. One target starts basic guidance; a second refines it.':'Choose an easy object below. Enable sensors above when you are ready to centre and record it. One target is enough to start.'):stage===1?'You can find targets now. One-target guidance corrects heading and tilt at your chosen object; accuracy elsewhere is not verified. Add a second object 30°–140° away for a fuller alignment.':'You can find targets now. A third object at least 20° from both alignment objects optionally checks the result. It is not required to start.';
+  $('capture-alignment').textContent=practiceMode()?(stage?'Add optional practice reference':'Record assumed reference · practise guidance'):isDaylight?'Alignment available after dusk':stage===0?'Record first object · start guidance':stage===1?'Add second object · refine alignment':'Check a third object · optional';
   let stable=false,steadyReason='Hold still for about one second while fresh readings arrive.';try{stableSample(session.history,session.now());stable=true;}catch(error){steadyReason=error.message;}
   $('capture-alignment').disabled=verified||isDaylight||!site.physicalConfirmed||!allowGuidance()||!fresh||!stable||!$('object-confirm').checked||!choices.length||(mode()==='mounted'&&!$('mount-confirm').checked)||(!!cameraStream&&!cameraLive);
   const captureReason=verified?'Alignment is already checked. Continue to live guidance.':isDaylight?'Recording is unavailable in daylight. Return after dusk; browsing and planning still work.':!site.physicalConfirmed?'Confirm you are at the selected observing location before recording.':!allowGuidance()?'This is a planned sky. Return to Now before aligning.':mode()==='mounted'&&!$('mount-confirm').checked?'Confirm the phone is secured and parallel to the telescope tube.':!session.active?'Enable pointing sensors before recording.':!fresh||session.status!=='receiving'?'Waiting for fresh, usable absolute sensor readings. '+session.message:!choices.length?'Choose an available, identified alignment object.':!stable?steadyReason:!$('object-confirm').checked?'Centre the identified object, then tick the confirmation above Record.':cameraStream&&!cameraLive?'Wait for the rear-camera image to become live.':'Ready: keep the object centred and tap Record. This is one-target alignment, not automatic object recognition.';
-  $('capture-readiness').textContent=captureReason;
+  $('capture-readiness').textContent=practiceMode()&&!$('object-confirm').checked?'Practice: hold still, tick the assumed-reference confirmation, then Record. No star identification is required.':captureReason;
+  $('capture-fix').hidden=!$('capture-alignment').disabled||verified;
   $('alignment-target').disabled=verified||!choices.length;
   $('object-confirm').disabled=verified||!choices.length;
   $('alignment-search').disabled=verified;
@@ -86,7 +92,7 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
    // still requires the separate one-second stableSample check above.
    let travel=0;const smooth=recent.length>=3&&recent.slice(1).every((sample,index)=>{const previous=recent[index],delta=angle(previous.vector,sample.vector),dt=sample.time-previous.time;travel+=delta;return dt>0&&delta/dt*1000<=90;})&&travel-angle(recent[0].vector,latest.vector)<=2;
    try {
-    const current=alignedDirection(model,latest.vector),now=new Date(),target=getSelected(),p=position(A,target,now),sun=position(A,catalogue.find(o=>o.id==='Sun'),now);
+    const current=alignedDirection(model,latest.vector),now=skyTime(),target=getSelected(),p=position(A,target,now),sun=position(A,catalogue.find(o=>o.id==='Sun'),now);
     mapPose={calibrated:true,ready:true,current};
     const result=guidance(current,p);
     if(sun.alt>-6){guidanceStatus='daylight';direction='Alignment retained. Guidance is paused until after dusk.';}
@@ -102,12 +108,14 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   if(isDaylight){guidanceStatus='daylight';direction='Daylight at this observing location. Alignment is paused until after dusk. Sky browsing and tour planning still work.';pose={ready:false};hapticPose={ready:false,message:direction};mapPose={calibrated:false,ready:false,message:direction};}
   const next=$('pointing-next');let nextStep=!site.physicalConfirmed?'location':mode()==='mounted'&&!$('mount-confirm').checked?'placement':!session.active?'sensors':isDaylight?'daylight':!fresh||session.status!=='receiving'?'sensors':!model?'alignment':'guidance';
   next.dataset.step=nextStep;next.disabled=session.status==='permission';next.textContent=nextStep==='location'?'Next · confirm this observing location':nextStep==='placement'?'Next · confirm phone placement':nextStep==='sensors'?(session.active?'Review sensor readings':'Next · enable pointing sensors'):nextStep==='daylight'?'Plan tonight · alignment starts after dusk':nextStep==='alignment'?'Next · centre and record one bright object':'Find target · live arrows & pulses';
-  onPose({...pose,capture:{ready:!$('capture-alignment').disabled,reason:captureReason},guidanceStatus,map:mapPose,haptic:hapticPose,alignment:{calibrated:!!model,quality:verified?'checked':model?.kind==='single'?'basic':model?'refined':null,fresh:!!fresh,sensorStatus:session.status,mountedConfirmed:$('mount-confirm').checked},message:direction,listening:session.active||session.status==='permission',mode:mode()});
+  if(practiceMode()){direction='PRACTICE · '+direction;pose.practice=true;hapticPose.practice=true;mapPose.practice=true;}
+  onPose({...pose,practice:practiceMode(),capture:{ready:!$('capture-alignment').disabled,reason:$('capture-readiness').textContent},guidanceStatus,map:mapPose,haptic:hapticPose,alignment:{calibrated:!!model,quality:verified?'checked':model?.kind==='single'?'basic':model?'refined':null,fresh:!!fresh,sensorStatus:session.status,mountedConfirmed:$('mount-confirm').checked},message:direction,listening:session.active||session.status==='permission',mode:mode()});
   $('guidance').textContent=direction;
   $('compact-guidance').textContent=session.active?direction:session.message+'. Open Pointing when you want to align.';
   document.querySelector('.dv-nav-alignment').hidden=verified;
   if(session.active&&session.status==='receiving'&&$('pointing-setup').dataset.autoCollapsed!=='true'){$('pointing-setup').open=false;$('pointing-setup').dataset.autoCollapsed='true';}
  }
+ $('capture-fix').addEventListener('click',()=>{if(!site.physicalConfirmed)onNext('location');else if(mode()==='mounted'&&!$('mount-confirm').checked)onNext('placement');else if(!session.active||session.status!=='receiving'||!session.history.at(-1)||session.now()-session.history.at(-1).time>700)onNext('sensors');else if(isDaylight)onNext('daylight');else {const control=$(!$('alignment-target').value?'alignment-search':'object-confirm');control.focus();control.scrollIntoView({block:'center'});}});
  $('pointing-next').addEventListener('click',()=>onNext($('pointing-next').dataset.step));
  $('guidance').addEventListener('click',()=>onNext(model?'guidance':'capture'));
  $('enable-sensors').addEventListener('click',()=>{if(!allowGuidance()){$('alignment-feedback').textContent='Return to Now before enabling pointing. A planned sky cannot supply live guidance.';return;}if(!site.physicalConfirmed){$('alignment-feedback').textContent='Remote viewing only. Confirm that you are physically at this observing site before enabling pointing.';return;}reset();$('pointing-setup').dataset.autoCollapsed='false';session.start(mode());if($('alignment-target').value)onTargetSelect($('alignment-target').value);});
@@ -126,19 +134,20 @@ export function createPointing({A,catalogue,position,getSelected,getAlignmentEye
   try {
    if(!session.active||session.status!=='receiving')throw Error('Enable fresh absolute sensor readings first.');
    if(!$('object-confirm').checked||(mode()==='mounted'&&!$('mount-confirm').checked))throw Error('Confirm the object and phone placement first.');
-   const positions=currentPositions(),phase=A.Illumination('Moon',new Date()).phase_fraction;
+   const positions=currentPositions(),phase=A.Illumination('Moon',skyTime()).phase_fraction;
    const eligible=easyTargets(catalogue,positions,samples,phase),object=eligible.find(o=>o.id===$('alignment-target').value);
    if(!object)throw Error('That object is no longer suitable. Refresh the suggestions and choose another.');
    const measured=stableSample(session.history,session.now()),sample={id:object.id,measured,target:skyVector(positions.get(object.id)),time:session.now()};
    accepted=true;
-   if(samples.length===0){samples.push(sample);model={...singleAlignment(sample),created:session.now()};$('alignment-feedback').textContent=`${object.name} recorded. Basic one-target guidance is ready. Accuracy is not verified; confirm through the finder. Add another object whenever you like.`;}
-   else if(samples.length===1){model={...solveAlignment(samples[0],sample),kind:'two',created:session.now()};samples.push(sample);$('alignment-feedback').textContent=`Two-target guidance is ready; fit residual ${model.residual.toFixed(1)}°. A third-object check is optional, not an accuracy guarantee.`;}
+   if(samples.length===0){samples.push(sample);model={...singleAlignment(sample),created:session.now(),clock:timeKey()};$('alignment-feedback').textContent=`${object.name} recorded. Basic one-target guidance is ready. Accuracy is not verified; confirm through the finder. Add another object whenever you like.`;}
+   else if(samples.length===1){model={...solveAlignment(samples[0],sample),kind:'two',created:session.now(),clock:timeKey()};samples.push(sample);$('alignment-feedback').textContent=`Two-target guidance is ready; fit residual ${model.residual.toFixed(1)}°. A third-object check is optional, not an accuracy guarantee.`;}
    else {checkError=validateAlignment(model,samples,sample);verified=true;model.created=session.now();$('alignment-feedback').textContent=`Third-object check passed within ${checkError.toFixed(1)}°. This is a coarse estimate; confirm targets in the eyepiece.`;}
-   $('alignment-search').value='';$('object-confirm').checked=false;refresh();completed={id:object.id,stage:samples.length,quality:verified?'checked':model.kind==='single'?'basic':'refined'};
+   $('alignment-search').value='';$('object-confirm').checked=false;if(practiceMode())$('alignment-feedback').textContent='Practice reference recorded. Offsets are assumed, not verified sky alignment. Return to real time clears them.';refresh();completed={id:object.id,stage:samples.length,quality:verified?'checked':model.kind==='single'?'basic':'refined'};
   }catch(e){if(accepted){samples=[];model=null;verified=false;}$('alignment-feedback').textContent=e.message;refresh();}
   if(completed)onAligned(completed);
  });
  $('camera-toggle').addEventListener('click',async()=>{
+  if(practiceMode()){$('camera-status').textContent='Camera aiming is off during practice. Use the assumed-reference controls; do not seek nighttime objects in daylight.';return;}
   if(cameraStream){stopCamera();return;}
   const generation=++cameraGeneration;
   try {

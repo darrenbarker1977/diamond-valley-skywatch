@@ -1,5 +1,5 @@
 // This controls the journey only. Original controls still own location, sensors and alignment.
-export function createWalkthrough({site,getPose,getTarget,canUseTarget,onLive,onPlan,onBrowse,onLeaveAlignment,onTargets}){
+export function createWalkthrough({site,isPractice=()=>false,getPose,getTarget,canUseTarget,onLive,onPlan,onBrowse,onLeaveAlignment,onTargets}){
  const $=id=>document.getElementById(id),slots=['walk-mode-slot','walk-location-slot','walk-sensors-slot','walk-align-slot','walk-target-slot'];
  const definitions=[
   ['Choose how you are pointing','Choose handheld for the rear-camera direction, or secure the phone along the telescope tube.'],
@@ -20,6 +20,7 @@ export function createWalkthrough({site,getPose,getTarget,canUseTarget,onLive,on
   if(!active)return;const p=pose(),target=getTarget(),day=p.guidanceStatus==='daylight',mounted=p.mode==='mounted';
   $('walkthrough-view').dataset.step=String(step);$('walk-step-number').textContent='STEP '+(step+1)+' OF 6';$('walk-stage-title').textContent=definitions[step][0];$('walk-stage-help').textContent=definitions[step][1];$('walk-destination').textContent='Optional target: '+target.name+' · choose another or simply explore';
   for(let i=0;i<slots.length;i++)$(slots[i]).hidden=i!==step;
+  if(isPractice()){$('walk-stage-title').textContent='Practice · '+definitions[step][0];$('walk-stage-help').textContent=step===0?'Practice uses your phone in hand. Keep the telescope parked and covered in daylight.':step===3?'Choose a practice reference and hold still. Confirm the assumption, then Record to rehearse arrows and pulses. You are not claiming to see the star.':definitions[step][1];$('walk-explore-aligned').textContent='Explore the practice sky';}else $('walk-explore-aligned').textContent='Just explore the aligned sky';
   const complete=[(modeDone||p.listening||aligned())&&(!mounted||p.alignment?.mountedConfirmed),site.physicalConfirmed,!!p.alignment?.fresh&&p.alignment?.sensorStatus==='receiving',aligned(),aligned()&&canUseTarget(),false];
   for(const item of document.querySelectorAll('[data-walk-step]')){const n=Number(item.dataset.walkStep);item.dataset.complete=String(complete[n]);if(n===step)item.setAttribute('aria-current','step');else item.removeAttribute('aria-current');}
   $('walk-back').disabled=step===0;$('walk-plan').hidden=!day;$('walk-explore-aligned').hidden=step!==4;
@@ -30,6 +31,9 @@ export function createWalkthrough({site,getPose,getTarget,canUseTarget,onLive,on
   if(step===3){const name=$('alignment-target').selectedOptions[0]?.textContent.split(' · ')[0]||'one object';status=aligned()?'One-object alignment is ready. Another object is optional.':day?'Daylight alignment is disabled. This is expected; plan tonight or browse while waiting for dusk.':'Record becomes available only after fresh, steady readings and your object confirmation.';next=aligned()?'Choose a destination →':day?'Plan tonight instead →':p.capture?.ready?'Record '+name+' · continue →':mounted?'Centre & record in the eyepiece →':'Centre & record with crosshairs →';disabled=!day&&!aligned()&&!$('alignment-target').value;}
   if(step===3&&!day&&!aligned()&&firstNeeded()<3){disabled=false;next='Review the missing setup step →';}
   if(step===4){disabled=!aligned()||!canUseTarget();status=disabled?'Choose a suitable visible target from the list. Your current destination cannot be guided to right now.':'Find '+target.name+' now, or choose a different object above. Weather and obstacles are unconfirmed.';next='Find '+target.name+' · live sky →';}
+  if(isPractice()&&step===3&&!aligned())next=p.capture?.ready?'Record practice reference · continue →':'Confirm assumed reference below →';
+  if(isPractice())status=step===3?'Practice only: '+(p.capture?.reason||status):'Practice · '+status;
+  const need=firstNeeded();$('walk-fix').hidden=step<=need||need>3;$('walk-fix').textContent='Open '+['phone placement','observing location','sensor controls','alignment controls'][Math.min(need,3)]+' →';
   $('walk-status').textContent=status;$('walk-next').disabled=disabled;$('walk-next').textContent=next;
  }
  function go(value){let wanted=typeof value==='number'?value:value==='location'?1:value==='placement'?0:value==='sensors'?2:value==='target'?4:3;
@@ -43,10 +47,12 @@ export function createWalkthrough({site,getPose,getTarget,canUseTarget,onLive,on
   if(value&&!active){active=true;modeDone=modeDone||!!pose().listening||aligned();for(let i=0;i<groups.length;i++)for(const entry of originals[i]){if(entry.open!==null)entry.open=entry.node.open;$(slots[i]).append(entry.node);}$('home-location-panel').open=true;pickerSummary.textContent='Search visible destinations';step=firstNeeded();if(step===4){$('finder-target-picker').open=true;onTargets();}update();}
   else if(!value&&active){if(step===3)onLeaveAlignment();active=false;for(const group of originals)for(const {node,marker,open}of group){marker.after(node);if(open!==null)node.open=open;}pickerSummary.textContent=pickerTitle;}
  }
+ for(const button of document.querySelectorAll('[data-walk-go]'))button.addEventListener('click',()=>Number(button.dataset.walkGo)===5?(aligned()?onLive():go(firstNeeded())):go(Number(button.dataset.walkGo)));
+ $('walk-fix').addEventListener('click',()=>go(firstNeeded()));
  $('walk-back').addEventListener('click',()=>go(step-1));
  $('walk-next').addEventListener('click',()=>{
   if(step===0){modeDone=true;go(1);}else if(step===1)go(2);else if(step===2)go(aligned()?4:3);else if(step===4)onLive();
-  else if(aligned())go(4);else if(pose().guidanceStatus==='daylight')onPlan();else if(firstNeeded()<3)go(firstNeeded());else if(pose().capture?.ready)$('capture-alignment').click();else if(pose().mode==='handheld'){$('camera-tools').open=true;$('camera-toggle').click();}else focus('object-confirm');
+  else if(aligned())go(4);else if(pose().guidanceStatus==='daylight')onPlan();else if(firstNeeded()<3)go(firstNeeded());else if(pose().capture?.ready)$('capture-alignment').click();else if(isPractice())focus('object-confirm');else if(pose().mode==='handheld'){$('camera-tools').open=true;$('camera-toggle').click();}else focus('object-confirm');
  });
  $('walk-explore').addEventListener('click',onBrowse);$('walk-explore-aligned').addEventListener('click',onBrowse);$('walk-plan').addEventListener('click',onPlan);$('walk-preview').addEventListener('click',onLive);$('walk-catalogue').addEventListener('click',onBrowse);
  return {activate,go,update,focus,confirmMode(){modeDone=true;},get active(){return active;},get step(){return step;},aligned(){onLeaveAlignment();go(4);}};

@@ -1,14 +1,15 @@
-import {createWalkthrough} from './walkthrough.js?v=walk-1';
+import {createPractice} from './practice.js?v=practice-1';
+import {createWalkthrough} from './walkthrough.js?v=practice-1';
 import {createLocation,site,forecastURL,setSite} from './location.js?v=location-1';
 import {createNavigation} from './navigation.js?v=walk-1';
 import {createEquipment} from './equipment-ui.js?v=folds-1';
-import {createPointing} from './pointing.js?v=walk-1';
+import {createPointing} from './pointing.js?v=practice-1';
 import {catalogue} from './catalogue.js?v=catalogue-1';
 import {skyVector,angle} from './alignment.js?v=field-1';
 import {position,matches} from './positions.js?v=catalogue-1';
-import {createSkyAtlas} from './sky-atlas.js?v=window-1';
-import {createFinderWindow} from './finder-window.js?v=window-1';
-import {createFinder} from './finder.js?v=window-1';
+import {createSkyAtlas} from './sky-atlas.js?v=practice-1';
+import {createFinderWindow} from './finder-window.js?v=practice-1';
+import {createFinder} from './finder.js?v=practice-1';
 import {objectVisual,objectStory,discoveryNote} from './object-cards.js?v=field-1';
 import {createPlanner} from './planner.js?v=aiming-1';
 import {createNightMission} from './night-mission.js?v=tour-1';
@@ -20,20 +21,22 @@ import {createStarHops} from './star-hops.js';
 import {createScopeView} from './scope-view.js?v=window-1';
 import {createScreenAwake} from './screen-awake.js?v=dismiss-1';
 import {createReadyCheck} from './ready-check.js?v=window-1';
-import {createNextTarget} from './next-target.js';
-import {createFinderTargets} from './finder-targets.js';
-import {createHapticGuide} from './haptic-guide.js?v=intensity-1';
+import {createNextTarget} from './next-target.js?v=practice-1';
+import {createFinderTargets} from './finder-targets.js?v=practice-1';
+import {createHapticGuide} from './haptic-guide.js?v=practice-1';
 import {createContextHelp} from './context-help.js';
 const requestedQuery=new URLSearchParams(location.search);
 if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has('lon')){
  try{let zone=requestedQuery.get('zone')||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch{zone='UTC';}setSite({latitude:Number(requestedQuery.get('lat')),longitude:Number(requestedQuery.get('lon')),height:0,accuracy:null,source:'coordinates',label:(requestedQuery.get('name')||'Planned location').slice(0,120),clockTimezone:zone,physicalConfirmed:false});}catch{}
 }
 const $=id=>document.getElementById(id), dialog=$('navigator');
+let practice=null;
+const skyTime=()=>practice?.context().instant||new Date();
 let exploring=true,walkthrough=null,liveWindow=null,readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null,contextHelp=null;
 let selected='Moon',desiredTarget='Moon',filter='all',timer,positions=new Map(),livePositions=new Map(),atlas=null,finder=null,planner=null,mission=null,locationUI=null,field=null,hops=null,lastDetail='',calculationTime=new Date();
 const A=globalThis.Astronomy;
 const equipment=createEquipment(()=>{if(positions.size)render();pointing.refresh();mission?.refresh();nextTarget?.refresh();readyCheck?.refresh();});
-const pointing=createPointing({A,catalogue,position,getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:result=>completeAlignment(result),onNext:step=>{if(step==='guidance')startLiveGuidance();else if(step==='daylight')appHelpAction('mission');else guidedPointing(null,step,step==='sensors'&&!currentPointing?.listening);},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;walkthrough?.update();updateHomeSession(state);atlas?.pose(state);finder?.pose(state);liveWindow?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
+const pointing=createPointing({A,catalogue,position,getTimeContext:()=>practice?.context()||{practice:false,instant:new Date()},getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:result=>completeAlignment(result),onNext:step=>{if(step==='guidance')startLiveGuidance();else if(step==='daylight')appHelpAction('mission');else guidedPointing(null,step,step==='sensors'&&!currentPointing?.listening);},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;walkthrough?.update();updateHomeSession(state);atlas?.pose(state);finder?.pose(state);liveWindow?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
 atlas=createSkyAtlas({A,site,catalogue,onSelect:id=>chooseObject(id)});
 function setPointingMode(mode){if($('pointing-mode').value!==mode){$('pointing-mode').value=mode;$('pointing-mode').dispatchEvent(new Event('change'));}}
 finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>guidedPointing(mode,'alignment'),onMode:setPointingMode,onStop:()=>pointing.suspend(),onAdvance:()=>advanceFinder(),onPick:()=>pickFinderTarget(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;if(currentPointing?.alignment?.calibrated)atlas.follow();revealReadyControl('atlas-title');}});
@@ -44,10 +47,12 @@ const scopeView=createScopeView();
 liveWindow=createFinderWindow({onExpand:()=>$('finder-scope-view').click(),onClose:()=>$('finder-sky').click()});
 createLiveCompass();createDiscovery();
 planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,onChange:()=>{
+ if(planner.planning)practice?.stop();
  if(planner.planning)pointing.suspend('Planned sky only. Return to Now and repeat alignment before using direction arrows.');
  if(mission?.active||planner.planning)mission?.activate();
  if(dialog.open)update();field?.refresh();readyCheck?.refresh();
 }});
+practice=createPractice({getZone:()=>site.clockTimezone,sunAltitude:time=>position(A,catalogue.find(o=>o.id==='Sun'),time).alt,onChange:()=>{if(practice.active)setPointingMode('handheld');pointing.suspend('Sky time changed. Practice alignment is cleared; repeat setup for this clock.');haptics.reset();if(practice.active)planner.now();if(dialog.open)update();},onSetup:()=>openWalkthrough()});
 mission=createNightMission({A,site,getContext:()=>planner.context(),getKit:()=>equipment.current(),ensureForecast:()=>navigation.ensureForecast(),onLive:id=>{
  setTransition('');selected=desiredTarget=id;planner.now();if(currentPointing?.alignment?.calibrated)startLiveGuidance();else openWalkthrough('capture');
 },onPreview:(id,time)=>{
@@ -64,10 +69,12 @@ function fail(error){pointing.suspend('Sky calculations failed. Guidance is off.
 function update(){
   try {
     if(!A)throw new Error('astronomy library did not load');
-    const now=new Date(),context=planner.context();calculationTime=context.planning?context.instant:now;
+    const now=new Date(),context=planner.context();calculationTime=practice?.active?skyTime():context.planning?context.instant:now;
     positions=new Map(catalogue.map(o=>[o.id,position(A,o,calculationTime)]));
     livePositions=context.planning?new Map(catalogue.map(o=>[o.id,position(A,o,now)])):positions;
     $('clock').textContent=new Intl.DateTimeFormat('en-CA',{timeZone:context.zone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'}).format(calculationTime);planner.refresh();
+    $('navigator-ready-slot').hidden=practice.active||walkthrough?.active;
+    if(practice.active){$('atlas-title').textContent='The sky, in practice.';$('atlas-live-badge').textContent='◷ PRACTICE';document.querySelector('.dv-nav-live').textContent='◷ Temporary sky · assumed practice alignment';}
     $('error').hidden=true;render();pointing.refresh();
   }catch(error){fail(error);}
 }
@@ -95,7 +102,7 @@ function render(){
   const hero=same?detail.querySelector(':scope > .object-visual'):null;
   const heading=node('div',undefined,'object-caption');heading.append(node('span',o.type.toUpperCase(),'dv-nav-eyebrow'),node('span',story.difficulty,'object-difficulty'),Object.assign(node('h3',o.name),{id:'target-name'}));
   const sun=positions.get('Sun');const availability=o.id==='Sun'?'Solar observing requires specialist protection':p.alt<=0?'Below the horizon · plan for another time':sun?.alt>-6?'Daylight or bright twilight · sky positions shown for planning':p.alt<20?'Low in the sky · watch for obstacles':'Above the horizon · check your actual sky';
-  heading.append(node('p',(planner.planning?'Planned sky · ':'')+availability,'object-availability'),node('p',`${compass(p.az)} · ${degrees(p.alt)} up · ${degrees(p.az)} true azimuth`,'object-position'),node('p',discoveryNote(o),'object-fact'));detail.replaceChildren(hero||objectVisual(o,{compass:true}),heading);
+  heading.append(node('p',(practice.active?'Practice sky · ':planner.planning?'Planned sky · ':'')+availability,'object-availability'),node('p',`${compass(p.az)} · ${degrees(p.alt)} up · ${degrees(p.az)} true azimuth`,'object-position'),node('p',discoveryNote(o),'object-fact'));detail.replaceChildren(hero||objectVisual(o,{compass:true}),heading);
   const stats=node('dl',undefined,'dv-nav-stats');
   for(const [label,value] of [['ALTITUDE',degrees(p.alt)],['TRUE AZIMUTH',`${degrees(p.az)} ${compass(p.az)}`]]){const group=node('div');group.append(node('dt',label),node('dd',value));stats.append(group);}
   const actions=node('div',undefined,'object-actions'),findButton=node('button',planner.planning?'⌖ Find in the live sky':'⌖ Find this object'),center=node('button','Show on sky map');findButton.id='find-selected';center.id='center-selected';findButton.type=center.type='button';findButton.disabled=o.id==='Sun';findButton.addEventListener('click',()=>{if(currentPointing?.alignment?.calibrated)startLiveGuidance();else openWalkthrough('capture');});center.addEventListener('click',()=>{$('atlas-card').open=true;atlas.centerTarget();$('atlas-card').scrollIntoView({block:'nearest'});});actions.append(findButton,center);if(p.alt<=0||sun?.alt>-6){const plan=node('button','Plan another time');plan.type='button';plan.id='plan-selected';plan.addEventListener('click',()=>appHelpAction('plan'));actions.append(plan);}const kitLink=node('button','My eyepieces');kitLink.type='button';kitLink.id='object-kit-link';kitLink.addEventListener('click',()=>appHelpAction(equipment.current()?'kit':'telescope'));actions.append(kitLink);detail.append(actions);
@@ -105,7 +112,7 @@ function render(){
   const expect=node('details',undefined,'object-expect');expect.dataset.detailKey='expect';expect.append(node('summary','What will I see through the eyepiece?'),node('p',story.expect),node('p','Space images can use enhanced colour and non-visible wavelengths. Expect subtler colours and less detail through an eyepiece.','dv-nav-fine'));detail.append(expect,about);
   for(const extra of detail.querySelectorAll('details'))if(openKeys.includes(extra.dataset.detailKey))extra.open=true;
   if(focusElement?.isConnected)focusElement.focus({preventScroll:true});else if(focusId)document.getElementById(focusId)?.focus({preventScroll:true});lastDetail=selected;
-  finder.target(o,livePositions.get(selected));nextTarget?.refresh();finderTargets?.refresh();hops.update(livePositions,selected);drawMap();pointing.paint();contextHelp?.refresh();
+  finder.target(o,livePositions.get(selected),practice.context());nextTarget?.refresh();finderTargets?.refresh();hops.update(livePositions,selected);drawMap();pointing.paint();contextHelp?.refresh();
 }
 function drawMap(){atlas?.update(positions,selected,calculationTime,planner.planning);}
 function chooseObject(id){setTransition('');atlas.showHop([]);selected=desiredTarget=id;render();$('object-library').open=false;$('selected-panel').open=true;if(id!=='Sun'&&!planner.planning&&currentPointing?.alignment?.calibrated&&!exploring)startLiveGuidance();else atlas.centerTarget();}
@@ -122,8 +129,9 @@ document.addEventListener('visibilitychange',()=>{if(dialog.open&&!document.hidd
 window.addEventListener('pageshow',()=>{if(dialog.open)update();});
 
 const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL,getEntrySection:()=>planner?.planning?'objects':currentPointing?.alignment?.calibrated?(exploring?'objects':'finder'):'walkthrough',onShown:name=>{if(name==='objects'&&exploring)$('compact-guidance').hidden=true;if(name==='walkthrough')walkthrough?.focus();if(name==='finder'&&dialog.open){revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}},onSection:name=>{
+ if(practice?.active&&(!dialog.open||['mission','field'].includes(name)))practice.stop();
  if(name==='objects'&&dialog.open)exploring=true;if(name==='finder')exploring=false;
- walkthrough?.activate(name==='walkthrough'&&dialog.open);$('navigator-ready-slot').hidden=name==='walkthrough';
+ walkthrough?.activate(name==='walkthrough'&&dialog.open);$('navigator-ready-slot').hidden=name==='walkthrough'||!!practice?.active;
  liveWindow?.activate(name==='finder'&&dialog.open);
  if(name!=='finder')scopeView.exit();
  readyCheck?.place(dialog.open);haptics?.activate(name==='finder'&&dialog.open);
@@ -133,7 +141,7 @@ const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>poin
  if(name==='finder'){if(currentPointing?.alignment?.calibrated){haptics?.start();atlas?.follow();}else atlas?.centerTarget();}
  if(name==='mission')mission.activate();if(name==='field')field.activate();else field.deactivate();
 }});
-locationUI=createLocation(()=>{pointing.suspend('Observing location changed. Repeat alignment at this location.');atlas.locationChanged();navigation.locationChanged();mission.locationChanged();field.locationChanged();planner.refresh();readyCheck?.refresh();nextTarget?.refresh();haptics?.reset();if(dialog.open)update();});
+locationUI=createLocation(()=>{practice.stop();pointing.suspend('Observing location changed. Repeat alignment at this location.');atlas.locationChanged();navigation.locationChanged();mission.locationChanged();field.locationChanged();planner.refresh();readyCheck?.refresh();nextTarget?.refresh();haptics?.reset();if(dialog.open)update();});
 
 function revealReadyControl(id){
  const control=$(id);if(!control||control.hidden)return;
@@ -183,8 +191,8 @@ readyCheck=createReadyCheck({A,site,getContext:()=>planner.context(),getSnapshot
 });
 if(currentPointing)readyCheck.pose(currentPointing);
 function findLiveTarget(id){haptics.reset();selected=desiredTarget=id;setTransition('');startLiveGuidance();}
-finderTargets=createFinderTargets({A,site,getSelected:()=>selected,onSelect:findLiveTarget});
-nextTarget=createNextTarget({A,site,getKit:()=>equipment.current(),getSelected:()=>selected,getSnapshot:()=>mission.snapshot,onSelect:findLiveTarget});
+finderTargets=createFinderTargets({A,site,getTime:skyTime,isPractice:()=>practice.active,getSelected:()=>selected,onSelect:findLiveTarget});
+nextTarget=createNextTarget({A,site,getTime:skyTime,isPractice:()=>practice.active,getKit:()=>equipment.current(),getSelected:()=>selected,getSnapshot:()=>mission.snapshot,onSelect:findLiveTarget});
 
 function setTransition(text){$('guidance-transition-status').textContent=text;$('guidance-transition-status').hidden=!text;}
 function updateHomeSession(state){
@@ -195,12 +203,12 @@ function updateHomeSession(state){
  $('observing-session-next').textContent=aligned?'Continue live guidance':'Next · finish one-object alignment';
 }
 function liveTargetUsable(id){
- try{const object=catalogue.find(o=>o.id===id);if(!object||id==='Sun')return false;const now=new Date(),p=position(A,object,now),sun=position(A,catalogue.find(o=>o.id==='Sun'),now);return p.alt>0&&p.alt<=80&&sun.alt<=-6&&angle(skyVector(p),skyVector(sun))>=30;}catch{return false;}
+ try{const object=catalogue.find(o=>o.id===id);if(!object||id==='Sun')return false;const now=skyTime(),p=position(A,object,now),sun=position(A,catalogue.find(o=>o.id==='Sun'),now);return p.alt>0&&p.alt<=80&&sun.alt<=-6&&angle(skyVector(p),skyVector(sun))>=30;}catch{return false;}
 }
 function completeAlignment(result){
  if(!currentPointing?.alignment?.calibrated)return;
  const preferred=desiredTarget,kept=liveTargetUsable(preferred);selected=desiredTarget=kept?preferred:result.id;
- setTransition(kept?'Aligned · live guidance is ready. Choose another target whenever you like.':'Alignment saved. Your previous target is not suitable in the live sky; showing '+(catalogue.find(o=>o.id===result.id)?.name||result.id)+'. Choose a visible target to continue.');
+ setTransition(practice.active?'Practice reference ready · all guidance uses assumed offsets. Return to real time clears this session.':kept?'Aligned · live guidance is ready. Choose another target whenever you like.':'Alignment saved. Your previous target is not suitable in the live sky; showing '+(catalogue.find(o=>o.id===result.id)?.name||result.id)+'. Choose a visible target to continue.');
  if(walkthrough?.active){pointing.hideCamera();walkthrough.aligned();return;}
  startLiveGuidance();
 }
@@ -262,7 +270,7 @@ function appHelpAction(action){
  }
 }
 contextHelp=createContextHelp({act:appHelpAction,getState:()=>({pose:currentPointing,kit:equipment.current(),target:catalogue.find(o=>o.id===selected),position:livePositions.get(selected)})});
-walkthrough=createWalkthrough({site,getPose:()=>currentPointing,getTarget:()=>catalogue.find(o=>o.id===desiredTarget),canUseTarget:()=>liveTargetUsable(desiredTarget),onLive:()=>{selected=desiredTarget;startLiveGuidance();},onPlan:()=>appHelpAction('mission'),onBrowse:()=>exploreSky(),onLeaveAlignment:()=>pointing.hideCamera(),onTargets:()=>finderTargets?.refresh()});
+walkthrough=createWalkthrough({site,isPractice:()=>practice.active,getPose:()=>currentPointing,getTarget:()=>catalogue.find(o=>o.id===desiredTarget),canUseTarget:()=>liveTargetUsable(desiredTarget),onLive:()=>{selected=desiredTarget;startLiveGuidance();},onPlan:()=>appHelpAction('mission'),onBrowse:()=>exploreSky(),onLeaveAlignment:()=>pointing.hideCamera(),onTargets:()=>finderTargets?.refresh()});
 
 window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close();}});
 function openTarget(id){

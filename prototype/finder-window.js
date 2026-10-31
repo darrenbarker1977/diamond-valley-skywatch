@@ -6,13 +6,14 @@ export function createFinderWindow({onExpand,onClose,env=window,root=document}){
  function paint(){
   const aligned=!!pose?.alignment?.calibrated,measured=!!pose?.map?.ready;
   $('finder-view-sky').setAttribute('aria-pressed',String(view==='sky'));$('finder-view-camera').setAttribute('aria-pressed',String(view==='camera'));
-  $('finder-view-camera').disabled=cameraPending||pose?.mode==='mounted';
+  $('finder-view-camera').disabled=cameraPending||pose?.practice||pose?.mode==='mounted';
   $('finder-map-slot').hidden=view==='camera';video.hidden=view!=='camera';
   $('finder-live-stage').dataset.view=view;$('finder-live-stage').dataset.tracking=aligned&&measured?'live':aligned?'paused':'preview';
-  $('finder-view-badge').textContent=view==='camera'?'Rear camera · phone estimate':aligned?(measured?'Live aligned sky':'Paused · last sky view'):'Calculated sky preview · align to follow';
+  $('finder-view-badge').textContent=pose?.practice?'PRACTICE SKY · ASSUMED REFERENCE':view==='camera'?'Rear camera · phone estimate':aligned?(measured?'Live aligned sky':'Paused · last sky view'):'Calculated sky preview · align to follow';
   if(cameraPending)say('Requesting the rear camera… You can keep using Live sky.');
   else if(cameraError)say(cameraError+' Live sky and setup remain available.');
   else if(view==='camera')say('Local rear camera with coarse sensor guidance. The app does not recognise objects or verify centring. Nothing is recorded or uploaded.');
+  else if(pose?.practice)say('Real phone movement through a temporary night sky. Direction offsets are assumed for practice; they do not point a telescope at real objects. Return to real time and align after dusk.');
   else say(pose?.mode==='mounted'?'Mounted guidance follows the phone’s top edge along the tube. Rear camera is for handheld mode; use the telescope finder and eyepiece to confirm the object.':aligned?'Live sky follows the aligned rear-camera direction. Rear camera is optional; arrows and pulses use the same checked phone readings.':'Choose a target, then align on one known bright object. The preview is not a measured phone direction.');
  }
  function stopCamera(message=''){
@@ -20,7 +21,7 @@ export function createFinderWindow({onExpand,onClose,env=window,root=document}){
  }
  async function camera(){
   if(view==='camera'){stopCamera();return;}
-  if(!active||pose?.mode==='mounted')return;
+  if(!active||pose?.practice||pose?.mode==='mounted')return;
   const requested=++generation;cameraPending=true;cameraError='';paint();
   try{
    if(!env.isSecureContext||!env.navigator.mediaDevices?.getUserMedia)throw Error('Rear camera requires HTTPS and camera support.');
