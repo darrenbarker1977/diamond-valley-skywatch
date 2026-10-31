@@ -30,7 +30,7 @@ export function createHapticGuide({env=window,root=document}={}){
   catch{blocked='Vibration blocked or unavailable. Tap Test pulse to retry from your touch; check phone settings if it stays silent.';stop();paint();text(blocked);return false;}
  }
  function update(state=pose){
-  pose=state?.haptic?{...state.haptic,message:state.haptic.message||state.message}:state;
+  pose=state?.haptic?{...state.haptic,practice:state.practice,message:state.haptic.message||state.message}:state;
   if(!supported){text('Vibration is unavailable in this browser. Use Chrome on a supported Android phone; arrows still work.');return;}
   if(testing){if(active&&!env.document.hidden)return;stop();paint();}
   if(!enabled){text('Vibration is off. Direction arrows still work.');return;}
@@ -38,7 +38,7 @@ export function createHapticGuide({env=window,root=document}={}){
   if(!active||env.document.hidden||!pose?.ready){stop();text('Vibration paused · '+(!active?'Open Find target to use guidance.':env.document.hidden?'The app is hidden.':pose?.message||'Align on one identified object.'));return;}
   const band=warmth(pose.error);if(!band){stop();text('Vibration paused · no valid aligned distance.');return;}
   if(anchor===null)anchor=pose.error;else if(Math.abs(pose.error-anchor)>=1.5){trend=pose.error<anchor?'Getting closer · ':'Moving away · ';anchor=pose.error;}
-  text('Pulses requested · '+trend+band.label);
+  text((pose.practice?'PRACTICE · pulses for assumed offsets · ':'Pulses requested · ')+trend+band.label);
   if(now()-last<band.interval)return;
   if(request(pulsePattern(band.pattern,level)))last=now();
  }
