@@ -29,7 +29,7 @@ if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has(
  try{let zone=requestedQuery.get('zone')||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch{zone='UTC';}setSite({latitude:Number(requestedQuery.get('lat')),longitude:Number(requestedQuery.get('lon')),height:0,accuracy:null,source:'coordinates',label:(requestedQuery.get('name')||'Planned location').slice(0,120),clockTimezone:zone,physicalConfirmed:false});}catch{}
 }
 const $=id=>document.getElementById(id), dialog=$('navigator');
-let walkthrough=null,liveWindow=null,readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null,contextHelp=null;
+let exploring=true,walkthrough=null,liveWindow=null,readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null,contextHelp=null;
 let selected='Moon',desiredTarget='Moon',filter='all',timer,positions=new Map(),livePositions=new Map(),atlas=null,finder=null,planner=null,mission=null,locationUI=null,field=null,hops=null,lastDetail='',calculationTime=new Date();
 const A=globalThis.Astronomy;
 const equipment=createEquipment(()=>{if(positions.size)render();pointing.refresh();mission?.refresh();nextTarget?.refresh();readyCheck?.refresh();});
@@ -108,7 +108,7 @@ function render(){
   finder.target(o,livePositions.get(selected));nextTarget?.refresh();finderTargets?.refresh();hops.update(livePositions,selected);drawMap();pointing.paint();contextHelp?.refresh();
 }
 function drawMap(){atlas?.update(positions,selected,calculationTime,planner.planning);}
-function chooseObject(id){setTransition('');atlas.showHop([]);selected=desiredTarget=id;render();$('object-library').open=false;$('selected-panel').open=true;if(id!=='Sun'&&!planner.planning&&currentPointing?.alignment?.calibrated)startLiveGuidance();else atlas.centerTarget();}
+function chooseObject(id){setTransition('');atlas.showHop([]);selected=desiredTarget=id;render();$('object-library').open=false;$('selected-panel').open=true;if(id!=='Sun'&&!planner.planning&&currentPointing?.alignment?.calibrated&&!exploring)startLiveGuidance();else atlas.centerTarget();}
 $('atlas-center').addEventListener('click',()=>atlas.centerTarget());
 $('atlas-align').addEventListener('click',()=>guidedPointing(null,'capture'));
 $('launch').addEventListener('click',()=>{if(!dialog.open)dialog.show();$('launch').setAttribute('aria-expanded','true');update();clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)update();},10000);$('close').focus();});
@@ -121,7 +121,8 @@ for(const button of document.querySelectorAll('[data-filter]'))button.addEventLi
 document.addEventListener('visibilitychange',()=>{if(dialog.open&&!document.hidden)update();});
 window.addEventListener('pageshow',()=>{if(dialog.open)update();});
 
-const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL,getEntrySection:()=>currentPointing?.alignment?.calibrated?'finder':'walkthrough',onShown:name=>{if(name==='walkthrough')walkthrough?.focus();if(name==='finder'&&dialog.open){revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}},onSection:name=>{
+const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL,getEntrySection:()=>planner?.planning?'objects':currentPointing?.alignment?.calibrated?(exploring?'objects':'finder'):'walkthrough',onShown:name=>{if(name==='objects'&&exploring)$('compact-guidance').hidden=true;if(name==='walkthrough')walkthrough?.focus();if(name==='finder'&&dialog.open){revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}},onSection:name=>{
+ if(name==='objects'&&dialog.open)exploring=true;if(name==='finder')exploring=false;
  walkthrough?.activate(name==='walkthrough'&&dialog.open);$('navigator-ready-slot').hidden=name==='walkthrough';
  liveWindow?.activate(name==='finder'&&dialog.open);
  if(name!=='finder')scopeView.exit();
@@ -138,6 +139,9 @@ function revealReadyControl(id){
  const control=$(id);if(!control||control.hidden)return;
  if(!control.matches('button,input,select,a[href]'))control.tabIndex=-1;
  control.focus({preventScroll:true});control.scrollIntoView({block:'center'});
+}
+function exploreSky(){
+ if(!dialog.open)$('launch').click();navigation.section('objects');$('atlas-card').open=true;if(currentPointing?.alignment?.calibrated)atlas.follow();revealReadyControl('atlas-title');
 }
 function openWalkthrough(step){
  planner.now();if(!dialog.open)$('launch').click();navigation.section('walkthrough');if(step)walkthrough?.go(step);
@@ -258,7 +262,7 @@ function appHelpAction(action){
  }
 }
 contextHelp=createContextHelp({act:appHelpAction,getState:()=>({pose:currentPointing,kit:equipment.current(),target:catalogue.find(o=>o.id===selected),position:livePositions.get(selected)})});
-walkthrough=createWalkthrough({site,getPose:()=>currentPointing,getTarget:()=>catalogue.find(o=>o.id===desiredTarget),canUseTarget:()=>liveTargetUsable(desiredTarget),onLive:()=>{selected=desiredTarget;startLiveGuidance();},onPlan:()=>appHelpAction('mission'),onBrowse:()=>openAppSection('objects'),onLeaveAlignment:()=>pointing.hideCamera(),onTargets:()=>finderTargets?.refresh()});
+walkthrough=createWalkthrough({site,getPose:()=>currentPointing,getTarget:()=>catalogue.find(o=>o.id===desiredTarget),canUseTarget:()=>liveTargetUsable(desiredTarget),onLive:()=>{selected=desiredTarget;startLiveGuidance();},onPlan:()=>appHelpAction('mission'),onBrowse:()=>exploreSky(),onLeaveAlignment:()=>pointing.hideCamera(),onTargets:()=>finderTargets?.refresh()});
 
 window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close();}});
 function openTarget(id){

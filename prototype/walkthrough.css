@@ -2,3 +2,5 @@
 @media(max-width:480px){.walk-card{padding:18px 14px}.walk-card h4{font-size:26px}.walk-heading h3{font-size:32px}.walk-progress li{font-size:9px}.walk-actions{gap:6px}.walk-actions button{padding-inline:12px;font-size:12px}.walk-slot .dv-nav-controls button{font-size:12px;min-height:48px}}
 
 #camera-view #capture-readiness{font-size:11px;line-height:1.5;padding:6px 9px;margin:6px 0}
+
+.walk-explore{display:block;width:100%;min-height:52px;margin:14px 0;border-color:var(--accent);color:var(--accent);text-align:left;font-size:14px}#walk-explore-aligned{display:block;width:100%;min-height:52px;margin-top:12px;color:var(--accent);background:transparent}#walk-explore-aligned[hidden]{display:none}

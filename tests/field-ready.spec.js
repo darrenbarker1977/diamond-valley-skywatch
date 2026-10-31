@@ -33,7 +33,7 @@ test('every readiness row has a useful shortcut, and location confirmation stays
 });
 test('daylight links to alignment help or a tour, and planned time has a direct return to Now',async({page})=>{
  const errors=await setup(page);await page.clock.setFixedTime(new Date('2026-10-27T19:00Z'));await page.locator('#ready-check>summary').click();await page.locator('#ready-purpose').selectOption('handheld');await expect(page.locator('[data-ready-action=time]')).toHaveText('Plan tonight');
- await page.locator('[data-ready-action=alignment]').click();await expect(page.locator('#walkthrough-view')).toBeVisible();await expect(page.locator('#walk-status')).toContainText('Waiting');await expect(page.locator('#capture-alignment')).toBeDisabled();await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
+ await page.locator('[data-ready-action=alignment]').click();await expect(page.locator('#walkthrough-view')).toBeVisible();await expect(page.locator('#walk-status')).toContainText('Daylight alignment is disabled');await expect(page.locator('#capture-alignment')).toBeDisabled();await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
  await page.locator('#walk-plan').click();await expect(page.locator('#mission-view')).toBeVisible();await expect(page.locator('#mission-title')).toBeFocused();await expect(page.locator('#sensor-status')).toHaveText('Sensors off');
  await page.locator('#plan-night').click();await expect(page.locator('[data-ready-action=time]')).toHaveText('Return to Now');await page.locator('[data-ready-action=time]').click();await expect(page.locator('#plan-now')).toHaveAttribute('aria-pressed','true');await expect(page.locator('[data-ready-action=time]')).toHaveText('Plan tonight');expect(errors).toEqual([]);
 });

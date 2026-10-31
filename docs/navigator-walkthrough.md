@@ -41,3 +41,5 @@ destinations, daylight, permission denial and shared GPS/Home controls. Existing
 advanced-tool regressions now explicitly choose Explore sky instead of assuming
 it is Navigator's landing page. Tests inject development-only poses; actual phone
 accuracy and physical vibration still require outdoor/device checks.
+
+Finding is optional. A visible Explore the sky action works before setup, and the aligned route offers Just explore the aligned sky. Exploration follows the aligned phone when available, runs without sensors otherwise, and never starts target pulses. Object taps inspect the object; Find this object explicitly starts guided finding. Planned tours survive the Navigator entry transition.
