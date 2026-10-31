@@ -26,3 +26,9 @@ screen-timeout setting as a fallback. Manual phone locking is not overridden.
 This feature does not resume old telescope calibration on return: the existing
 visibility/placement/sensor validity safeguards remain unchanged. Both forecast
 files and the permanent Pages URL remain unchanged.
+
+The help popup has a 44 px close button. Closing it, pressing Escape or clicking
+outside dismisses only the popup and preserves the wake-lock request/preference.
+Escape closes the help before the underlying Navigator. Outside clicks remain
+available to page controls, including the same-origin Forecast frame. Popup
+content scrolls on short screens while the close header stays visible.

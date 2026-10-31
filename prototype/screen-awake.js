@@ -4,6 +4,16 @@ export function createScreenAwake({env=window,root=document}={}){
  try{wanted=env.localStorage.getItem(key)!=='off';}catch{}
  let hold=null,pending=null,generation=0,retryTimer=null,releaseRetries=1,gestureRetried=false,state='off',message='Screen hold is off. Your usual timeout applies.';
  const buttons=[...root.querySelectorAll('[data-screen-awake]')],statuses=[...root.querySelectorAll('[data-screen-awake-status]')],auto=root.getElementById('screen-awake-auto');
+ const help=root.getElementById('screen-awake-info'),helpClose=root.getElementById('screen-awake-help-close');
+ function closeHelp(restoreFocus=false){
+  if(!help?.open)return false;
+  help.open=false;if(restoreFocus)help.querySelector('summary')?.focus({preventScroll:true});return true;
+ }
+ helpClose?.addEventListener('click',event=>{event.stopPropagation();closeHelp(true);});
+ root.addEventListener('pointerdown',event=>{if(help?.open&&!help.contains(event.target))closeHelp(help.contains(root.activeElement));});
+ root.addEventListener('click',event=>{if(help?.open&&!help.contains(event.target))closeHelp(help.contains(root.activeElement));},true);
+ function escapeHelp(event){if(event.key==='Escape'&&help?.open&&!root.querySelector('dialog:modal')){event.preventDefault();event.stopImmediatePropagation();closeHelp(true);}}
+ root.addEventListener('keydown',escapeHelp,true);
  function paint(){
   if(auto)auto.checked=wanted;
   const active=!!hold&&!hold.released;
@@ -48,10 +58,10 @@ export function createScreenAwake({env=window,root=document}={}){
   gestureRetried=true;releaseRetries=1;acquire();
  }
  auto?.addEventListener('change',()=>set(auto.checked));
- root.addEventListener('click',event=>{if(event.target.closest?.('#screen-awake-auto'))return;if(event.target.closest?.('[data-screen-awake]'))toggle();else gesture(event);});
+ root.addEventListener('click',event=>{if(event.target.closest?.('#screen-awake-help-close'))return;if(event.target.closest?.('#screen-awake-auto'))return;if(event.target.closest?.('[data-screen-awake]'))toggle();else gesture(event);});
  // Forecast is a same-origin frame. Its user taps may provide a browser's
  // required activation too, without adding another wake-lock owner.
- const frame=root.getElementById('forecast-frame');frame?.addEventListener('load',()=>{try{frame.contentDocument?.addEventListener('click',gesture);}catch{}});
+ const frame=root.getElementById('forecast-frame');frame?.addEventListener('load',()=>{try{const doc=frame.contentDocument;doc?.addEventListener('pointerdown',()=>closeHelp());doc?.addEventListener('keydown',escapeHelp,true);doc?.addEventListener('click',event=>{closeHelp();gesture(event);});}catch{}});
  function pause(){release();state=wanted?'paused':'off';message=wanted?'Screen hold paused while the app is hidden. It will be requested again when you return.':'Screen hold is off. Your usual timeout applies.';paint();}
  function resume(){if(!env.document.hidden&&wanted){gestureRetried=false;releaseRetries=1;acquire();}}
  env.document.addEventListener('visibilitychange',()=>{if(env.document.hidden)pause();else resume();});env.addEventListener('pagehide',pause);env.addEventListener('pageshow',resume);
