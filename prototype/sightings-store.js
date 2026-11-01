@@ -28,7 +28,7 @@ export function preferUnseen(items,seenIds,enabled=true){
 export function createSightingsStore({storage,allowedIds}){
  let records=[],error='',raw=null;
  function reload(){try{raw=storage.getItem(SIGHTINGS_KEY);records=raw===null?[]:parseSightings(raw,allowedIds);error='';}catch(e){error='Saved sightings could not be read: '+e.message+' Existing browser data was left unchanged.';records=[];}return snapshot();}
- function snapshot(){return {records:structuredClone(records),error,recovery:!!error&&typeof raw==='string'};}
+ function snapshot(){return {records:records.map(r=>({...r,site:{...r.site},eyepiece:r.eyepiece&&{...r.eyepiece}})),error,recovery:!!error&&typeof raw==='string'};}
  function write(next){if(next.length>LIMIT)throw Error('The 10,000-sighting limit is reached. Export a backup before removing old records.');const data=envelope(next);try{storage.setItem(SIGHTINGS_KEY,data);}catch{throw Error('The browser could not save sightings. Nothing was changed. Check available storage or browser permissions.');}records=next;raw=data;error='';}
  function ready(){reload();if(error)throw Error(error);}
  function add(input){ready();const record=validateSighting(input,allowedIds),prior=records.find(r=>r.id===record.id);if(prior){if(JSON.stringify(prior)!==JSON.stringify(record))throw Error('Conflicting sighting ID. Nothing was changed.');return false;}write([...records,record]);return true;}

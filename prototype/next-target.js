@@ -17,7 +17,7 @@ export function fitsEyepiece(object,choice){
 }
 export function nextWithEyepiece(A,site,time,choice,excluded=[]){
  if(!choice)return [];
- return rankTargets(A,site,[new Date(time)]).filter(item=>!excluded.includes(item.object.id)&&fitsEyepiece(item.object,choice));
+ return rankTargets(A,site,[new Date(time)]).filter(item=>item.alt<=80&&!excluded.includes(item.object.id)&&fitsEyepiece(item.object,choice));
 }
 export function createNextTarget({A,site,getKit,getSelected,getSnapshot,onSelect,getTime=()=>new Date(),isPractice=()=>false,getSeenIds=()=>new Set(),preferNew=()=>true}){
  const $=id=>document.getElementById(id),key='dvsky:fitted-eyepiece:v1';let chosen={id:'',mm:NaN},seen=new Set(),context='',kitSignature='';
