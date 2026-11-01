@@ -4,6 +4,12 @@ import {weatherAt,assessWeather,coordinateKey} from './mission-weather.js';
 import {localInstant} from './observing-time.js';
 const easy=new Set(['Moon','Jupiter','Saturn','Venus','Albireo','M42','M45','NGC104','NGC5139','Sirius','Vega','Canopus','Achernar']);
 const minute=60000;
+const duskObjects=new Set(['Moon','Venus','Jupiter','Saturn','Mars','Mercury']);
+// Tour recommendations wait for easier beginner conditions. Manual finding
+// retains the existing live-sky checks, so these are not alignment permissions.
+function tourCandidates(A,site,time){
+ return rankTargets(A,site,[time]).filter(item=>item.alt<=80&&item.sunAltitude<=(duskObjects.has(item.object.id)?-6:['Star','Double star'].includes(item.object.type)?-10:-12));
+}
 export function missionStopCount(minutes){
  if(!Number.isInteger(minutes)||minutes<1||minutes>719)throw Error('Choose a duration of at least one minute, up to 11 hours 59 minutes.');
  return Math.max(1,Math.min(5,Math.ceil(minutes/25)));
@@ -15,9 +21,9 @@ function weatherPenalty(row){
 }
 export function targetAssessment(A,site,snapshot,id,time){
  const object=catalogue.find(o=>o.id===id);if(!object)return {usable:false,reason:'Choose a catalogue object.'};
- const position=positionFor(A,object,new Date(time),site),weather=localWeather(snapshot,site,time),outlook=assessWeather(weather);
+ const position=positionFor(A,object,new Date(time),site),sun=positionFor(A,{body:'Sun'},new Date(time),site),weather=localWeather(snapshot,site,time),outlook=assessWeather(weather);
  const candidate=rankTargets(A,site,[new Date(time)]).find(item=>item.object.id===id);
- return {usable:!!candidate,position,weather,outlook,reason:candidate?outlook.reason:position.alt<=0?'This target is now below your horizon.':position.alt<20?'This target is now too low for a beginner tour.':'Daylight, Moon interference or Sun-separation checks make another target a better choice.'};
+ return {usable:!!candidate&&position.alt<=80,position,weather,outlook,reason:sun.alt>-6?'It is still daylight or bright twilight at this location.':position.alt>80?'This target is too close to overhead for reliable left/right guidance. Choose a lower target or wait.':candidate?outlook.reason:position.alt<=0?'This target is now below your horizon.':position.alt<20?'This target is now too low for a beginner tour.':'Moon interference or Sun-separation checks make another target a better choice.'};
 }
 export function buildMission(A,{site,snapshot,night,anchor,zone,live=true,minutes=90,excluded=[],endAt=null,maxStops=5}){
  if(!A)throw Error('The astronomy library did not load.');
@@ -31,9 +37,11 @@ export function buildMission(A,{site,snapshot,night,anchor,zone,live=true,minute
  // In live mode a not-yet-started tour may begin after dusk. Once started its
  // real deadline remains fixed. Planned sessions retain their selected window.
  const scanEnd=Math.min(nightEnd,deadline,live?Infinity:from+minutes*minute);
+ const candidates=new Map();
+ const at=time=>{const key=new Date(time).getTime();if(!candidates.has(key))candidates.set(key,tourCandidates(A,site,new Date(key)));return candidates.get(key);};
  let start=from;
- while(start<scanEnd&&positionFor(A,{body:'Sun'},new Date(start),site).alt>-6)start+=5*minute;
- if(start>=scanEnd)return {steps:[],covered:false,reason:'This window is too bright for a night tour. Choose a later start in Plan a night. Weather is not blocking the route.'};
+ while(start<scanEnd){const date=new Date(start);if(positionFor(A,{body:'Sun'},date,site).alt<=-6&&at(start).length)break;start+=5*minute;}
+ if(start>=scanEnd)return {steps:[],covered:false,reason:'This window is too bright or has no suitable beginner targets. Choose a later start in Plan a night. Weather is not blocking the route.'};
  const end=Math.min(scanEnd,start+minutes*minute),count=Math.min(maxStops,budget),used=new Set(excluded),types=new Map(),steps=[];
  for(let i=0;i<count;i++){
   const slotStart=start+i*(end-start)/count,slotEnd=start+(i+1)*(end-start)/count;
@@ -43,7 +51,7 @@ export function buildMission(A,{site,snapshot,night,anchor,zone,live=true,minute
   let choice=null,best=-Infinity;
   for(const t of [...new Set(times)]){
    const date=new Date(t),weather=localWeather(snapshot,site,date);
-   for(const item of rankTargets(A,site,[date])){
+   for(const item of at(date)){
     if(used.has(item.object.id)||(types.get(item.object.type)||0)>=(item.object.type==='Star'?1:2))continue;
     const score=item.score+(i===0&&easy.has(item.object.id)?16:0)-weatherPenalty(weather)-(t-slotStart)/minute*.08;
     if(score>best){best=score;choice={...item,weather};}

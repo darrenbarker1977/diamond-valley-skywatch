@@ -33,7 +33,7 @@ test('Friday mission differs by hemisphere and follows actual cloud windows',()=
  assert.ok(n.steps.length>=3&&s.steps.length>=3);assert.notDeepEqual(n.steps.map(t=>t.object.id),s.steps.map(t=>t.object.id));
  assert.ok(!n.steps.some(t=>['NGC104','PGC17223'].includes(t.object.id)));
  assert.ok(s.steps.some(t=>t.object.id==='NGC104'));
- for(const plan of [n,s]){assert.ok(plan.steps.length<=5);assert.equal(new Set(plan.steps.map(t=>t.object.id)).size,plan.steps.length);for(const stop of plan.steps){assert.ok(stop.alt>=20);assert.notEqual(stop.object.id,'Sun');}}
+ for(const plan of [n,s]){assert.ok(plan.steps.length<=5);assert.equal(new Set(plan.steps.map(t=>t.object.id)).size,plan.steps.length);for(const stop of plan.steps){assert.ok(stop.alt>=20&&stop.alt<=80);assert.notEqual(stop.object.id,'Sun');}}
  const cloudy=buildMission(A,{site:north,snapshot:forecast(north,north.clockTimezone,95),night:'2026-10-30',zone:north.clockTimezone,anchor:localInstant('2026-10-30',1260,north.clockTimezone),live:false,minutes:90});assert.ok(cloudy.steps.length>=3);assert.equal(cloudy.weatherCaution,true);assert.ok(cloudy.steps.every(s=>s.weather.cloud_cover===95));
 });
 test('unknown weather, wrong locations and uncovered nights keep real sky tours without invented conditions',()=>{
@@ -73,4 +73,24 @@ test('a clearer hour is preferred within the first stop slot without changing th
  const snapshot=forecast(north,north.clockTimezone,95);for(const row of snapshot.rows.values())if(row.time==='2026-10-30T22:00')row.cloud_cover=10;
  const anchor=localInstant('2026-10-30',1305,north.clockTimezone),tour=buildMission(A,{site:north,snapshot,night:'2026-10-30',zone:north.clockTimezone,anchor,live:false,minutes:90});
  assert.equal(tour.steps[0].weather.cloud_cover,10);assert.ok(tour.steps.every(s=>s.date>=anchor&&s.date<tour.end));assert.equal(tour.end.getTime()-anchor.getTime(),90*60000);
+});
+
+test('beginner tours wait for dimmer twilight for stars while retaining dusk planet stops',()=>{
+ const site={...north,latitude:50.6835,longitude:-114.23331},night='2026-10-31',zone=site.clockTimezone;
+ const tour=buildMission(A,{site,night,zone,anchor:localInstant(night,1054,zone),live:true,minutes:90,snapshot:null});
+ assert.ok(tour.steps.length>0);const stars=tour.steps.filter(s=>['Star','Double star'].includes(s.object.type));assert.ok(stars.length>0);
+ for(const stop of stars){assert.ok(stop.sunAltitude<=-10);assert.ok(stop.date>localInstant(night,1128,zone),'star recommendation must be later than the photographed 6:48 twilight slot');}
+ for(const stop of tour.steps)if(!['Moon','Venus','Jupiter','Saturn','Mars','Mercury'].includes(stop.object.id)&&!['Star','Double star'].includes(stop.object.type))assert.ok(stop.sunAltitude<=-12);
+ // Fix the astronomical instant; future local timezone-law data can differ between runtimes.
+ const twilight=new Date('2026-12-02T00:30:00Z'),planets=buildMission(A,{site,night:'2026-12-01',zone:'UTC',anchor:twilight,live:false,minutes:1,snapshot:null});
+ assert.ok(planets.steps.length>0);assert.ok(planets.steps.every(s=>['Moon','Venus','Jupiter','Saturn','Mars','Mercury'].includes(s.object.id)));assert.ok(planets.steps[0].sunAltitude>-10);
+ // The stricter tour preference must not block experienced users from trying a
+ // bright double star manually once the ordinary dusk checks are met.
+ assert.equal(targetAssessment(A,site,null,'Albireo',localInstant(night,1145,zone)).usable,true);
+ assert.match(targetAssessment(A,site,null,'Albireo',localInstant(night,1054,zone)).reason,/daylight or bright twilight/);
+});
+
+test('tour candidates stay out of the finder overhead exclusion zone',()=>{
+ const time=new Date('2026-11-01T01:36:00Z'),state=targetAssessment(A,north,null,'M39',time);assert.ok(state.position.alt>80);assert.equal(state.usable,false);assert.match(state.reason,/overhead/);
+ const tour=buildMission(A,{site:north,night:'2026-10-31',zone:'UTC',anchor:time,live:false,minutes:90,snapshot:null});assert.ok(tour.steps.length>0);assert.ok(tour.steps.every(step=>step.alt<=80));
 });
