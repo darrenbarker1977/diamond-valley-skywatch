@@ -14,7 +14,8 @@ export function createSightings({site,catalogue,getSelected,getEyepiece,getConte
  try{preferNew=storage.getItem('dvsky:sightings:prefer-new:v1')!=='off';}catch{}
  $('seen-prefer-new').checked=preferNew;
  const object=id=>catalogue.find(o=>o.id===id),name=id=>object(id)?.name||id;
- const dateLabel=r=>new Intl.DateTimeFormat('en-CA',{timeZone:r.zone,year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(r.observedAt));
+ const dateFormats=new Map();
+ function dateLabel(r){if(!dateFormats.has(r.zone))dateFormats.set(r.zone,new Intl.DateTimeFormat('en-CA',{timeZone:r.zone,year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}));return dateFormats.get(r.zone).format(new Date(r.observedAt));}
  const coordinates=s=>`${Math.abs(s.latitude).toFixed(5)}° ${s.latitude<0?'S':'N'}, ${Math.abs(s.longitude).toFixed(5)}° ${s.longitude<0?'W':'E'}`;
  const ids=()=>new Set(state.records.map(r=>r.objectId));
  function latestTonight(){const now=nightDate(new Date(),site.clockTimezone);return state.records.filter(r=>r.objectId===getSelected()&&Math.abs(r.site.latitude-site.latitude)<.00001&&Math.abs(r.site.longitude-site.longitude)<.00001&&nightDate(new Date(r.observedAt),site.clockTimezone)===now).sort((a,b)=>b.observedAt.localeCompare(a.observedAt))[0];}
@@ -31,7 +32,7 @@ export function createSightings({site,catalogue,getSelected,getEyepiece,getConte
   if(history.open)paintList();
  }
  function paintList(){
-  const query=$('seen-search').value.trim().toLowerCase(),all=[...state.records].sort((a,b)=>b.observedAt.localeCompare(a.observedAt)||a.id.localeCompare(b.id)).filter(r=>(name(r.objectId)+' '+r.objectId+' '+r.site.label+' '+dateLabel(r)).toLowerCase().includes(query));
+  const query=$('seen-search').value.trim().toLowerCase(),all=[...state.records].sort((a,b)=>b.observedAt.localeCompare(a.observedAt)||a.id.localeCompare(b.id)).filter(r=>!query||(name(r.objectId)+' '+r.objectId+' '+r.site.label+' '+dateLabel(r)).toLowerCase().includes(query));
   const shown=all.slice(0,limit),key=JSON.stringify(shown);$('seen-list-count').textContent=all.length?`Showing ${shown.length} of ${all.length} ${all.length===1?'sighting':'sightings'}.`:query?'No matching sightings.':'No sightings yet. Choose an object and tap Seen it after you have identified it.';$('seen-more').hidden=shown.length>=all.length;
   if(key===signature)return;signature=key;
   $('seen-list').replaceChildren(...shown.map(r=>{const li=node('li'),details=node('details'),summary=node('summary'),title=node('strong',name(r.objectId)),when=node('span',dateLabel(r)),where=node('small',r.site.label);summary.append(title,when,where);details.append(summary,node('p',coordinates(r.site)+(r.site.confirmed?' · presence confirmed when recorded':' · selected observing site; presence was not confirmed')));
