@@ -1,3 +1,4 @@
+import {createSightings} from './sightings.js?v=seen-1';
 import {createPractice} from './practice.js?v=practice-1';
 import {createWalkthrough} from './walkthrough.js?v=practice-1';
 import {createLocation,site,forecastURL,setSite} from './location.js?v=location-1';
@@ -21,8 +22,8 @@ import {createStarHops} from './star-hops.js';
 import {createScopeView} from './scope-view.js?v=window-1';
 import {createScreenAwake} from './screen-awake.js?v=dismiss-1';
 import {createReadyCheck} from './ready-check.js?v=window-1';
-import {createNextTarget} from './next-target.js?v=practice-1';
-import {createFinderTargets} from './finder-targets.js?v=practice-1';
+import {createNextTarget} from './next-target.js?v=seen-1';
+import {createFinderTargets} from './finder-targets.js?v=seen-1';
 import {createHapticGuide} from './haptic-guide.js?v=practice-1';
 import {createContextHelp} from './context-help.js';
 const requestedQuery=new URLSearchParams(location.search);
@@ -30,7 +31,7 @@ if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has(
  try{let zone=requestedQuery.get('zone')||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch{zone='UTC';}setSite({latitude:Number(requestedQuery.get('lat')),longitude:Number(requestedQuery.get('lon')),height:0,accuracy:null,source:'coordinates',label:(requestedQuery.get('name')||'Planned location').slice(0,120),clockTimezone:zone,physicalConfirmed:false});}catch{}
 }
 const $=id=>document.getElementById(id), dialog=$('navigator');
-let practice=null;
+let practice=null,sightings=null;
 const skyTime=()=>practice?.context().instant||new Date();
 let exploring=true,walkthrough=null,liveWindow=null,readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null,contextHelp=null;
 let selected='Moon',desiredTarget='Moon',filter='all',timer,positions=new Map(),livePositions=new Map(),atlas=null,finder=null,planner=null,mission=null,locationUI=null,field=null,hops=null,lastDetail='',calculationTime=new Date();
@@ -50,7 +51,7 @@ planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,o
  if(planner.planning)practice?.stop();
  if(planner.planning)pointing.suspend('Planned sky only. Return to Now and repeat alignment before using direction arrows.');
  if(mission?.active||planner.planning)mission?.activate();
- if(dialog.open)update();field?.refresh();readyCheck?.refresh();
+ if(dialog.open)update();field?.refresh();readyCheck?.refresh();sightings?.refresh();
 }});
 practice=createPractice({getZone:()=>site.clockTimezone,sunAltitude:time=>position(A,catalogue.find(o=>o.id==='Sun'),time).alt,onChange:()=>{if(practice.active)setPointingMode('handheld');pointing.suspend('Sky time changed. Practice alignment is cleared; repeat setup for this clock.');haptics.reset();if(practice.active)planner.now();if(dialog.open)update();},onSetup:()=>openWalkthrough('sensors')});
 mission=createNightMission({A,site,getContext:()=>planner.context(),getKit:()=>equipment.current(),ensureForecast:()=>navigation.ensureForecast(),onLive:id=>{
@@ -112,7 +113,7 @@ function render(){
   const expect=node('details',undefined,'object-expect');expect.dataset.detailKey='expect';expect.append(node('summary','What will I see through the eyepiece?'),node('p',story.expect),node('p','Space images can use enhanced colour and non-visible wavelengths. Expect subtler colours and less detail through an eyepiece.','dv-nav-fine'));detail.append(expect,about);
   for(const extra of detail.querySelectorAll('details'))if(openKeys.includes(extra.dataset.detailKey))extra.open=true;
   if(focusElement?.isConnected)focusElement.focus({preventScroll:true});else if(focusId)document.getElementById(focusId)?.focus({preventScroll:true});lastDetail=selected;
-  finder.target(o,livePositions.get(selected),practice.context());nextTarget?.refresh();finderTargets?.refresh();hops.update(livePositions,selected);drawMap();pointing.paint();contextHelp?.refresh();
+  finder.target(o,livePositions.get(selected),practice.context());nextTarget?.refresh();finderTargets?.refresh();hops.update(livePositions,selected);drawMap();pointing.paint();contextHelp?.refresh();sightings?.refresh();
 }
 function drawMap(){atlas?.update(positions,selected,calculationTime,planner.planning);}
 function chooseObject(id){setTransition('');atlas.showHop([]);selected=desiredTarget=id;render();$('object-library').open=false;$('selected-panel').open=true;if(id!=='Sun'&&!planner.planning&&currentPointing?.alignment?.calibrated&&!exploring)startLiveGuidance();else atlas.centerTarget();}
@@ -131,7 +132,7 @@ window.addEventListener('pageshow',()=>{if(dialog.open)update();});
 const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL,getEntrySection:()=>planner?.planning?'objects':currentPointing?.alignment?.calibrated?(exploring?'objects':'finder'):'walkthrough',onShown:name=>{if(name==='objects'&&exploring)$('compact-guidance').hidden=true;if(name==='walkthrough')walkthrough?.focus();if(name==='finder'&&dialog.open){revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}},onSection:name=>{
  if(practice?.active&&(!dialog.open||['mission','field'].includes(name)))practice.stop();
  if(name==='objects'&&dialog.open)exploring=true;if(name==='finder')exploring=false;
- walkthrough?.activate(name==='walkthrough'&&dialog.open);$('navigator-ready-slot').hidden=name==='walkthrough'||!!practice?.active;
+ sightings?.place(name);walkthrough?.activate(name==='walkthrough'&&dialog.open);$('navigator-ready-slot').hidden=name==='walkthrough'||!!practice?.active;
  liveWindow?.activate(name==='finder'&&dialog.open);
  if(name!=='finder')scopeView.exit();
  readyCheck?.place(dialog.open);haptics?.activate(name==='finder'&&dialog.open);
@@ -141,7 +142,7 @@ const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>poin
  if(name==='finder'){if(currentPointing?.alignment?.calibrated){haptics?.start();atlas?.follow();}else atlas?.centerTarget();}
  if(name==='mission')mission.activate();if(name==='field')field.activate();else field.deactivate();
 }});
-locationUI=createLocation(()=>{practice.stop();pointing.suspend('Observing location changed. Repeat alignment at this location.');atlas.locationChanged();navigation.locationChanged();mission.locationChanged();field.locationChanged();planner.refresh();readyCheck?.refresh();nextTarget?.refresh();haptics?.reset();if(dialog.open)update();});
+locationUI=createLocation(()=>{practice.stop();pointing.suspend('Observing location changed. Repeat alignment at this location.');atlas.locationChanged();navigation.locationChanged();mission.locationChanged();field.locationChanged();planner.refresh();readyCheck?.refresh();nextTarget?.refresh();sightings?.refresh();haptics?.reset();if(dialog.open)update();});
 
 function revealReadyControl(id){
  const control=$(id);if(!control||control.hidden)return;
@@ -191,8 +192,11 @@ readyCheck=createReadyCheck({A,site,getContext:()=>planner.context(),getSnapshot
 });
 if(currentPointing)readyCheck.pose(currentPointing);
 function findLiveTarget(id){haptics.reset();selected=desiredTarget=id;setTransition('');startLiveGuidance();}
-finderTargets=createFinderTargets({A,site,getTime:skyTime,isPractice:()=>practice.active,getSelected:()=>selected,onSelect:findLiveTarget});
-nextTarget=createNextTarget({A,site,getTime:skyTime,isPractice:()=>practice.active,getKit:()=>equipment.current(),getSelected:()=>selected,getSnapshot:()=>mission.snapshot,onSelect:findLiveTarget});
+finderTargets=createFinderTargets({A,site,order:items=>sightings?sightings.order(items):items,getSeenIds:()=>sightings?.ids()||new Set(),getTime:skyTime,isPractice:()=>practice.active,getSelected:()=>selected,onSelect:findLiveTarget});
+nextTarget=createNextTarget({A,site,getSeenIds:()=>sightings?.ids()||new Set(),preferNew:()=>sightings?.preferNew()??true,getTime:skyTime,isPractice:()=>practice.active,getKit:()=>equipment.current(),getSelected:()=>selected,getSnapshot:()=>mission.snapshot,onSelect:findLiveTarget});
+
+sightings=createSightings({site,catalogue,getSelected:()=>selected,getEyepiece:()=>nextTarget.current(),getContext:()=>({planning:planner.planning,practice:practice.active}),onChange:()=>{finderTargets?.refresh();nextTarget?.refresh();},onLocation:()=>openAppLocation(),onHistory:()=>scopeView.exit(),onRealTime:()=>{practice.stop();planner.now();if(dialog.open)update();sightings.refresh();},onTarget:id=>{exploring=true;exploreSky();chooseObject(id);$('selected-panel').open=true;revealReadyControl('selected-summary');}});
+for(const [id,event]of [['fitted-eyepiece','change'],['fitted-zoom','input']])$(id).addEventListener(event,()=>sightings.refresh());
 
 function setTransition(text){$('guidance-transition-status').textContent=text;$('guidance-transition-status').hidden=!text;}
 function updateHomeSession(state){
