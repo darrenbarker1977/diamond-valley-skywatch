@@ -1,0 +1,32 @@
+name: Refresh astronomy model
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: astronomy-model-cache
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch and validate public Diamond Valley model
+        run: python scripts/update-astro.py
+      - name: Publish changed model only
+        run: |
+          if git diff --quiet -- data/astro-diamond-valley.json; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/astro-diamond-valley.json
+          git commit -m 'Refresh published astronomy forecast'
+          git pull --rebase origin main
+          git push origin HEAD:main
