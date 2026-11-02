@@ -1,4 +1,4 @@
-import {createSightings} from './sightings.js?v=seen-1';
+import {createSightings} from './sightings.js?v=abt-1';
 import {createPractice} from './practice.js?v=practice-1';
 import {createWalkthrough} from './walkthrough.js?v=practice-1';
 import {createLocation,site,forecastURL,setSite} from './location.js?v=location-1';
@@ -9,12 +9,12 @@ import {catalogue} from './catalogue.js?v=catalogue-1';
 import {skyVector,angle} from './alignment.js?v=field-1';
 import {position,matches} from './positions.js?v=catalogue-1';
 import {createSkyAtlas} from './sky-atlas.js?v=practice-1';
-import {createFinderWindow} from './finder-window.js?v=practice-1';
+import {createFinderWindow} from './finder-window.js?v=abt-1';
 import {createFinder} from './finder.js?v=practice-1';
 import {objectVisual,objectStory,discoveryNote} from './object-cards.js?v=field-1';
 import {createPlanner} from './planner.js?v=aiming-1';
 import {createNightMission} from './night-mission.js?v=twilight-1';
-import {localParts,nightDate,addDays} from './observing-time.js';
+import {localParts,nightDate,addDays} from './observing-time.js?v=abt-1';
 import {createLiveCompass} from './live-compass.js?v=field-1';
 import {createDiscovery} from './discovery.js';
 import {createFieldTools} from './field-tools.js?v=ready-1';
@@ -73,7 +73,7 @@ function update(){
     const now=new Date(),context=planner.context();calculationTime=practice?.active?skyTime():context.planning?context.instant:now;
     positions=new Map(catalogue.map(o=>[o.id,position(A,o,calculationTime)]));
     livePositions=context.planning?new Map(catalogue.map(o=>[o.id,position(A,o,now)])):positions;
-    $('clock').textContent=new Intl.DateTimeFormat('en-CA',{timeZone:context.zone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'}).format(calculationTime);planner.refresh();
+    $('clock').textContent=DVSkyTime.formatter('en-CA',{timeZone:context.zone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'}).format(calculationTime);planner.refresh();
     $('navigator-ready-slot').hidden=practice.active||walkthrough?.active;
     if(practice.active){$('atlas-title').textContent='The sky, in practice.';$('atlas-live-badge').textContent='◷ PRACTICE';document.querySelector('.dv-nav-live').textContent='◷ Temporary sky · assumed practice alignment';}
     $('error').hidden=true;render();pointing.refresh();

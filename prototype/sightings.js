@@ -1,5 +1,5 @@
 import {createSightingsStore,preferUnseen,SIGHTINGS_KEY} from './sightings-store.js?v=seen-1';
-import {nightDate} from './observing-time.js';
+import {nightDate} from './observing-time.js?v=abt-1';
 export function createSightings({site,catalogue,getSelected,getEyepiece,getContext,onChange=()=>{},onHistory=()=>{},onLocation,onRealTime,onTarget,env=window}){
  const $=id=>document.getElementById(id),node=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
  let storage;try{storage=env.localStorage;}catch{storage={getItem(){throw Error('Browser storage is unavailable.');}};}
@@ -15,7 +15,7 @@ export function createSightings({site,catalogue,getSelected,getEyepiece,getConte
  $('seen-prefer-new').checked=preferNew;
  const object=id=>catalogue.find(o=>o.id===id),name=id=>object(id)?.name||id;
  const dateFormats=new Map();
- function dateLabel(r){if(!dateFormats.has(r.zone))dateFormats.set(r.zone,new Intl.DateTimeFormat('en-CA',{timeZone:r.zone,year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}));return dateFormats.get(r.zone).format(new Date(r.observedAt));}
+ function dateLabel(r){if(!dateFormats.has(r.zone))dateFormats.set(r.zone,DVSkyTime.formatter('en-CA',{timeZone:r.zone,year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}));return dateFormats.get(r.zone).format(new Date(r.observedAt));}
  const coordinates=s=>`${Math.abs(s.latitude).toFixed(5)}° ${s.latitude<0?'S':'N'}, ${Math.abs(s.longitude).toFixed(5)}° ${s.longitude<0?'W':'E'}`;
  const ids=()=>new Set(state.records.map(r=>r.objectId));
  function latestTonight(){const now=nightDate(new Date(),site.clockTimezone);return state.records.filter(r=>r.objectId===getSelected()&&Math.abs(r.site.latitude-site.latitude)<.00001&&Math.abs(r.site.longitude-site.longitude)<.00001&&nightDate(new Date(r.observedAt),site.clockTimezone)===now).sort((a,b)=>b.observedAt.localeCompare(a.observedAt))[0];}

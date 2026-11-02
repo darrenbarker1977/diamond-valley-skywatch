@@ -1,4 +1,4 @@
-import {nightDate,localInstant,localLabel,localParts} from './observing-time.js';
+import {nightDate,localInstant,localLabel,localParts} from './observing-time.js?v=abt-1';
 export function createPlanner({getZone,onChange}){
  const $=id=>document.getElementById(id);let planning=false,day=nightDate(new Date(),getZone()),minute=1260,pending=0,inputError='';
  function context(){return {planning,zone:getZone(),night:planning?day:nightDate(new Date(),getZone()),instant:planning?localInstant(day,minute,getZone()):new Date()};}

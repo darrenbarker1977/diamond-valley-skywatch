@@ -1,4 +1,4 @@
-import {localParts} from './observing-time.js';
+import {localParts} from './observing-time.js?v=abt-1';
 export const weatherKey=site=>site.source==='default'?'dvsky:weather:v5':`dvsky:weather:v6:${site.latitude.toFixed(5)}:${site.longitude.toFixed(5)}`;
 export const coordinateKey=site=>`${site.latitude.toFixed(5)}:${site.longitude.toFixed(5)}`;
 const fields=['cloud_cover','precipitation_probability','snowfall','wind_gusts_10m','temperature_2m','dew_point_2m','relative_humidity_2m'];
@@ -19,14 +19,14 @@ export function weatherSnapshot(message,site,now=Date.now()){
   if(row.snowfall!==null&&row.snowfall<0)row.snowfall=null;
   rows.set(time,row);
  });
- return {rows,ambiguousHours,zone,stamp:message.stamp,offline:!!message.offline,cached:!!message.cached,error:typeof message.error==='string'?message.error.slice(0,180):'',coordinateKey:coordinateKey(site),dataSignature:JSON.stringify([message.stamp,zone,[...rows.values()],[...ambiguousHours]]),signature:JSON.stringify([message.stamp,!!message.offline,!!message.cached,zone,[...rows.values()],[...ambiguousHours]])};
+ return {clockRule:message.data?.clock_rule||null,rows,ambiguousHours,zone,stamp:message.stamp,offline:!!message.offline,cached:!!message.cached,error:typeof message.error==='string'?message.error.slice(0,180):'',coordinateKey:coordinateKey(site),dataSignature:JSON.stringify([message.stamp,zone,message.data?.clock_rule||null,[...rows.values()],[...ambiguousHours]]),signature:JSON.stringify([message.stamp,!!message.offline,!!message.cached,zone,message.data?.clock_rule||null,[...rows.values()],[...ambiguousHours]])};
 }
 export function savedWeather(site,now=Date.now()){
  try{const saved=JSON.parse(globalThis.localStorage?.getItem(weatherKey(site))||'null');if(saved)return weatherSnapshot({...saved,latitude:site.latitude,longitude:site.longitude,cached:true,offline:globalThis.navigator?.onLine===false},site,now);}catch{}
  return null;
 }
 export function weatherAt(snapshot,time){
- if(!snapshot)return null;
+ if(!snapshot||!DVSkyTime.weatherSafe({timezone:snapshot.zone,clock_rule:snapshot.clockRule},time))return null;
  const p=localParts(time,snapshot.zone),hour=`${p.date}T${String(p.hour).padStart(2,'0')}`;
  if(snapshot.ambiguousHours?.has(hour))return null;
  let found=null;for(const row of snapshot.rows.values())if(row.time.slice(0,13)===hour&&Number(row.time.slice(14,16))<=p.minute&&(!found||row.time>found.time))found=row;

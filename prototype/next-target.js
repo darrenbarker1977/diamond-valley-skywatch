@@ -1,7 +1,7 @@
 import {preferUnseen} from './sightings-store.js?v=seen-1';
 import {rankTargets} from './forecast-targets.js?v=mission-1';
 import {validateKit,describe,viewingPlan} from './eyepieces.js?v=catalogue-1';
-import {weatherAt,assessWeather,coordinateKey,savedWeather} from './mission-weather.js';
+import {weatherAt,assessWeather,coordinateKey,savedWeather} from './mission-weather.js?v=abt-1';
 export function fittedChoice(kit,id,mm){
  try{const k=validateKit(kit),e=k.eyepieces.find(e=>e.enabled&&e.id===id);if(!e||!Number.isFinite(mm)||mm<e.min||mm>e.max)return null;return {...e,mm,power:k.focalLength/mm};}catch{return null;}
 }
