@@ -1,7 +1,7 @@
 import {moonPhoto,moonCredit} from './moon-photo.js';
 import {solarDetails,dewRisk,auroraAt,validateOrbit,issPasses,bearing} from './field-math.js';
-import {weatherAt,savedWeather,coordinateKey} from './mission-weather.js';
-import {localParts,localLabel,shortClock} from './observing-time.js';
+import {weatherAt,savedWeather,coordinateKey} from './mission-weather.js?v=abt-1';
+import {localParts,localLabel,shortClock} from './observing-time.js?v=abt-1';
 const NOAA='https://services.swpc.noaa.gov/json/ovation_aurora_latest.json';
 const ISS='https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=JSON';
 const read=key=>{try{return JSON.parse(localStorage.getItem(key)||'null');}catch{return null;}};

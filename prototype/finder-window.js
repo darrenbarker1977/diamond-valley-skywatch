@@ -1,3 +1,4 @@
+import './time-zone.js?v=abt-1';
 // One shared atlas, moved into the finder. No simulated pose or camera fallback.
 export function createFinderWindow({onExpand,onClose,getContext=()=>null,env=window,root=document}){
  const $=id=>root.getElementById(id),stage=root.querySelector('.atlas-stage'),home=stage.parentElement,anchor=stage.nextSibling,canvas=$('sky-canvas'),video=$('finder-live-camera');
@@ -9,7 +10,7 @@ export function createFinderWindow({onExpand,onClose,getContext=()=>null,env=win
   $('finder-view-camera').disabled=cameraPending||pose?.practice||pose?.mode==='mounted';
   $('finder-map-slot').hidden=view==='camera';video.hidden=view!=='camera';
   $('finder-live-stage').dataset.view=view;$('finder-live-stage').dataset.tracking=aligned&&measured?'live':aligned?'paused':'preview';
-  const context=getContext(),practiceClock=context?.practice?new Intl.DateTimeFormat('en-CA',{timeZone:context.zone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(context.instant):'';
+  const context=getContext(),practiceClock=context?.practice?DVSkyTime.formatter('en-CA',{timeZone:context.zone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(context.instant):'';
   $('finder-view-badge').textContent=pose?.practice?'PRACTICE · ASSUMED · '+practiceClock:view==='camera'?'Rear camera · phone estimate':aligned?(measured?'Live aligned sky':'Paused · last sky view'):'Calculated sky preview · align to follow';
   if(cameraPending)say('Requesting the rear camera… You can keep using Live sky.');
   else if(cameraError)say(cameraError+' Live sky and setup remain available.');

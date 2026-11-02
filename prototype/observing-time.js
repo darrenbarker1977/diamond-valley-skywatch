@@ -1,5 +1,6 @@
+import './time-zone.js?v=abt-1';
 const formatters=new Map();
-function formatter(zone){if(!formatters.has(zone))formatters.set(zone,new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}));return formatters.get(zone);}
+function formatter(zone){if(!formatters.has(zone))formatters.set(zone,DVSkyTime.formatter('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}));return formatters.get(zone);}
 export function localParts(time,zone){
  const parts=formatter(zone).formatToParts(new Date(time)),get=key=>parts.find(p=>p.type===key).value;
  return {date:`${get('year')}-${get('month')}-${get('day')}`,hour:Number(get('hour')),minute:Number(get('minute'))};
@@ -25,5 +26,5 @@ export function localInstant(date,minutes,zone){
  if(!matches.length)throw Error('This local time is skipped when the clocks change. Choose another time.');
  return new Date(Math.min(...matches));
 }
-export function localLabel(time,zone){return new Intl.DateTimeFormat('en-CA',{timeZone:zone,weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(time));}
-export function shortClock(time,zone){return new Intl.DateTimeFormat('en-CA',{timeZone:zone,hour:'numeric',minute:'2-digit'}).format(new Date(time));}
+export function localLabel(time,zone){return DVSkyTime.formatter('en-CA',{timeZone:zone,weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(time));}
+export function shortClock(time,zone){return DVSkyTime.formatter('en-CA',{timeZone:zone,hour:'numeric',minute:'2-digit'}).format(new Date(time));}

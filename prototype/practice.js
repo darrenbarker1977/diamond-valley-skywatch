@@ -1,4 +1,4 @@
-import {localInstant,localParts,localLabel} from './observing-time.js';
+import {localInstant,localParts,localLabel} from './observing-time.js?v=abt-1';
 // A temporary astronomy clock, never a source of measured phone readings.
 export function findDarkTime(start,sunAltitude){
  let twilight=null;

@@ -1,7 +1,7 @@
 import {rankTargets,catalogue} from './forecast-targets.js?v=mission-1';
 import {positionFor} from './sky-position.js?v=catalogue-1';
-import {weatherAt,assessWeather,coordinateKey} from './mission-weather.js';
-import {localInstant} from './observing-time.js';
+import {weatherAt,assessWeather,coordinateKey} from './mission-weather.js?v=abt-1';
+import {localInstant} from './observing-time.js?v=abt-1';
 const easy=new Set(['Moon','Jupiter','Saturn','Venus','Albireo','M42','M45','NGC104','NGC5139','Sirius','Vega','Canopus','Achernar']);
 const minute=60000;
 const duskObjects=new Set(['Moon','Venus','Jupiter','Saturn','Mars','Mercury']);
