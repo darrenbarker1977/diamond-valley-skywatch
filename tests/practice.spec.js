@@ -1,7 +1,7 @@
 // Synthetic device events are test fixtures only; production uses real phone samples.
 import {test,expect} from '@playwright/test';
 async function start(page){
- await page.addInitScript(()=>{for(const type of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(type,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);Object.defineProperty(navigator,'vibrate',{configurable:true,value:p=>{(window.__practicePulses??=[]).push(p);return true;}});});
+ await page.addInitScript(()=>{localStorage.setItem('dvsky:experience:v1','handheld');for(const type of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(type,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);Object.defineProperty(navigator,'vibrate',{configurable:true,value:p=>{(window.__practicePulses??=[]).push(p);return true;}});});
  await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.clock.install({time:new Date('2026-10-27T19:00:00Z')});await page.clock.pauseAt(new Date('2026-10-27T19:00:10Z'));await page.goto('/');await page.locator('#launch').click();await expect(page.locator('#walkthrough-view')).toBeVisible();
 }
 async function practice(page){await page.locator('#walk-practice').click();await page.locator('#practice-date').fill('2026-10-26');await page.locator('#practice-time').fill('21:00');await page.locator('#practice-start').click();await expect(page.locator('#practice-banner')).toBeVisible();}
