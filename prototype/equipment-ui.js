@@ -1,5 +1,5 @@
 import {validateKit,viewingPlan,describe,alignmentEyepiece} from './eyepieces.js?v=catalogue-1';
-import {KIT_KEY as KEY,readKit} from './kit-store.js?v=catalogue-1';
+import {readKit,writeKit} from './kit-store.js?v=catalogue-1';
 const element=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
 export function createEquipment(onChange){
  const $=id=>document.getElementById(id);let kit=readKit();
@@ -9,7 +9,7 @@ export function createEquipment(onChange){
   const config=current();
   if(!config){$('kit-status').textContent='Enter a valid telescope focal length between 200 and 5000 mm. Suggestions are paused.';onChange();return;}
   kit=config;
-  try{localStorage.setItem(KEY,JSON.stringify(kit));$('kit-status').textContent='Saved on this browser only. Changes update viewing suggestions immediately.';}catch{$('kit-status').textContent='Settings work for this visit, but browser storage is unavailable. They may not survive a reload.';}
+  try{writeKit(kit);$('kit-status').textContent='Saved on this browser only. Changes update viewing suggestions immediately.';}catch{$('kit-status').textContent='Settings work for this visit, but browser storage is unavailable. They may not survive a reload.';}
   for(const row of $('kit-list').children){const e=kit.eyepieces.find(e=>e.id===row.dataset.id);row.querySelector('small').textContent=e.kind==='zoom'?`${e.min}–${e.max} mm · about ${Math.round(kit.focalLength/e.max)}–${Math.round(kit.focalLength/e.min)}×`:`${e.min} mm · about ${Math.round(kit.focalLength/e.min)}×`;}
   onChange();
  }
