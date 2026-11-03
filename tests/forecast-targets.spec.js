@@ -16,7 +16,7 @@ test('Friday recommendations change by hemisphere, link into Navigator and follo
  await page.locator('#nav-to-forecast').click();await f.locator('#days .day').filter({hasText:'Fri'}).click();
  await expect(f.locator('#target-summary')).toContainText('Australia/Darwin');await expect(f.locator('#targets [data-id=NGC104]')).toContainText('47 Tucanae');await expect(f.locator('#targets [data-id=Saturn]')).toBeVisible();
  const southern=await f.locator('#targets .target').evaluateAll(els=>els.map(el=>el.dataset.id));expect(southern).not.toEqual(northern);expect(southern).not.toContain('Polaris');expect(southern).not.toContain('Sun');
- await expect(f.locator('#targets [data-id=NGC104]')).toContainText('48×');
+ await expect(f.locator('#targets [data-id=NGC104]')).toContainText('60×');
  await f.locator('#target-summary').scrollIntoViewIfNeeded();await page.screenshot({path:`/tmp/skywatch-${info.project.name}-global-targets.png`,fullPage:true});
  await f.locator('#targets [data-id=NGC104] .target-find').click();await expect(page.locator('#target-name')).toHaveText('47 Tucanae');await expect(page.locator('#app-header nav')).toBeVisible();
  await page.locator('[data-nav-section=equipment]').click();await page.locator('#eyepiece-add-panel').evaluate(el=>el.open=true);await page.locator('#new-eyepiece-name').fill('My new 32 mm');await page.locator('#new-eyepiece-min').fill('32');await page.locator('#add-eyepiece-form button[type=submit]').click();

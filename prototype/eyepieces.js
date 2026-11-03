@@ -1,6 +1,6 @@
 export const defaultKit=()=>({focalLength:1200,eyepieces:[
- {id:'supplied25',name:'Supplied 25 mm',kind:'fixed',min:25,max:25,enabled:true},
- {id:'supplied10',name:'Supplied 10 mm',kind:'fixed',min:10,max:10,enabled:true},
+ {id:'wide20',name:'20 mm 70° wide-angle',kind:'fixed',min:20,max:20,enabled:true},
+ {id:'wide12_5',name:'12.5 mm 70° wide-angle',kind:'fixed',min:12.5,max:12.5,enabled:true},
  {id:'sv135',name:'SVBONY SV135 7–21 mm zoom',kind:'zoom',min:7,max:21,enabled:true}
 ]});
 export function validateKit(value){
@@ -20,16 +20,21 @@ export function candidates(kit){
  return choices.sort((a,b)=>a.power-b.power||(a.kind===b.kind?0:a.kind==='fixed'?-1:1));
 }
 export const describe=e=>`${e.name}${e.kind==='zoom'?` set to ${e.mm} mm`:''} · about ${Math.round(e.power)}×`;
+export function findingEyepiece(kit){
+ const pool=candidates(kit),lowest=pool[0];
+ // A fixed eyepiece near the lowest power avoids a needless swap to the zoom at 21 mm.
+ return lowest&&(pool.find(e=>e.kind==='fixed'&&e.power<=Math.min(lowest.power*1.1,220))||lowest);
+}
 export function alignmentEyepiece(kit){
- try {const start=candidates(kit)[0];return start&&start.power>220?'Enable a longer-focal-length eyepiece for alignment; your current kit starts above 220×.':start?`For alignment, use ${describe(start)}. This is your lowest available magnification. Centre the object before recording; you can zoom in after alignment.`:'Add or enable an eyepiece in My eyepieces before choosing alignment magnification.';}catch{return 'Check the telescope focal length in My eyepieces before using the magnification suggestions.';}
+ try {const start=findingEyepiece(kit);return start&&start.power>220?'Enable a longer-focal-length eyepiece for alignment; your current kit starts above 220×.':start?`For alignment, use ${describe(start)}. Start at low power and centre the object before recording; you can zoom in after alignment.`:'Add or enable an eyepiece in My eyepieces before choosing alignment magnification.';}catch{return 'Check the telescope focal length in My eyepieces before using the magnification suggestions.';}
 }
 export function viewingPlan(object,kit,alt=45){
  if(object.id==='Sun')return {steps:[],note:'No ordinary eyepiece recommendation for the Sun. Never observe it through this telescope without a certified front-aperture solar filter and appropriate solar observing knowledge.'};
  let pool;try{pool=candidates(kit);}catch{return {steps:[],note:'Check your telescope focal length and eyepiece settings first.'};}
  if(!pool.length)return {steps:[],note:'Add or enable an eyepiece in My eyepieces to see a viewing plan.'};
- const start=pool[0];
+ const start=findingEyepiece(kit);
  if(start.power>220)return {steps:[],note:'All your enabled eyepieces give more than 220×. Enable a longer-focal-length eyepiece for finding and beginner viewing; this guide does not recommend starting at such high power.'};
- const steps=[{title:'Find it first',choice:start,why:'Use the finder, then your lowest available magnification. Centre the object before changing power.'}];
+ const steps=[{title:'Find it first',choice:start,why:'Use the finder, then this low-power starting eyepiece. Centre the object before changing power.'}];
  const add=(title,wanted,why,high=false)=>{
   const available=pool.filter(e=>e.power>steps.at(-1).choice.power*1.12&&e.power<=220);
   if(!available.length)return;

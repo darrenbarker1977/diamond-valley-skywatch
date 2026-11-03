@@ -2,15 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {defaultKit,candidates,viewingPlan,alignmentEyepiece,validateKit} from '../prototype/eyepieces.js';
 test('photographed kit gives correct magnifications at standard 1200 mm focal length',()=>{
- const c=candidates(defaultKit());assert.equal(c.find(e=>e.id==='supplied25').power,48);assert.equal(c.find(e=>e.id==='supplied10').power,120);assert.equal(Math.round(c.find(e=>e.id==='sv135'&&e.mm===7).power),171);
- assert.match(alignmentEyepiece(defaultKit()),/25 mm.*48×/);
+ const c=candidates(defaultKit());assert.equal(c.find(e=>e.id==='wide20').power,60);assert.equal(c.find(e=>e.id==='wide12_5').power,96);assert.equal(Math.round(c.find(e=>e.id==='sv135'&&e.mm===7).power),171);
+ assert.match(alignmentEyepiece(defaultKit()),/20 mm.*60×/);
 });
 test('new longer and shorter eyepieces participate in live recommendations',()=>{
  const kit=defaultKit();kit.eyepieces.push({id:'wide32',name:'My wide eyepiece',kind:'fixed',min:32,max:32,enabled:true},{id:'detail6',name:'My detail eyepiece',kind:'fixed',min:6,max:6,enabled:true});
  const plan=viewingPlan({id:'Jupiter',type:'Planet'},kit,45);
  assert.equal(plan.steps[0].choice.id,'wide32');assert.equal(plan.steps.at(-1).choice.id,'detail6');assert.equal(plan.steps.at(-1).choice.power,200);
- kit.eyepieces.find(e=>e.id==='wide32').enabled=false;assert.equal(viewingPlan({id:'M45'},kit).steps[0].choice.mm,25);
- kit.focalLength=1000;assert.equal(candidates(kit).find(e=>e.id==='supplied25').power,40);
+ kit.eyepieces.find(e=>e.id==='wide32').enabled=false;assert.equal(viewingPlan({id:'M45'},kit).steps[0].choice.mm,20);
+ kit.focalLength=1000;assert.equal(candidates(kit).find(e=>e.id==='wide20').power,50);
 });
 test('large objects, low targets and the Sun have appropriate limits',()=>{
  assert.equal(viewingPlan({id:'M31'},defaultKit()).steps.length,1);
