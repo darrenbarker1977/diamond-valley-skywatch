@@ -17,5 +17,5 @@ export function createAppHistory({env=window,onRestore=()=>{}}={}){
  function commit(route,{replace=false}={}){const next=validRoute(route);if(!next||JSON.stringify(next)===JSON.stringify(current))return false;current=next;if(!replace)depth++;write(replace);return true;}
  function back(){if(pending)return true;if(!enabled||depth===0)return false;pending=true;env.history.back();return true;}
  env.addEventListener('popstate',event=>{pending=false;const target=unpack(event.state);if(!target)return;const previous=current;current=target.route;depth=target.depth;onRestore(current,previous);});
- return {commit,back,get current(){return {...current,layers:[...current.layers]};},get depth(){return depth;},get enabled(){return enabled;},restore(){if(!saved)return false;saved=null;onRestore(current,null);return true;}};
+ return {commit,back,get current(){return {...current,layers:[...current.layers]};},get depth(){return depth;},get enabled(){return enabled;},restore(){if(!saved)return false;saved=null;if(current.layers.length)commit({...current,layers:[]},{replace:true});onRestore(current,null);return true;}};
 }
