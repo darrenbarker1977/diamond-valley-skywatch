@@ -28,7 +28,7 @@ test('storage refusal does not claim success or discard previous observations',(
 });
 test('backup validation rejects unknown catalogues, unsupported versions, bad timezones and invalid optical settings',()=>{
  for(const bad of [{...record(),objectId:'invented'}, {...record(),zone:'Moon/Base'}, {...record(),observedAt:'tomorrow'}, {...record(),eyepiece:{...record().eyepiece,mm:0}}, {...record(),observedAt:'0001-01-01T00:00:00.000Z'}])assert.throws(()=>parseSightings(backup([bad]),allowedIds));
- assert.throws(()=>parseSightings(JSON.stringify({format:SIGHTINGS_FORMAT,version:2,records:[]}),allowedIds));assert.throws(()=>parseSightings(' '.repeat(8*1024*1024+1),allowedIds));
+ assert.throws(()=>parseSightings(JSON.stringify({format:SIGHTINGS_FORMAT,version:3,records:[]}),allowedIds));assert.throws(()=>parseSightings(' '.repeat(8*1024*1024+1),allowedIds));
  const nakedEye={...record(),eyepiece:null};assert.equal(parseSightings(backup([nakedEye]),allowedIds)[0].eyepiece,null);
 });
 test('new-target preference keeps original ranking within groups and never hides seen favourites',()=>{
