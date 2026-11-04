@@ -1,5 +1,5 @@
 // This controls the journey only. Original controls still own location, sensors and alignment.
-export function createWalkthrough({site,isPractice=()=>false,getPose,getTarget,canUseTarget,onLive,onPlan,onBrowse,onLeaveAlignment,onTargets}){
+export function createWalkthrough({site,isPractice=()=>false,getPose,getTarget,canUseTarget,onLive,onPlan,onBrowse,onLeaveAlignment,onTargets,onStep=()=>{},onBack=()=>false}){
  const $=id=>document.getElementById(id),slots=['walk-mode-slot','walk-location-slot','walk-sensors-slot','walk-align-slot','walk-target-slot'];
  const definitions=[
   ['Choose how you are pointing','Choose handheld for the rear-camera direction, or secure the phone along the telescope tube.'],
@@ -41,7 +41,7 @@ export function createWalkthrough({site,isPractice=()=>false,getPose,getTarget,c
   if(wanted===4&&!aligned())wanted=firstNeeded();
   if(step===3&&wanted!==3)onLeaveAlignment();step=Math.max(0,Math.min(4,wanted));
   if(step===4){$('finder-target-picker').open=true;onTargets();}
-  update();focus();
+  update();focus();onStep(step);
  }
  function activate(value){
   if(value&&!active){active=true;modeDone=modeDone||!!pose().listening||aligned();for(let i=0;i<groups.length;i++)for(const entry of originals[i]){if(entry.open!==null)entry.open=entry.node.open;$(slots[i]).append(entry.node);}$('home-location-panel').open=true;pickerSummary.textContent='Search visible destinations';step=firstNeeded();if(step===4){$('finder-target-picker').open=true;onTargets();}update();}
@@ -49,7 +49,7 @@ export function createWalkthrough({site,isPractice=()=>false,getPose,getTarget,c
  }
  for(const button of document.querySelectorAll('[data-walk-go]'))button.addEventListener('click',()=>Number(button.dataset.walkGo)===5?(aligned()?onLive():go(firstNeeded())):go(Number(button.dataset.walkGo)));
  $('walk-fix').addEventListener('click',()=>go(firstNeeded()));
- $('walk-back').addEventListener('click',()=>go(step-1));
+ $('walk-back').addEventListener('click',()=>{if(!onBack())go(step-1);});
  $('walk-next').addEventListener('click',()=>{
   if(step===0){modeDone=true;go(1);}else if(step===1)go(2);else if(step===2)go(aligned()?4:3);else if(step===4)onLive();
   else if(aligned())go(4);else if(pose().guidanceStatus==='daylight')onPlan();else if(firstNeeded()<3)go(firstNeeded());else if(pose().capture?.ready)$('capture-alignment').click();else if(isPractice())focus('object-confirm');else if(pose().mode==='handheld'){$('camera-tools').open=true;$('camera-toggle').click();}else focus('object-confirm');
