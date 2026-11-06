@@ -199,7 +199,7 @@ finderTargets=createFinderTargets({A,site,order:items=>sightings?sightings.order
 nextTarget=createNextTarget({A,site,getSeenIds:()=>sightings?.ids()||new Set(),preferNew:()=>sightings?.preferNew()??true,getTime:skyTime,isPractice:()=>practice.active,getKit:()=>equipment.current(),getSelected:()=>selected,getSnapshot:()=>mission.snapshot,onSelect:findLiveTarget});
 
 sightings=createSightings({site,catalogue,getSelected:()=>selected,getEyepiece:()=>nextTarget.current(),getSnapshot:()=>mission.snapshot,onWeather:()=>$('nav-to-forecast').click(),onEyepiece:()=>appHelpAction('fitted'),getContext:()=>({planning:planner.planning,practice:practice.active}),onChange:()=>{finderTargets?.refresh();nextTarget?.refresh();},onLocation:()=>openAppLocation(),onHistory:()=>scopeView.exit(),onRealTime:()=>{practice.stop();planner.now();if(dialog.open)update();sightings.refresh();},onTarget:id=>{exploring=true;exploreSky();chooseObject(id);$('selected-panel').open=true;revealReadyControl('selected-summary');}});
-for(const [id,event]of [['fitted-eyepiece','change'],['fitted-zoom','input']])$(id).addEventListener(event,()=>sightings.refresh());
+for(const [id,event]of [['fitted-eyepiece','change'],['fitted-zoom','input'],['fitted-barlow','change']])$(id).addEventListener(event,()=>sightings.refresh());
 
 function setTransition(text){$('guidance-transition-status').textContent=text;$('guidance-transition-status').hidden=!text;}
 function updateHomeSession(state){

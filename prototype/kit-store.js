@@ -1,9 +1,10 @@
-import {defaultKit,validateKit} from './eyepieces.js?v=catalogue-1';
+import {defaultKit,defaultBarlow,validateKit} from './eyepieces.js?v=catalogue-1';
 export const KIT_KEY='dvsky:navigator:eyepieces:v1';
-export const KIT_VERSION=2;
+export const KIT_VERSION=3;
 export function migrateKit(value){
  const kit=validateKit(value);
  if(value.version===KIT_VERSION)return kit;
+ if(value.barlows===undefined)kit.barlows=[defaultBarlow()];
  const assumed=e=>e.kind==='fixed'&&((e.id==='supplied25'&&e.name==='Supplied 25 mm'&&e.min===25&&e.max===25)||(e.id==='supplied10'&&e.name==='Supplied 10 mm'&&e.min===10&&e.max===10));
  if(!kit.eyepieces.some(assumed))return kit;
  const eyepieces=kit.eyepieces.filter(e=>!assumed(e));

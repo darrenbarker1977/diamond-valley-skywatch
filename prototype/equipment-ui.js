@@ -11,7 +11,10 @@ export function createEquipment(onChange){
   kit=config;
   try{writeKit(kit);$('kit-status').textContent='Saved on this browser only. Changes update viewing suggestions immediately.';}catch{$('kit-status').textContent='Settings work for this visit, but browser storage is unavailable. They may not survive a reload.';}
   for(const row of $('kit-list').children){const e=kit.eyepieces.find(e=>e.id===row.dataset.id);row.querySelector('small').textContent=e.kind==='zoom'?`${e.min}–${e.max} mm · about ${Math.round(kit.focalLength/e.max)}–${Math.round(kit.focalLength/e.min)}×`:`${e.min} mm · about ${Math.round(kit.focalLength/e.min)}×`;}
-  onChange();
+  drawBarlows();onChange();
+ }
+ function drawBarlows(){
+  $('barlow-list').replaceChildren(...kit.barlows.map(b=>{const row=element('div');row.className='dv-nav-kit-row';const label=element('label'),input=element('input');input.type='checkbox';input.checked=b.enabled;input.setAttribute('aria-label','Available '+b.name);input.addEventListener('change',()=>{b.enabled=input.checked;update();});const text=element('span');text.append(element('strong',b.name),element('small',`Nominal ${b.factor}× · 20 mm ≈ ${Math.round(kit.focalLength/20*b.factor)}× · 12.5 mm ≈ ${Math.round(kit.focalLength/12.5*b.factor)}×`));label.append(input,text);row.append(label);return row;}));
  }
  function draw(){
   $('kit-list').replaceChildren(...kit.eyepieces.map(e=>{
@@ -34,7 +37,7 @@ export function createEquipment(onChange){
    kit=validateKit({...config,eyepieces:[...config.eyepieces,{id,name,kind,min,max,enabled:true}]});draw();update();$('add-eyepiece-status').textContent=`${name} added. Viewing suggestions now include it.`;$('new-eyepiece-name').value='';$('new-eyepiece-min').value='';$('new-eyepiece-max').value='';
   }catch(e){$('add-eyepiece-status').textContent=e.message;}
  });
- draw();
+ draw();drawBarlows();
  return {
   current,
   alignmentHint:()=>alignmentEyepiece(current()),
