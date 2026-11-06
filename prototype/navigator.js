@@ -130,7 +130,7 @@ for(const button of document.querySelectorAll('[data-filter]'))button.addEventLi
 document.addEventListener('visibilitychange',()=>{if(dialog.open&&!document.hidden)update();});
 window.addEventListener('pageshow',()=>{if(dialog.open)update();});
 
-const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL,getEntrySection:()=>experience?.mode==='browse'||planner?.planning?'objects':currentPointing?.alignment?.calibrated?(exploring?'objects':'finder'):'walkthrough',onShown:name=>{if(name==='objects'&&exploring)$('compact-guidance').hidden=true;if(name==='walkthrough')walkthrough?.focus();if(name==='finder'&&dialog.open){revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}},onSection:name=>{
+const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>pointing.hideCamera(),forecastURL,getStage:()=>walkthrough?.step??null,restoreStage:step=>walkthrough?.go(step),getEntrySection:()=>experience?.mode==='browse'||planner?.planning?'objects':currentPointing?.alignment?.calibrated?(exploring?'objects':'finder'):'walkthrough',onShown:name=>{if(name==='objects'&&exploring)$('compact-guidance').hidden=true;if(name==='walkthrough')walkthrough?.focus();if(name==='finder'&&dialog.open){revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}},onSection:name=>{
  if(practice?.active&&(!dialog.open||['mission','field'].includes(name)))practice.stop();
  if(name==='objects'&&dialog.open)exploring=true;if(name==='finder')exploring=false;
  sightings?.place(name);walkthrough?.activate(name==='walkthrough'&&dialog.open);$('navigator-ready-slot').hidden=name==='walkthrough'||!!practice?.active;
@@ -151,11 +151,11 @@ function revealReadyControl(id){
  control.focus({preventScroll:true});control.scrollIntoView({block:'center'});
 }
 function exploreSky(){
- if(!dialog.open)$('launch').click();navigation.section('objects');$('atlas-card').open=true;if(currentPointing?.alignment?.calibrated)atlas.follow();revealReadyControl('atlas-title');
+ navigation.open('objects');$('atlas-card').open=true;if(currentPointing?.alignment?.calibrated)atlas.follow();revealReadyControl('atlas-title');
 }
 function openWalkthrough(step){
  if(experience?.mode==='browse')experience.set($('pointing-mode').value,{source:'setup'});
- planner.now();if(!dialog.open)$('launch').click();else update();navigation.section('walkthrough');if(step)walkthrough?.go(step);
+ navigation.batch(()=>{planner.now();if(!dialog.open)$('launch').click();else update();navigation.section('walkthrough');if(step)walkthrough?.go(step);});
 }
 function guidedPointing(mode,step,startSensors=false){
  if(mode){setPointingMode(mode);walkthrough?.confirmMode();}$('pointing-setup').open=true;openWalkthrough(step||'capture');
@@ -220,7 +220,7 @@ function completeAlignment(result){
  startLiveGuidance();
 }
 function startLiveGuidance({pick=false}={}){
- planner.now();if(!dialog.open)$('launch').click();else update();navigation.section('finder');
+ navigation.batch(()=>{planner.now();if(!dialog.open)$('launch').click();else update();navigation.section('finder');});
  if(currentPointing?.alignment?.calibrated){atlas.follow();haptics.start();}
  if(pick){$('finder-target-picker').open=true;finderTargets?.refresh();revealReadyControl('finder-target-search');}
  else{$('finder-target-picker').open=false;revealReadyControl('finder-compass');$('finder-compass').scrollIntoView({block:'start'});}
@@ -241,7 +241,7 @@ $('observing-session-next').addEventListener('click',()=>{if(currentPointing?.al
 $('pointing-return-target').addEventListener('click',()=>{selected=desiredTarget;startLiveGuidance();});
 $('observing-session-stop').addEventListener('click',()=>pointing.suspend('Pointing stopped. Enable sensors and align when you want to resume.'));
 
-function openAppSection(name){if(!dialog.open)$('launch').click();navigation.section(name);}
+function openAppSection(name){navigation.open(name);}
 function openAppLocation(action){
  const wasOpen=dialog.open,show=()=>{$('home-location-panel').open=true;if(action==='place'||action==='coordinates')document.querySelector('.dv-location-search').open=true;if(action==='coordinates')$('coordinate-form').closest('details').open=true;revealReadyControl(action==='place'?'place-query':action==='coordinates'?'site-latitude':'use-location');};
  if(wasOpen)dialog.addEventListener('close',show,{once:true});document.querySelector('#app-header [data-app-view=home]').click();if(!wasOpen)show();
@@ -277,7 +277,7 @@ function appHelpAction(action){
  }
 }
 contextHelp=createContextHelp({act:appHelpAction,getState:()=>({pose:currentPointing,kit:equipment.current(),target:catalogue.find(o=>o.id===selected),position:livePositions.get(selected)})});
-walkthrough=createWalkthrough({site,isPractice:()=>practice.active,getPose:()=>currentPointing,getTarget:()=>catalogue.find(o=>o.id===desiredTarget),canUseTarget:()=>liveTargetUsable(desiredTarget),onLive:()=>{selected=desiredTarget;startLiveGuidance();},onPlan:()=>appHelpAction('mission'),onBrowse:()=>exploreSky(),onLeaveAlignment:()=>pointing.hideCamera(),onTargets:()=>finderTargets?.refresh()});
+walkthrough=createWalkthrough({site,isPractice:()=>practice.active,getPose:()=>currentPointing,getTarget:()=>catalogue.find(o=>o.id===desiredTarget),canUseTarget:()=>liveTargetUsable(desiredTarget),onLive:()=>{selected=desiredTarget;startLiveGuidance();},onPlan:()=>appHelpAction('mission'),onBrowse:()=>exploreSky(),onLeaveAlignment:()=>pointing.hideCamera(),onTargets:()=>finderTargets?.refresh(),onStep:()=>navigation.checkpoint(),onBack:()=>navigation.back()});
 
 function applyExperience({mode,source='initial'}){
  if(mode==='browse'){
@@ -294,6 +294,7 @@ applyExperience({mode:experience.mode});
 
 window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close();}});
 function openTarget(id){
+ navigation.batch(()=>{
  setTransition('');
  if(id&&!catalogue.some(object=>object.id===id))return;
  if(id)selected=desiredTarget=id;
@@ -301,6 +302,7 @@ function openTarget(id){
  $('search').value='';filter='all';for(const button of document.querySelectorAll('[data-filter]'))button.setAttribute('aria-pressed',String(button.dataset.filter==='all'));
  $('launch').click();
  if(id){$('selected-panel').open=true;if(id!=='Sun'&&experience.mode!=='browse'){if(currentPointing?.alignment?.calibrated)startLiveGuidance();else openWalkthrough('capture');}else{navigation.section('objects');atlas.centerTarget();}}else{navigation.section('objects');$('object-library').open=true;}
+ });
 }
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==$('forecast-frame').contentWindow)return;
@@ -309,10 +311,15 @@ window.addEventListener('message',event=>{
  if(event.data?.type==='dvsky-select-target'&&typeof event.data.id==='string')openTarget(event.data.id);
 });
 function startMission(date,minute){
- try{if(date){addDays(date,0);if(!Number.isInteger(minute)||minute<960||minute>1800)return;planner.plan(date,minute);}if(!dialog.open)$('launch').click();navigation.section('mission');}catch{}
+ try{navigation.batch(()=>{if(date){addDays(date,0);if(!Number.isInteger(minute)||minute<960||minute>1800)return;planner.plan(date,minute);}if(!dialog.open)$('launch').click();navigation.section('mission');});}catch{}
 }
+const restoredNavigation=navigation.restore();
+if(restoredNavigation){const id=requestedQuery.get('target');if(id&&catalogue.some(o=>o.id===id)){selected=desiredTarget=id;if(dialog.open)update();}}
+if(!restoredNavigation){
 if(requestedQuery.has('target'))openTarget(requestedQuery.get('target')||'');else if(requestedQuery.has('navigator'))$('launch').click();
 if(requestedQuery.has('mission'))startMission(requestedQuery.get('night'),Number(requestedQuery.get('at')||1260));
 
 const sectionLink=requestedQuery.get('section');
 if(['walkthrough','objects','finder','pointing','equipment','mission','field'].includes(sectionLink)){openAppSection(sectionLink);if(sectionLink==='pointing')readyPointing(null,'alignment');}
+
+}
