@@ -30,9 +30,9 @@ export function createNextTarget({A,site,getKit,getSelected,getSnapshot,onSelect
   if(signature!==kitSignature){kitSignature=signature;const options=[Object.assign(document.createElement('option'),{value:'',textContent:'Choose the eyepiece fitted now'})];
    for(const e of kit?.eyepieces||[])if(e.enabled)options.push(Object.assign(document.createElement('option'),{value:e.id,textContent:e.name}));$('fitted-eyepiece').replaceChildren(...options);const barlows=[Object.assign(document.createElement('option'),{value:'',textContent:'No Barlow fitted'})];for(const b of kit?.barlows||[])if(b.enabled)barlows.push(Object.assign(document.createElement('option'),{value:b.id,textContent:b.name}));$('fitted-barlow').replaceChildren(...barlows);
   }
-  if(chosen.barlowId&&!kit?.barlows.some(b=>b.enabled&&b.id===chosen.barlowId))chosen={id:'',mm:NaN,barlowId:''};$('fitted-barlow').value=chosen.barlowId||'';
+  if(chosen.barlowId&&!kit?.barlows.some(b=>b.enabled&&b.id===chosen.barlowId)){chosen={id:'',mm:NaN,barlowId:''};save();}$('fitted-barlow').value=chosen.barlowId||'';
   const e=kit?.eyepieces.find(e=>e.enabled&&e.id===chosen.id);
-  if(!e){chosen={id:'',mm:NaN,barlowId:''};$('fitted-eyepiece').value='';}else $('fitted-eyepiece').value=e.id;
+  if(!e){const hadSelection=!!(chosen.id||chosen.barlowId);chosen={id:'',mm:NaN,barlowId:''};if(hadSelection)save();$('fitted-eyepiece').value='';$('fitted-barlow').value='';}else $('fitted-eyepiece').value=e.id;
   $('fitted-zoom-label').hidden=e?.kind!=='zoom';if(e?.kind==='zoom'){const input=$('fitted-zoom');input.min=e.min;input.max=e.max;if(document.activeElement!==input)input.value=Number.isFinite(chosen.mm)?chosen.mm:'';}
   const current=choice();set('fitted-summary',current?describe(current):'Choose your actual eyepiece. Recommendations elsewhere do not change this setting.');
   $('show-another').disabled=!current;
