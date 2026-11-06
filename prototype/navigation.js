@@ -39,16 +39,19 @@ export function createNavigation({dialog,launch,stopCamera,forecastURL,onSection
   $('home-view').hidden=name!=='home';$('forecast-view').hidden=name!=='forecast';document.body.classList.remove('dv-app-navigator-mode');document.body.classList.toggle('dv-app-forecast-mode',name==='forecast');
   if(name==='forecast')ensureForecast();mark();window.scrollTo(0,0);applying=wasApplying;checkpoint();
  }
- function replay(target){
+ function replay(target,previous){
   applying=true;replaying=true;
   try{
    for(const name of [...layers()].reverse())if(!target.layers.includes(name))closeLayer(name);
+   const sameScreen=previous&&previous.view===target.view&&previous.underlay===target.underlay&&previous.section===target.section&&previous.stage===target.stage;
+   if(!sameScreen){
    view=target.underlay;
    if(target.view==='navigator'){
     if(!dialog.open)launch.click();
     $('home-view').hidden=true;$('forecast-view').hidden=true;document.body.classList.remove('dv-app-forecast-mode');document.body.classList.add('dv-app-navigator-mode');
     section(target.section);if(target.section==='walkthrough'&&target.stage!==null)restoreStage(target.stage);
    }else show(target.view);
+   }
    for(const name of target.layers){
     if(isOpen(name))continue;
     if(name==='compass')$('phone-compass-dialog').showModal();
