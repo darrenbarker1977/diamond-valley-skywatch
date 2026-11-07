@@ -1,32 +1,36 @@
+export const defaultBarlow=()=>({id:'svbony2x',name:'SVBONY 2× Barlow',factor:2,enabled:true});
 export const defaultKit=()=>({focalLength:1200,eyepieces:[
  {id:'wide20',name:'20 mm 70° wide-angle',kind:'fixed',min:20,max:20,enabled:true},
  {id:'wide12_5',name:'12.5 mm 70° wide-angle',kind:'fixed',min:12.5,max:12.5,enabled:true},
  {id:'sv135',name:'SVBONY SV135 7–21 mm zoom',kind:'zoom',min:7,max:21,enabled:true}
-]});
+],barlows:[defaultBarlow()]});
 export function validateKit(value){
  if(!value||!Number.isFinite(value.focalLength)||value.focalLength<200||value.focalLength>5000||!Array.isArray(value.eyepieces)||value.eyepieces.length>40)throw Error('Enter a telescope focal length between 200 and 5000 mm.');
  const ids=new Set();
  const eyepieces=value.eyepieces.map(e=>{
   if(!e||!['fixed','zoom'].includes(e.kind)||typeof e.id!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(e.id)||ids.has(e.id)||typeof e.name!=='string'||!e.name.trim()||e.name.length>80||typeof e.enabled!=='boolean'||!Number.isFinite(e.min)||!Number.isFinite(e.max)||e.min<1||e.max>80||e.max<e.min||(e.kind==='fixed'&&e.max!==e.min))throw Error('Check the eyepiece name and focal length (1–80 mm). Zoom limits must be in increasing order.');
   ids.add(e.id);return {id:e.id,name:e.name.trim(),kind:e.kind,min:e.min,max:e.max,enabled:e.enabled};
- });return {focalLength:value.focalLength,eyepieces};
+ });
+ const accessories=value.barlows??[];if(!Array.isArray(accessories)||accessories.length>10)throw Error('Check your Barlow accessories.');
+ const barlowIds=new Set(),barlows=accessories.map(b=>{if(!b||typeof b.id!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(b.id)||barlowIds.has(b.id)||typeof b.name!=='string'||!b.name.trim()||b.name.length>80||typeof b.enabled!=='boolean'||!Number.isFinite(b.factor)||b.factor<1.1||b.factor>5)throw Error('Check the Barlow name and nominal multiplier (1.1×–5×).');barlowIds.add(b.id);return {id:b.id,name:b.name.trim(),factor:b.factor,enabled:b.enabled};});
+ return {focalLength:value.focalLength,eyepieces,barlows};
 }
 export function candidates(kit){
  const config=validateKit(kit),choices=[];
  for(const e of config.eyepieces.filter(e=>e.enabled)){
   const lengths=e.kind==='fixed'?[e.min]:[e.min,e.max,...[7,9,10,12,14,16,18,21,24,28,32].filter(mm=>mm>e.min&&mm<e.max)];
-  for(const mm of [...new Set(lengths)])choices.push({id:e.id,name:e.name,kind:e.kind,mm,power:config.focalLength/mm});
+  for(const mm of [...new Set(lengths)]){const bare={id:e.id,name:e.name,kind:e.kind,mm,power:config.focalLength/mm};choices.push(bare);for(const b of config.barlows.filter(b=>b.enabled))choices.push({...bare,power:bare.power*b.factor,barlow:{...b}});}
  }
- return choices.sort((a,b)=>a.power-b.power||(a.kind===b.kind?0:a.kind==='fixed'?-1:1));
+ return choices.sort((a,b)=>a.power-b.power||Number(!!a.barlow)-Number(!!b.barlow)||(a.kind===b.kind?0:a.kind==='fixed'?-1:1));
 }
-export const describe=e=>`${e.name}${e.kind==='zoom'?` set to ${e.mm} mm`:''} · about ${Math.round(e.power)}×`;
+export const describe=e=>`${e.name}${e.kind==='zoom'?` set to ${e.mm} mm`:''}${e.barlow?` + ${e.barlow.name}`:''} · about ${Math.round(e.power)}×`;
 export function findingEyepiece(kit){
- const pool=candidates(kit),lowest=pool[0];
+ const pool=candidates(kit).filter(e=>!e.barlow),lowest=pool[0];
  // A fixed eyepiece near the lowest power avoids a needless swap to the zoom at 21 mm.
  return lowest&&(pool.find(e=>e.kind==='fixed'&&e.power<=Math.min(lowest.power*1.1,220))||lowest);
 }
 export function alignmentEyepiece(kit){
- try {const start=findingEyepiece(kit);return start&&start.power>220?'Enable a longer-focal-length eyepiece for alignment; your current kit starts above 220×.':start?`For alignment, use ${describe(start)}. Start at low power and centre the object before recording; you can zoom in after alignment.`:'Add or enable an eyepiece in My eyepieces before choosing alignment magnification.';}catch{return 'Check the telescope focal length in My eyepieces before using the magnification suggestions.';}
+ try {const start=findingEyepiece(kit);return start&&start.power>220?'Enable a longer-focal-length eyepiece for alignment; your current kit starts above 220×.':start?`For alignment, use ${describe(start)}. Use it without a Barlow and centre the object before recording; you can zoom in after alignment.`:'Add or enable an eyepiece in My eyepieces before choosing alignment magnification.';}catch{return 'Check the telescope focal length in My eyepieces before using the magnification suggestions.';}
 }
 export function viewingPlan(object,kit,alt=45){
  if(object.id==='Sun')return {steps:[],note:'No ordinary eyepiece recommendation for the Sun. Never observe it through this telescope without a certified front-aperture solar filter and appropriate solar observing knowledge.'};
@@ -34,11 +38,12 @@ export function viewingPlan(object,kit,alt=45){
  if(!pool.length)return {steps:[],note:'Add or enable an eyepiece in My eyepieces to see a viewing plan.'};
  const start=findingEyepiece(kit);
  if(start.power>220)return {steps:[],note:'All your enabled eyepieces give more than 220×. Enable a longer-focal-length eyepiece for finding and beginner viewing; this guide does not recommend starting at such high power.'};
- const steps=[{title:'Find it first',choice:start,why:'Use the finder, then this low-power starting eyepiece. Centre the object before changing power.'}];
+ const steps=[{title:'Find it first',choice:start,why:'Use the finder, then this low-power starting eyepiece on its own. Centre the object before changing power.'}];
  const add=(title,wanted,why,high=false)=>{
   const available=pool.filter(e=>e.power>steps.at(-1).choice.power*1.12&&e.power<=220);
   if(!available.length)return;
-  const choice=high?available.find(e=>Math.abs(e.power-available.at(-1).power)<1e-6):available.reduce((best,e)=>Math.abs(Math.log(e.power/wanted))<Math.abs(Math.log(best.power/wanted))?e:best);
+  const top=available.at(-1),higher=available.find(e=>!e.barlow&&e.power>=top.power*.95)||available.find(e=>e.kind==='fixed'&&e.power>=top.power*.95)||top;
+  const choice=high?higher:available.reduce((best,e)=>Math.abs(Math.log(e.power/wanted))<Math.abs(Math.log(best.power/wanted))?e:best);
   steps.push({title,choice,why});
  };
  let note='Suggestions use your enabled eyepieces. Atmospheric steadiness is not measured: if the view blurs or shimmers, return to lower power.';
@@ -57,5 +62,6 @@ export function viewingPlan(object,kit,alt=45){
  }else if(['M42','M81','Albireo'].includes(object.id)||['Open cluster','Galaxy','Nebula','Supernova remnant'].includes(object.type))add('Take a closer look',90,object.id==='Albireo'?'Look for the blue-and-gold pair; you may already separate it at low power.':'Compare the brighter central region at moderate power; return to low power for the wider surroundings.');
  else note='Low power is enough to identify this bright star or use it for alignment. Stars remain points; extra magnification will not reveal a stellar surface. '+note;
  if(start.power>100)note='Your lowest enabled power is already fairly high. Finding objects may be harder; a longer-focal-length eyepiece would make a useful low-power option. '+note;
+ if(steps.some(step=>step.choice.barlow))note+=' Centre at low power before adding one Barlow, then refocus. The multiplier is nominal and depends on spacing.';
  return {steps,note};
 }

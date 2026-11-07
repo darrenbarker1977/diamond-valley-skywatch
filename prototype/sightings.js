@@ -24,6 +24,7 @@ export function createSightings({site,catalogue,getSelected,getEyepiece,getConte
  const object=id=>catalogue.find(o=>o.id===id),name=id=>object(id)?.name||id;
  const dateFormats=new Map();
  function dateLabel(r){if(!dateFormats.has(r.zone))dateFormats.set(r.zone,DVSkyTime.formatter('en-CA',{timeZone:r.zone,year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}));return dateFormats.get(r.zone).format(new Date(r.observedAt));}
+ const lensName=lens=>lens.name+(lens.barlow?' + '+Number(lens.barlow.factor.toFixed(2))+'× Barlow':'');
  const coordinates=s=>`${Math.abs(s.latitude).toFixed(5)}° ${s.latitude<0?'S':'N'}, ${Math.abs(s.longitude).toFixed(5)}° ${s.longitude<0?'W':'E'}`;
  const ids=()=>new Set(state.records.map(r=>r.objectId));
  function latestTonight(){const now=nightDate(new Date(),site.clockTimezone);return state.records.filter(r=>r.objectId===getSelected()&&Math.abs(r.site.latitude-site.latitude)<.00001&&Math.abs(r.site.longitude-site.longitude)<.00001&&nightDate(new Date(r.observedAt),site.clockTimezone)===now).sort((a,b)=>b.observedAt.localeCompare(a.observedAt))[0];}
@@ -31,8 +32,8 @@ export function createSightings({site,catalogue,getSelected,getEyepiece,getConte
   const context=getContext(),simulated=context.planning||context.practice,target=object(getSelected()),last=latestTonight(),lens=getEyepiece();
   $('seen-record').textContent=last?'✓ Seen tonight':'✓ Seen it';$('seen-record').disabled=!!state.error||!!simulated||!!last||!target;$('seen-record').setAttribute('aria-label',last?'Already recorded '+target.name+' tonight':'Record that I saw '+(target?.name||'this object'));
   $('seen-again').hidden=!last||!!simulated||!!state.error;$('seen-live').hidden=!simulated;$('seen-blocked').hidden=!simulated;$('seen-blocked').textContent=simulated?'Sightings are off for planned and practice skies. Return to real time to record what you have seen.':'';
-  const setting=lens?`${lens.name} · ${lens.mm} mm · about ${Math.round(lens.power)}×`:'Eyepiece not selected';
-  $('seen-context-summary').textContent=`${target?.name||'Selected object'} · ${site.label} · ${lens?lens.mm+' mm fitted':'eyepiece not set'}`;
+  const setting=lens?`${lensName(lens)} · ${lens.mm} mm · about ${Math.round(lens.power)}×`:'Eyepiece not selected';
+  $('seen-context-summary').textContent=`${target?.name||'Selected object'} · ${site.label} · ${lens?lens.mm+' mm fitted'+(lens.barlow?' + '+Number(lens.barlow.factor.toFixed(2))+'× Barlow':''):'eyepiece not set'}`;
   $('seen-context').textContent=simulated?'Planned and practice skies cannot create sightings. Return to real time, then record only after you have seen the object.':`Confirm you saw ${target?.name||'the selected object'}. Records the real time at ${site.label} · ${coordinates(site)} (${site.physicalConfirmed?'presence confirmed':'selected site; check it before recording'}). ${setting}.`;
   const weather=simulated?null:weatherAtCapture(new Date());$('seen-weather-preview').textContent=simulated?'Weather is saved only with real-time observations.':weather?describeSightingWeather(weather,new Date().toISOString()).summary+' Will save this forecast with its download time; it is not measured weather.':'No matching hourly forecast is available to save. Seen it will still record the object, time, site and selected eyepiece.';
   $('seen-feedback').textContent=message;$('seen-history-feedback').textContent=message;$('seen-undo').hidden=!undo;$('seen-history-undo').hidden=!undo;
@@ -53,7 +54,7 @@ export function createSightings({site,catalogue,getSelected,getEyepiece,getConte
  function run(action){try{action();changed();}catch(e){message=e.message;state=store.snapshot();paint();}}
  function record(again=false){
   const context=getContext();if(context.planning||context.practice)return;if(!again&&latestTonight())return;
-  run(()=>{const lens=getEyepiece(),time=new Date(),record={id:env.crypto?.randomUUID?.()||('s'+Date.now().toString(36)+Math.random().toString(36).slice(2)),objectId:getSelected(),observedAt:time.toISOString(),zone:site.clockTimezone,site:{label:site.label,latitude:site.latitude,longitude:site.longitude,confirmed:!!site.physicalConfirmed},eyepiece:lens?{id:lens.id,name:lens.name,mm:lens.mm,power:lens.power}:null,weather:weatherAtCapture(time)};store.add(record);undo={kind:'add',record};message='Saved '+name(record.objectId)+' · '+dateLabel(record)+' · '+record.site.label+'.';});
+  run(()=>{const lens=getEyepiece(),time=new Date(),record={id:env.crypto?.randomUUID?.()||('s'+Date.now().toString(36)+Math.random().toString(36).slice(2)),objectId:getSelected(),observedAt:time.toISOString(),zone:site.clockTimezone,site:{label:site.label,latitude:site.latitude,longitude:site.longitude,confirmed:!!site.physicalConfirmed},eyepiece:lens?{id:lens.id,name:lensName(lens),mm:lens.mm,power:lens.power}:null,weather:weatherAtCapture(time)};store.add(record);undo={kind:'add',record};message='Saved '+name(record.objectId)+' · '+dateLabel(record)+' · '+record.site.label+'.';});
  }
  function undoLast(){if(!undo)return;run(()=>{const action=undo;if(action.kind==='add')store.remove(action.record.id);else store.add(action.record);message='Undid the last change for '+name(action.record.objectId)+'.';undo=null;});}
  $('seen-record').addEventListener('click',()=>record());$('seen-again').addEventListener('click',()=>record(true));$('seen-undo').addEventListener('click',undoLast);$('seen-history-undo').addEventListener('click',undoLast);
