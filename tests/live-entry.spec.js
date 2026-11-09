@@ -1,5 +1,5 @@
 import {catalogue} from '../prototype/catalogue.js';
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('permanent entry loads shared Navigator assets and original forecast',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.clock.setFixedTime(new Date('2026-10-27T03:00:00Z'));

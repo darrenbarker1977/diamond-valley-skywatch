@@ -1,5 +1,5 @@
 // Synthetic device events are test fixtures only; production uses real phone samples.
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 async function start(page){
  await page.addInitScript(()=>{localStorage.setItem('dvsky:experience:v1','handheld');for(const type of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(type,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);Object.defineProperty(navigator,'vibrate',{configurable:true,value:p=>{(window.__practicePulses??=[]).push(p);return true;}});});
  await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.clock.install({time:new Date('2026-10-27T19:00:00Z')});await page.clock.pauseAt(new Date('2026-10-27T19:00:10Z'));await page.goto('/');await page.locator('#launch').click();await expect(page.locator('#walkthrough-view')).toBeVisible();

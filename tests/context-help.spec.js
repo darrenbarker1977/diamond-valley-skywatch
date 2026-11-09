@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 async function setup(page,{day=false,mapFailure=false}={}){
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install({time:new Date(day?'2026-10-27T19:00Z':'2026-10-27T03:00Z')});await page.clock.pauseAt(new Date(day?'2026-10-27T19:00:10Z':'2026-10-27T03:00:10Z'));await page.route('https://api.open-meteo.com/**',r=>r.abort());if(mapFailure)await page.route('**/atlas-data.js*',r=>r.abort());await page.goto('/');return errors;
 }

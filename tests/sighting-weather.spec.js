@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 import {readFile} from 'node:fs/promises';
 const KEY='dvsky:sightings:v1',NOW='2026-11-04T03:35:00.000Z';
 function forecast(cloud=27){const time=[];for(let d=3;d<=8;d++)for(let h=0;h<24;h++)time.push(`2026-11-0${d}T${String(h).padStart(2,'0')}:00`);const hourly={time};for(const [k,v]of Object.entries({cloud_cover:cloud,cloud_cover_low:cloud,cloud_cover_mid:0,cloud_cover_high:0,temperature_2m:-5,dew_point_2m:-6,relative_humidity_2m:90,wind_speed_10m:8,wind_gusts_10m:17,precipitation_probability:5,snowfall:0,visibility:20000,weather_code:0}))hourly[k]=time.map(()=>v);return {timezone:'Etc/GMT+6',utc_offset_seconds:-21600,hourly};}

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 import {catalogue} from '../prototype/catalogue.js';
 function weather(zone){
  const time=[];for(let d=26;d<=31;d++)for(let h=0;h<24;h++)time.push(`2026-10-${d}T${String(h).padStart(2,'0')}:00`);

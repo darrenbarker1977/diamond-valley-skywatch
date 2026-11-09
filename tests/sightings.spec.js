@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 import {readFile} from 'node:fs/promises';
 const KEY='dvsky:sightings:v1',FORMAT='barker-after-dark-sightings';
 const saved=page=>page.evaluate(key=>JSON.parse(localStorage.getItem(key)||'{"records":[]}').records,KEY);

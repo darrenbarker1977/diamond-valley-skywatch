@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('real sky atlas pans, zooms, centres, changes views and stays in red night mode',async({page},info)=>{
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.clock.setFixedTime(new Date('2026-10-27T03:00Z'));

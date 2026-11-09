@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('home tools and preserved forecast refresh',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));let requests=0;
  await page.clock.setFixedTime(new Date('2026-10-27T03:00:00Z'));

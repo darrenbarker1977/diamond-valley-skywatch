@@ -16,6 +16,7 @@ export function missionStopCount(minutes){
 }
 function localWeather(snapshot,site,time){return snapshot?.coordinateKey===coordinateKey(site)?weatherAt(snapshot,time):null;}
 function weatherPenalty(row){
+ if(row?.source==='Environment Canada'){const o=assessWeather(row);return !o.known?12:o.usable?(/variable/i.test(o.reason)?12:0):45;}
  if(!Number.isFinite(row?.cloud_cover))return 12;
  return row.cloud_cover*.4+Math.max(0,(row.precipitation_probability||0)-30)*.3+(row.snowfall>.09?20:0)+Math.max(0,(row.wind_gusts_10m||0)-30)*.5;
 }

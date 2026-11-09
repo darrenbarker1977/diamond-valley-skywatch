@@ -1,5 +1,5 @@
 // Only development tests generate orientation and camera samples.
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 const errors=new WeakMap();
 test.beforeEach(async({page})=>{errors.set(page,[]);page.on('pageerror',e=>errors.get(page).push(e.message));});
 test.afterEach(async({page})=>expect(errors.get(page)).toEqual([]));

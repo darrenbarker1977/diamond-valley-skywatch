@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('add eyepieces, update target advice, toggle ownership and preserve kit on reload',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/prototype/');await page.locator('#launch').click();await page.locator('[data-nav-section=objects]').click();

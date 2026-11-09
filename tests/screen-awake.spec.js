@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 async function mock(page,{deferred=false,denied=false}={}){
  await page.addInitScript(({deferred,denied})=>{
   window.__wakeRequests=0;window.__wakeReleases=0;window.__wakeLocks=[];window.__wakeResolve=[];

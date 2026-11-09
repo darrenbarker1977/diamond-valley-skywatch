@@ -1,5 +1,5 @@
 // Synthetic orientation exists only in these development tests, never in the app.
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 const pageErrors=new WeakMap();
 test.beforeEach(async({page})=>{pageErrors.set(page,[]);page.on('pageerror',error=>pageErrors.get(page).push(error.message));});
 test.afterEach(async({page})=>expect(pageErrors.get(page)).toEqual([]));

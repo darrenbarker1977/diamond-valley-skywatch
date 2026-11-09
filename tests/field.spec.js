@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';import fs from 'node:fs';
+import {test,expect} from './fixtures.js';import fs from 'node:fs';
 const orbit=JSON.parse(fs.readFileSync(new URL('./fixtures/iss-20261027.json',import.meta.url)));
 async function setup(page){
  await page.clock.install({time:new Date('2026-10-27T21:00Z')});await page.clock.setFixedTime(new Date('2026-10-27T21:00Z'));const errors=[];page.on('pageerror',e=>errors.push(e.message));let issRequests=0;

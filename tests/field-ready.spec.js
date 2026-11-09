@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 async function setup(page){
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install({time:new Date('2026-10-27T03:00:00Z')});await page.clock.pauseAt(new Date('2026-10-27T03:00:10Z'));
  await page.route('https://api.open-meteo.com/**',route=>{const time=[];for(let day=26;day<=31;day++)for(let h=0;h<24;h++)time.push(`2026-10-${day}T${String(h).padStart(2,'0')}:00`);const hourly={time};for(const key of ['temperature_2m','relative_humidity_2m','dew_point_2m','cloud_cover','cloud_cover_low','cloud_cover_mid','cloud_cover_high','wind_speed_10m','wind_gusts_10m','precipitation_probability','snowfall','visibility','weather_code'])hourly[key]=time.map(()=>key==='visibility'?20000:key==='snowfall'?0:10);return route.fulfill({json:{timezone:'America/Edmonton',hourly}});});

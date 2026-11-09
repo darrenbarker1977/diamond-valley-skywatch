@@ -1,5 +1,5 @@
 // Development-only orientation events exercise the real guided route. No production fallback exists.
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 const failures=new WeakMap();
 test.beforeEach(async({page})=>{failures.set(page,[]);page.on('pageerror',e=>failures.get(page).push(e.message));});
 test.afterEach(async({page})=>expect(failures.get(page)).toEqual([]));
