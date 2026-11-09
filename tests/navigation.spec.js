@@ -4,7 +4,7 @@ test('home tools and preserved forecast refresh',async({page})=>{
  await page.clock.setFixedTime(new Date('2026-10-27T03:00:00Z'));
  const time=[];for(let day=26;day<=31;day++)for(let h=0;h<24;h++)time.push(`2026-10-${day}T${String(h).padStart(2,'0')}:00`);
  const hourly={time};for(const name of ['temperature_2m','relative_humidity_2m','dew_point_2m','cloud_cover','cloud_cover_low','cloud_cover_mid','cloud_cover_high','wind_speed_10m','wind_gusts_10m','precipitation_probability','snowfall','visibility','weather_code'])hourly[name]=time.map(()=>name==='visibility'?20000:name==='snowfall'?0:10);
- await page.route('https://api.open-meteo.com/**',route=>{requests++;return route.fulfill({json:{hourly}});});
+ await page.route('https://api.open-meteo.com/**',route=>{if(new URL(route.request().url()).pathname==='/v1/forecast')requests++;return route.fulfill({json:{hourly}});});
  await page.goto('/prototype/');await expect(page.locator('#home-view')).toBeVisible();expect(requests).toBe(0);
  await page.locator('#launch').click();await page.locator('[data-nav-section=objects]').click();await page.locator('[data-nav-section=equipment]').click();await expect(page.locator('#equipment')).toBeVisible();await expect(page.locator('.dv-nav-content')).toBeHidden();
  await page.locator('[data-nav-section=objects]').click();await expect(page.locator('#detail h4')).toHaveText('Recommended eyepiece');
