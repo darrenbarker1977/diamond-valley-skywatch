@@ -68,7 +68,7 @@ export function officialAssessment(row){
 export async function fetchOfficial(site,zone,{signal,fetcher=fetch,now=Date.now()}={}){
  if(!canadianZone(zone))return {data:null,note:'Worldwide forecast · Open-Meteo'};
  if(distanceKm(site,{latitude:50.68,longitude:-114.25})<=2.5){
-  try{const r=await fetcher(new URL('../data/weather-diamond-valley.json',import.meta.url),{cache:'no-store',signal});if(r.ok){const saved=await r.json();if(saved.version===1&&fresh(saved.fetchedAt,now,3*3600000)&&Math.abs(saved.requested?.latitude-50.68)<.00001&&Math.abs(saved.requested?.longitude+114.25)<.00001){const data=normalizeOfficial(saved.feature,site,zone,now);data.cacheFetchedAt=saved.fetchedAt;return {data,note:''};}}}catch{}
+  for(const url of ['https://raw.githubusercontent.com/darrenbarker1977/diamond-valley-skywatch/main/data/weather-diamond-valley.json',new URL('../data/weather-diamond-valley.json',import.meta.url)]){try{const r=await fetcher(url,{cache:'no-store',signal});if(r.ok){const saved=await r.json();if(saved.version===1&&fresh(saved.fetchedAt,now,3*3600000)&&Math.abs(saved.requested?.latitude-50.68)<.00001&&Math.abs(saved.requested?.longitude+114.25)<.00001){const data=normalizeOfficial(saved.feature,site,zone,now);data.cacheFetchedAt=saved.fetchedAt;return {data,note:''};}}}catch{}}
  }
  const dy=.023,dx=dy/Math.max(.2,Math.cos(site.latitude*Math.PI/180)),u=new URL(base);u.search=new URLSearchParams({f:'json',lang:'en',limit:'50',bbox:[site.longitude-dx,site.latitude-dy,site.longitude+dx,site.latitude+dy].join(',')});
  const resp=await fetcher(u,{cache:'no-store',signal});if(!resp.ok)throw Error('Environment Canada HTTP '+resp.status);

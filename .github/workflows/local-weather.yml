@@ -1,5 +1,10 @@
 name: Refresh official local weather
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/update-weather.py'
+      - '.github/workflows/local-weather.yml'
   schedule:
     - cron: '7,37 * * * *'
   workflow_dispatch:
