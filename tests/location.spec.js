@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 function weather(zone){const time=[];for(let d=26;d<=31;d++)for(let h=0;h<24;h++)time.push(`2026-10-${d}T${String(h).padStart(2,'0')}:00`);const hourly={time};for(const n of ['temperature_2m','relative_humidity_2m','dew_point_2m','cloud_cover','cloud_cover_low','cloud_cover_mid','cloud_cover_high','wind_speed_10m','wind_gusts_10m','precipitation_probability','snowfall','visibility','weather_code'])hourly[n]=time.map(()=>n==='visibility'?20000:n==='snowfall'?0:10);return {timezone:zone,hourly};}
 test('remote global search updates title, weather coordinates/timezone and survives offline reload',async({page,context})=>{
  await page.clock.setFixedTime(new Date('2026-10-27T03:00:00Z'));

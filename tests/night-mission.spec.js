@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 function weather(zone,cloud=10){
  const time=[];for(let day=26;day<=31;day++)for(let hour=0;hour<24;hour++)time.push(`2026-10-${day}T${String(hour).padStart(2,'0')}:00`);
  const hourly={time};for(const key of ['temperature_2m','relative_humidity_2m','dew_point_2m','cloud_cover','cloud_cover_low','cloud_cover_mid','cloud_cover_high','wind_speed_10m','wind_gusts_10m','precipitation_probability','snowfall','visibility','weather_code'])hourly[key]=time.map(()=>key==='cloud_cover'?cloud:key==='snowfall'?0:key==='visibility'?20000:10);

@@ -8,7 +8,7 @@ const LOCATION_KEY='dvsky:observing-location:v1';
 try {const saved=JSON.parse(globalThis.localStorage?.getItem(LOCATION_KEY)||'null');if(saved&&typeof saved.label==='string'&&saved.label.length<=120&&typeof saved.clockTimezone==='string'){new Intl.DateTimeFormat('en',{timeZone:saved.clockTimezone});setSite({...saved,source:saved.source==='default'?'default':'saved',physicalConfirmed:false,accuracy:Number.isFinite(saved.accuracy)?saved.accuracy:null});}}catch{}
 function saveSite(){try{localStorage.setItem(LOCATION_KEY,JSON.stringify({...site,physicalConfirmed:false,savedAt:Date.now()}));return true;}catch{return false;}}
 export function coordinates(){return `${Math.abs(site.latitude).toFixed(5)}° ${site.latitude<0?'S':'N'}, ${Math.abs(site.longitude).toFixed(5)}° ${site.longitude<0?'W':'E'}`;}
-export function forecastURL(base){const url=new URL(base,document.baseURI);url.searchParams.set('v','location-1');if(site.source!=='default'){url.searchParams.set('lat',site.latitude);url.searchParams.set('lon',site.longitude);url.searchParams.set('name',site.label);}return url.href;}
+export function forecastURL(base){const url=new URL(base,document.baseURI);url.searchParams.set('v','location-1');if(site.source!=='default'){url.searchParams.set('lat',site.latitude);url.searchParams.set('lon',site.longitude);url.searchParams.set('name',site.label);url.searchParams.set('zone',site.clockTimezone);}return url.href;}
 export function createLocation(onChange){
  const $=id=>document.getElementById(id);let generation=0;
  function display(){

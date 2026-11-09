@@ -16,7 +16,7 @@ export function createNightMission({A,site,getContext,getKit,ensureForecast,onLi
   const now=Date.now(),age=snapshot?Math.max(0,Math.floor((now-snapshot.stamp)/60000)):0,stale=snapshot&&(snapshot.offline||age>=30);
   $('mission-view').dataset.location=siteKey;$('mission-view').dataset.planning=String(c.planning);$('mission-view').dataset.weatherStamp=String(snapshot?.stamp||0);
   set('mission-location',site.label);set('mission-mode',c.planning?'PLANNED EVENING':'LIVE · ADAPTS THROUGH THE NIGHT');
-  set('mission-weather',snapshot?`${snapshot.offline?'Offline · saved forecast':snapshot.cached?'Saved forecast':stale?'Forecast needs refreshing':'Open-Meteo forecast'} · ${localLabel(snapshot.stamp,snapshot.zone)} · ${age} min old${stale?' · conditions may be stale':''}`:failure||'Getting this location’s hourly forecast…');
+  set('mission-weather',snapshot?`${snapshot.offline?'Offline · saved forecast':snapshot.cached?'Saved forecast':stale?'Forecast needs refreshing':(snapshot.source||'Open-Meteo')+' forecast'} · ${localLabel(snapshot.stamp,snapshot.zone)} · ${age} min old${stale?' · conditions may be stale':''}`:failure||'Getting this location’s hourly forecast…');
   $('mission-weather').classList.toggle('is-stale',!!stale||!snapshot);
   set('mission-date',model.start?`${localLabel(model.start,c.zone)} → ${shortClock(model.end,c.zone)}`:c.planning?localLabel(c.instant,c.zone):'Tonight at this observing location');
   set('mission-summary',model.reason||'Checking the sky and weather.');

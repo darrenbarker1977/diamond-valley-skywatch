@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test.use({serviceWorkers:'block'});
 async function start(page,url='/'){await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.goto(url);await expect(page.locator('#ready-check')).toBeAttached();}
 async function back(page){await page.goBack();}

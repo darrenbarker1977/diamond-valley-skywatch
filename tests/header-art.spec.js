@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('header art loads on Home, Forecast and every Navigator tool',async({page},info)=>{
  await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.goto('/');const main=page.locator('#app-header .dv-brand-art');
  await expect(main).toBeVisible();await expect.poll(()=>main.evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);

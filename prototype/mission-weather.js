@@ -1,3 +1,4 @@
+import {checkedOfficial,officialAt,officialAssessment} from './official-weather.js?v=official-1';
 import {localParts} from './observing-time.js?v=abt-1';
 export const weatherKey=site=>site.source==='default'?'dvsky:weather:v5':`dvsky:weather:v6:${site.latitude.toFixed(5)}:${site.longitude.toFixed(5)}`;
 export const coordinateKey=site=>`${site.latitude.toFixed(5)}:${site.longitude.toFixed(5)}`;
@@ -19,7 +20,8 @@ export function weatherSnapshot(message,site,now=Date.now()){
   if(row.snowfall!==null&&row.snowfall<0)row.snowfall=null;
   rows.set(time,row);
  });
- return {clockRule:message.data?.clock_rule||null,rows,ambiguousHours,zone,stamp:message.stamp,offline:!!message.offline,cached:!!message.cached,error:typeof message.error==='string'?message.error.slice(0,180):'',coordinateKey:coordinateKey(site),dataSignature:JSON.stringify([message.stamp,zone,message.data?.clock_rule||null,[...rows.values()],[...ambiguousHours]]),signature:JSON.stringify([message.stamp,!!message.offline,!!message.cached,zone,message.data?.clock_rule||null,[...rows.values()],[...ambiguousHours]])};
+ const official=checkedOfficial(message.data?.official_forecast,site,zone,now);
+ return {official,modelSource:message.data?.model_source==='Canadian GEM via Open-Meteo'?message.data.model_source:null,source:official?'Environment Canada':message.data?.model_source==='Canadian GEM via Open-Meteo'?message.data.model_source:'Open-Meteo',clockRule:message.data?.clock_rule||null,rows,ambiguousHours,zone,stamp:message.stamp,offline:!!message.offline,cached:!!message.cached,error:typeof message.error==='string'?message.error.slice(0,180):'',coordinateKey:coordinateKey(site),dataSignature:JSON.stringify([message.stamp,zone,message.data?.clock_rule||null,message.data?.model_source||null,official,[...rows.values()],[...ambiguousHours]]),signature:JSON.stringify([message.stamp,!!message.offline,!!message.cached,zone,message.data?.clock_rule||null,message.data?.model_source||null,official,[...rows.values()],[...ambiguousHours]])};
 }
 export function savedWeather(site,now=Date.now()){
  try{const saved=JSON.parse(globalThis.localStorage?.getItem(weatherKey(site))||'null');if(saved)return weatherSnapshot({...saved,latitude:site.latitude,longitude:site.longitude,cached:true,offline:globalThis.navigator?.onLine===false},site,now);}catch{}
@@ -30,9 +32,10 @@ export function weatherAt(snapshot,time){
  const p=localParts(time,snapshot.zone),hour=`${p.date}T${String(p.hour).padStart(2,'0')}`;
  if(snapshot.ambiguousHours?.has(hour))return null;
  let found=null;for(const row of snapshot.rows.values())if(row.time.slice(0,13)===hour&&Number(row.time.slice(14,16))<=p.minute&&(!found||row.time>found.time))found=row;
- return found;
+ return officialAt(snapshot.official,time,snapshot.zone)||(found&&snapshot.modelSource?{...found,source:snapshot.modelSource}:found);
 }
 export function assessWeather(row){
+ const official=officialAssessment(row);if(official)return official;
  if(!row||!Number.isFinite(row.cloud_cover))return {usable:false,known:false,reason:'No verified hourly cloud forecast for this time.'};
  if(row.cloud_cover>55)return {usable:false,known:true,reason:`Cloud forecast ${Math.round(row.cloud_cover)}% — wait for a clearer window.`};
  if(row.precipitation_probability!==null&&row.precipitation_probability>30)return {usable:false,known:true,reason:'Rain or snow probability is too high for this mission window.'};

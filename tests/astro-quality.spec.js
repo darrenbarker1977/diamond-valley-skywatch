@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 function feed(){return {schema:1,source:'7timer-astro',site:{latitude:50.68,longitude:-114.25,label:'Diamond Valley'},forecast:{product:'astro',init:'2026110212',dataseries:Array.from({length:24},(_,i)=>({timepoint:(i+1)*3,seeing:2,transparency:4}))}};}
 function weather(){const time=[];for(let d=2;d<=7;d++)for(let h=0;h<24;h++)time.push(`2026-11-0${d}T${String(h).padStart(2,'0')}:00`);const hourly={time};for(const k of ['temperature_2m','relative_humidity_2m','dew_point_2m','cloud_cover','cloud_cover_low','cloud_cover_mid','cloud_cover_high','wind_speed_10m','wind_gusts_10m','precipitation_probability','snowfall','visibility','weather_code'])hourly[k]=time.map(()=>k==='visibility'?20000:k==='snowfall'?0:10);return {timezone:'Etc/GMT+6',utc_offset_seconds:-21600,hourly};}
 async function setup(page){await page.clock.setFixedTime(new Date('2026-11-02T20:00Z'));await page.route('https://api.open-meteo.com/**',r=>r.fulfill({json:weather()}));}

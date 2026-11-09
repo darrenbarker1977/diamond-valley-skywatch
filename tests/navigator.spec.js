@@ -1,5 +1,5 @@
 import {catalogue} from '../prototype/catalogue.js';
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('open, search, select, filter, expand, red mode and close',async({page},testInfo)=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{window.sensorSubscriptions=[];const original=window.addEventListener;window.addEventListener=function(name,...args){if(['deviceorientation','deviceorientationabsolute','devicemotion'].includes(name))window.sensorSubscriptions.push(name);return original.call(this,name,...args);};});

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('site-specific app manifest and downloadable PNG icons are valid',async({page,request})=>{
  await page.goto('/');const href=await page.locator('link[rel=manifest]').getAttribute('href');const response=await request.get('/'+href);expect(response.ok()).toBe(true);const manifest=await response.json();
  expect(manifest.name).toBe('Barker After Dark');expect(new URL(manifest.scope,'http://127.0.0.1:8000/manifest.webmanifest').pathname).toBe('/');expect(manifest.start_url).toBe('./');

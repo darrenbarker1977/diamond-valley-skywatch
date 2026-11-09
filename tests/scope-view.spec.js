@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('scope view has both pointing modes, large controls and a safe screen hold',async({page},info)=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{window.__wakeRequests=0;window.__wakeReleases=0;Object.defineProperty(navigator,'wakeLock',{configurable:true,value:{request:async()=>{window.__wakeRequests++;return {release:async()=>{window.__wakeReleases++;},addEventListener:()=>{}};}}});});

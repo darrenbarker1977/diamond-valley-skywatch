@@ -1,5 +1,5 @@
 // All samples are synthetic development inputs, never production fallbacks.
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test.use({serviceWorkers:'block'});
 async function init(page){await page.addInitScript(()=>{for(const name of ['deviceorientation','deviceorientationabsolute'])window.addEventListener(name,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);});await page.clock.install({time:new Date('2026-10-27T03:00Z')});await page.route('https://api.open-meteo.com/**',r=>r.abort());await page.goto('/');}
 async function sample(page,values={}){await page.evaluate(values=>{const e=new Event('deviceorientationabsolute');Object.assign(e,{absolute:true,alpha:270,beta:0,gamma:0},values);window.dispatchEvent(e);},values);}

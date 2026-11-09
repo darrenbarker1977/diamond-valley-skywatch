@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 test('Home, Forecast and Navigator use the same header node, artwork and buttons',async({page},info)=>{
  await page.goto('/');const menu=page.locator('#app-header nav');
  await expect(menu.locator('button')).toHaveText(['Home','Forecast','Navigator']);
