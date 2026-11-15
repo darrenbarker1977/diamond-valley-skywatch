@@ -6,15 +6,15 @@
     "longitude": -114.25,
     "label": "Diamond Valley"
   },
-  "fetchedAt": "2026-11-15T11:12:58.294052+00:00",
+  "fetchedAt": "2026-11-15T17:51:04.700287+00:00",
   "sourceURL": "https://www.7timer.info/bin/api.pl?lon=-114.25&lat=50.68&product=astro&output=json&points=80",
   "forecast": {
     "product": "astro",
-    "init": "2026111506",
+    "init": "2026111512",
     "dataseries": [
       {
         "timepoint": 3,
-        "cloudcover": 1,
+        "cloudcover": 9,
         "seeing": 4,
         "transparency": 2,
         "lifted_index": 15,
@@ -28,38 +28,10 @@
       },
       {
         "timepoint": 6,
-        "cloudcover": 1,
-        "seeing": 5,
-        "transparency": 2,
-        "lifted_index": 15,
-        "rh2m": 9,
-        "wind10m": {
-          "direction": "SW",
-          "speed": 2
-        },
-        "temp2m": -1,
-        "prec_type": "none"
-      },
-      {
-        "timepoint": 9,
-        "cloudcover": 8,
-        "seeing": 5,
-        "transparency": 2,
-        "lifted_index": 15,
-        "rh2m": 8,
-        "wind10m": {
-          "direction": "SW",
-          "speed": 2
-        },
-        "temp2m": -1,
-        "prec_type": "none"
-      },
-      {
-        "timepoint": 12,
-        "cloudcover": 8,
+        "cloudcover": 9,
         "seeing": 3,
         "transparency": 2,
-        "lifted_index": 10,
+        "lifted_index": 15,
         "rh2m": 6,
         "wind10m": {
           "direction": "SW",
@@ -69,96 +41,68 @@
         "prec_type": "none"
       },
       {
-        "timepoint": 15,
+        "timepoint": 9,
         "cloudcover": 4,
         "seeing": 2,
         "transparency": 2,
         "lifted_index": 6,
         "rh2m": 2,
         "wind10m": {
-          "direction": "SW",
+          "direction": "W",
           "speed": 3
         },
-        "temp2m": 10,
+        "temp2m": 11,
         "prec_type": "none"
       },
       {
-        "timepoint": 18,
+        "timepoint": 12,
         "cloudcover": 3,
         "seeing": 5,
         "transparency": 2,
         "lifted_index": 10,
-        "rh2m": 4,
+        "rh2m": 5,
         "wind10m": {
-          "direction": "SW",
+          "direction": "S",
           "speed": 2
         },
         "temp2m": 6,
         "prec_type": "none"
       },
       {
-        "timepoint": 21,
-        "cloudcover": 9,
-        "seeing": 5,
+        "timepoint": 15,
+        "cloudcover": 6,
+        "seeing": 4,
         "transparency": 2,
         "lifted_index": 10,
-        "rh2m": 6,
+        "rh2m": 5,
         "wind10m": {
           "direction": "S",
           "speed": 2
         },
-        "temp2m": 5,
+        "temp2m": 6,
         "prec_type": "none"
       },
       {
-        "timepoint": 24,
-        "cloudcover": 7,
+        "timepoint": 18,
+        "cloudcover": 4,
         "seeing": 5,
         "transparency": 2,
         "lifted_index": 10,
         "rh2m": 8,
         "wind10m": {
-          "direction": "S",
+          "direction": "W",
           "speed": 2
         },
         "temp2m": 1,
         "prec_type": "none"
       },
       {
-        "timepoint": 27,
-        "cloudcover": 4,
+        "timepoint": 21,
+        "cloudcover": 1,
         "seeing": 5,
         "transparency": 2,
         "lifted_index": 10,
         "rh2m": 10,
-        "wind10m": {
-          "direction": "W",
-          "speed": 3
-        },
-        "temp2m": 4,
-        "prec_type": "none"
-      },
-      {
-        "timepoint": 30,
-        "cloudcover": 5,
-        "seeing": 5,
-        "transparency": 2,
-        "lifted_index": 10,
-        "rh2m": 9,
-        "wind10m": {
-          "direction": "SW",
-          "speed": 2
-        },
-        "temp2m": 0,
-        "prec_type": "none"
-      },
-      {
-        "timepoint": 33,
-        "cloudcover": 6,
-        "seeing": 5,
-        "transparency": 2,
-        "lifted_index": 10,
-        "rh2m": 9,
         "wind10m": {
           "direction": "SW",
           "speed": 2
@@ -167,9 +111,79 @@
         "prec_type": "none"
       },
       {
+        "timepoint": 24,
+        "cloudcover": 1,
+        "seeing": 5,
+        "transparency": 2,
+        "lifted_index": 10,
+        "rh2m": 9,
+        "wind10m": {
+          "direction": "W",
+          "speed": 2
+        },
+        "temp2m": -1,
+        "prec_type": "none"
+      },
+      {
+        "timepoint": 27,
+        "cloudcover": 1,
+        "seeing": 5,
+        "transparency": 2,
+        "lifted_index": 10,
+        "rh2m": 10,
+        "wind10m": {
+          "direction": "SW",
+          "speed": 2
+        },
+        "temp2m": -1,
+        "prec_type": "none"
+      },
+      {
+        "timepoint": 30,
+        "cloudcover": 2,
+        "seeing": 1,
+        "transparency": 2,
+        "lifted_index": 6,
+        "rh2m": 3,
+        "wind10m": {
+          "direction": "W",
+          "speed": 3
+        },
+        "temp2m": 7,
+        "prec_type": "none"
+      },
+      {
+        "timepoint": 33,
+        "cloudcover": 4,
+        "seeing": 1,
+        "transparency": 2,
+        "lifted_index": 2,
+        "rh2m": 2,
+        "wind10m": {
+          "direction": "W",
+          "speed": 3
+        },
+        "temp2m": 8,
+        "prec_type": "none"
+      },
+      {
         "timepoint": 36,
         "cloudcover": 6,
-        "seeing": 1,
+        "seeing": 5,
+        "transparency": 2,
+        "lifted_index": 6,
+        "rh2m": 3,
+        "wind10m": {
+          "direction": "N",
+          "speed": 2
+        },
+        "temp2m": 2,
+        "prec_type": "none"
+      },
+      {
+        "timepoint": 39,
+        "cloudcover": 8,
+        "seeing": 4,
         "transparency": 2,
         "lifted_index": 6,
         "rh2m": 5,
@@ -177,35 +191,21 @@
           "direction": "W",
           "speed": 2
         },
-        "temp2m": 6,
-        "prec_type": "none"
-      },
-      {
-        "timepoint": 39,
-        "cloudcover": 4,
-        "seeing": 1,
-        "transparency": 2,
-        "lifted_index": 6,
-        "rh2m": 1,
-        "wind10m": {
-          "direction": "SW",
-          "speed": 3
-        },
-        "temp2m": 8,
+        "temp2m": -1,
         "prec_type": "none"
       },
       {
         "timepoint": 42,
-        "cloudcover": 6,
+        "cloudcover": 9,
         "seeing": 4,
         "transparency": 2,
-        "lifted_index": 10,
-        "rh2m": 3,
+        "lifted_index": 6,
+        "rh2m": 8,
         "wind10m": {
-          "direction": "NW",
+          "direction": "W",
           "speed": 2
         },
-        "temp2m": 2,
+        "temp2m": -1,
         "prec_type": "none"
       },
       {
@@ -214,7 +214,7 @@
         "seeing": 4,
         "transparency": 2,
         "lifted_index": 10,
-        "rh2m": 5,
+        "rh2m": 8,
         "wind10m": {
           "direction": "W",
           "speed": 2
@@ -225,12 +225,12 @@
       {
         "timepoint": 48,
         "cloudcover": 9,
-        "seeing": 4,
+        "seeing": 5,
         "transparency": 2,
         "lifted_index": 10,
-        "rh2m": 7,
+        "rh2m": 8,
         "wind10m": {
-          "direction": "W",
+          "direction": "SW",
           "speed": 2
         },
         "temp2m": -1,
@@ -242,34 +242,6 @@
         "seeing": 4,
         "transparency": 2,
         "lifted_index": 10,
-        "rh2m": 7,
-        "wind10m": {
-          "direction": "SW",
-          "speed": 2
-        },
-        "temp2m": -1,
-        "prec_type": "none"
-      },
-      {
-        "timepoint": 54,
-        "cloudcover": 9,
-        "seeing": 4,
-        "transparency": 2,
-        "lifted_index": 10,
-        "rh2m": 7,
-        "wind10m": {
-          "direction": "SW",
-          "speed": 2
-        },
-        "temp2m": -1,
-        "prec_type": "none"
-      },
-      {
-        "timepoint": 57,
-        "cloudcover": 9,
-        "seeing": 4,
-        "transparency": 2,
-        "lifted_index": 10,
         "rh2m": 8,
         "wind10m": {
           "direction": "W",
@@ -279,7 +251,7 @@
         "prec_type": "none"
       },
       {
-        "timepoint": 60,
+        "timepoint": 54,
         "cloudcover": 9,
         "seeing": 2,
         "transparency": 2,
@@ -293,14 +265,42 @@
         "prec_type": "none"
       },
       {
+        "timepoint": 57,
+        "cloudcover": 9,
+        "seeing": 2,
+        "transparency": 2,
+        "lifted_index": 10,
+        "rh2m": 5,
+        "wind10m": {
+          "direction": "E",
+          "speed": 2
+        },
+        "temp2m": 2,
+        "prec_type": "none"
+      },
+      {
+        "timepoint": 60,
+        "cloudcover": 9,
+        "seeing": 2,
+        "transparency": 8,
+        "lifted_index": 10,
+        "rh2m": 14,
+        "wind10m": {
+          "direction": "NE",
+          "speed": 2
+        },
+        "temp2m": -1,
+        "prec_type": "none"
+      },
+      {
         "timepoint": 63,
         "cloudcover": 9,
         "seeing": 2,
         "transparency": 8,
         "lifted_index": 10,
-        "rh2m": 13,
+        "rh2m": 15,
         "wind10m": {
-          "direction": "NE",
+          "direction": "N",
           "speed": 2
         },
         "temp2m": -1,
@@ -325,7 +325,7 @@
         "cloudcover": 9,
         "seeing": 2,
         "transparency": 8,
-        "lifted_index": 10,
+        "lifted_index": 15,
         "rh2m": 15,
         "wind10m": {
           "direction": "N",
@@ -339,10 +339,10 @@
         "cloudcover": 9,
         "seeing": 2,
         "transparency": 8,
-        "lifted_index": 15,
+        "lifted_index": 10,
         "rh2m": 15,
         "wind10m": {
-          "direction": "N",
+          "direction": "NW",
           "speed": 2
         },
         "temp2m": -2,
