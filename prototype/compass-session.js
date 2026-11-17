@@ -8,14 +8,15 @@ export class CompassSession {
  notify(){this.onChange(this);}
  attach(){for(const name of ['deviceorientationabsolute','deviceorientation']){this.env.removeEventListener(name,this.handle);this.env.addEventListener(name,this.handle);}}
  reconnect(){if(!this.active)return this.start();this.attach();this.lastReconnect=this.now();this.notify();}
- async start(){
+ async start({interactive=true}={}){
   this.stop();const generation=this.generation;
   if(!this.env.isSecureContext){this.status='unsupported';this.message='Compass needs HTTPS. Open the permanent secure website.';this.notify();return;}
   const API=this.env.DeviceOrientationEvent;
   if(!API){this.status='unsupported';this.message='This browser does not expose orientation sensors. Try Chrome on your Pixel 8.';this.notify();return;}
-  this.status='permission';this.message='Waiting for motion-sensor permission…';this.notify();
+  this.permissionRequired=typeof API.requestPermission==='function';
+  this.status=interactive&&this.permissionRequired?'permission':'waiting';this.message=this.status==='permission'?'Waiting for motion-sensor permission…':'Listening for live orientation readings…';this.notify();
   try{
-   if(typeof API.requestPermission==='function'&&await API.requestPermission(true)!=='granted')throw Error('Motion-sensor permission denied. Allow it in browser site settings, then retry.');
+   if(interactive&&typeof API.requestPermission==='function'&&await API.requestPermission(true)!=='granted')throw Error('Motion-sensor permission denied. Allow it in browser site settings, then retry.');
    if(generation!==this.generation)return;
    this.active=true;this.started=this.lastReconnect=this.now();this.status='waiting';this.message='Compass enabled · waiting for absolute sensor readings.';this.attach();this.timer=this.env.setInterval(()=>this.tick(),500);this.notify();
   }catch(error){if(generation!==this.generation)return;this.status='denied';this.message=error.message||'Motion-sensor permission failed.';this.notify();}
@@ -26,7 +27,7 @@ export class CompassSession {
   let vector;try{vector=deviceAxis(event,'mounted');}catch{this.history=[];this.status='waiting';this.message='Incomplete sensor reading · waiting for a valid heading.';this.notify();return;}
   const time=this.now(),last=this.history.at(-1);
   if(last&&time-last.time<80&&angle(last.vector,vector)>80&&!this.suspect){this.suspect=vector;this.history=[];this.status='waiting';this.message='Sudden heading change · checking the next sensor sample.';this.notify();return;}
-  this.suspect=null;this.history=[{vector,time}];this.status='receiving';this.message='Live device-north heading · browser accuracy unknown.';this.notify();
+  this.suspect=null;this.permissionRequired=false;this.history=[{vector,camera:deviceAxis(event,'handheld'),time}];this.status='receiving';this.message='Live device-north heading · browser accuracy unknown.';this.notify();
  }
  tick(){
   if(!this.active)return;const time=this.now(),last=this.history.at(-1);

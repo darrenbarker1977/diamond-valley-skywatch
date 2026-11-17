@@ -1,3 +1,4 @@
+import {createHomeSky} from './home-sky.js?v=home-1';
 import {createSightings} from './sightings.js?v=abt-1';
 import {createPractice} from './practice.js?v=practice-1';
 import {createWalkthrough} from './walkthrough.js?v=practice-1';
@@ -32,13 +33,13 @@ if(requestedQuery.has('mission')&&requestedQuery.has('lat')&&requestedQuery.has(
  try{let zone=requestedQuery.get('zone')||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch{zone='UTC';}setSite({latitude:Number(requestedQuery.get('lat')),longitude:Number(requestedQuery.get('lon')),height:0,accuracy:null,source:'coordinates',label:(requestedQuery.get('name')||'Planned location').slice(0,120),clockTimezone:zone,physicalConfirmed:false});}catch{}
 }
 const $=id=>document.getElementById(id), dialog=$('navigator');
-let practice=null,sightings=null,experience=null;
+let practice=null,sightings=null,experience=null,homeSky=null;
 const skyTime=()=>practice?.context().instant||new Date();
 let exploring=true,walkthrough=null,liveWindow=null,readyCheck=null,nextTarget=null,haptics=null,finderTargets=null,currentPointing=null,contextHelp=null;
 let selected='Moon',desiredTarget='Moon',filter='all',timer,positions=new Map(),livePositions=new Map(),atlas=null,finder=null,planner=null,mission=null,locationUI=null,field=null,hops=null,lastDetail='',calculationTime=new Date();
 const A=globalThis.Astronomy;
 const equipment=createEquipment(()=>{if(positions.size)render();pointing.refresh();mission?.refresh();nextTarget?.refresh();readyCheck?.refresh();});
-const pointing=createPointing({A,catalogue,position,getTimeContext:()=>practice?.context()||{practice:false,instant:new Date()},getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:result=>completeAlignment(result),onNext:step=>{if(step==='guidance')startLiveGuidance();else if(step==='daylight')appHelpAction('mission');else guidedPointing(null,step,step==='sensors'&&!currentPointing?.listening);},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;walkthrough?.update();updateHomeSession(state);atlas?.pose(state);finder?.pose(state);liveWindow?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
+const pointing=createPointing({A,catalogue,position,getTimeContext:()=>practice?.context()||{practice:false,instant:new Date()},getSelected:()=>catalogue.find(o=>o.id===selected),getAlignmentEyepiece:()=>equipment.alignmentHint(),onTargetSelect:id=>{selected=id;if(positions.size)render();},onAligned:result=>completeAlignment(result),onNext:step=>{if(step==='guidance')startLiveGuidance();else if(step==='daylight')appHelpAction('mission');else guidedPointing(null,step,step==='sensors'&&!currentPointing?.listening);},allowGuidance:()=>!planner?.planning,onPose:state=>{currentPointing=state;homeSky?.pose();walkthrough?.update();updateHomeSession(state);atlas?.pose(state);finder?.pose(state);liveWindow?.pose(state);readyCheck?.pose(state);haptics?.pose(state);}});
 atlas=createSkyAtlas({A,site,catalogue,onSelect:id=>chooseObject(id)});
 function setPointingMode(mode){if($('pointing-mode').value!==mode){$('pointing-mode').value=mode;$('pointing-mode').dispatchEvent(new Event('change'));}}
 finder=createFinder({getKit:()=>equipment.current(),onSetup:mode=>guidedPointing(mode,'alignment'),onMode:setPointingMode,onStop:()=>pointing.suspend(),onAdvance:()=>advanceFinder(),onPick:()=>pickFinderTarget(),onSky:()=>{navigation.section('objects');$('atlas-card').open=true;if(currentPointing?.alignment?.calibrated)atlas.follow();revealReadyControl('atlas-title');}});
@@ -47,7 +48,7 @@ const screenAwake=createScreenAwake();
 haptics=createHapticGuide();
 const scopeView=createScopeView();
 liveWindow=createFinderWindow({getContext:()=>practice?.context(),onExpand:()=>$('finder-scope-view').click(),onClose:()=>$('finder-sky').click()});
-createLiveCompass();createDiscovery();
+const liveCompass=createLiveCompass();createDiscovery();
 planner=createPlanner({getZone:()=>mission?.snapshot?.zone||site.clockTimezone,onChange:()=>{
  if(planner.planning)practice?.stop();
  if(planner.planning)pointing.suspend('Planned sky only. Return to Now and repeat alignment before using direction arrows.');
@@ -143,7 +144,7 @@ const navigation=createNavigation({dialog,launch:$('launch'),stopCamera:()=>poin
  if(name==='finder'){if(currentPointing?.alignment?.calibrated){haptics?.start();atlas?.follow();}else atlas?.centerTarget();}
  if(name==='mission')mission.activate();if(name==='field')field.activate();else field.deactivate();
 }});
-locationUI=createLocation(()=>{practice.stop();pointing.suspend('Observing location changed. Repeat alignment at this location.');atlas.locationChanged();navigation.locationChanged();mission.locationChanged();field.locationChanged();planner.refresh();readyCheck?.refresh();nextTarget?.refresh();sightings?.refresh();haptics?.reset();if(dialog.open)update();});
+locationUI=createLocation(()=>{practice.stop();pointing.suspend('Observing location changed. Repeat alignment at this location.');atlas.locationChanged();homeSky?.refresh(true);navigation.locationChanged();mission.locationChanged();field.locationChanged();planner.refresh();readyCheck?.refresh();nextTarget?.refresh();sightings?.refresh();haptics?.reset();if(dialog.open)update();});
 
 function revealReadyControl(id){
  const control=$(id);if(!control||control.hidden)return;
@@ -291,6 +292,7 @@ function applyExperience({mode,source='initial'}){
 }
 experience=createExperience({onChange:applyExperience});
 applyExperience({mode:experience.mode});
+homeSky=createHomeSky({A,site,catalogue,compass:liveCompass,getPointing:()=>currentPointing,onTarget:id=>{navigation.batch(()=>{planner.now();navigation.open('objects');chooseObject(id);$('selected-panel').open=true;});},onSetup:()=>guidedPointing('mounted','placement')});
 
 window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open){event.preventDefault();dialog.close();}});
 function openTarget(id){

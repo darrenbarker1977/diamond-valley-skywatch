@@ -1,10 +1,11 @@
 import {positionFor} from './sky-position.js?v=catalogue-1';
 import {projectView,projectDome,moveCamera,wrap,starColour} from './atlas-math.js';
-export function createSkyAtlas({A,site,catalogue,onSelect}){
- const $=id=>document.getElementById(id),canvas=$('sky-canvas'),ctx=canvas.getContext('2d');
+export function createSkyAtlas({A,site,catalogue,onSelect,prefix='',phonePreview=false,onPreviewToggle=()=>{}}){
+ const $=id=>document.getElementById(prefix+id),canvas=$('sky-canvas'),ctx=canvas.getContext('2d');
  let camera={az:180,alt:28,fov:85},mode='horizon',lines=true,labels=true,following=false,followStopped=false,pose=null,isPlanned=false;
  let stars=[],constellations=[],dataLoaded=false,dataFailed=false,faintStars=[],milkyWay=[],milkyPositions=[],faintPositions=[],deepLoaded=false,hopIds=[];
  let starPositions=[],linePositions=[],labelPositions=[],positions=new Map(),selected='Moon',date=null,lastEpoch=0,hits=[],width=0,height=0,frame=0,failed=false;
+ let previewSignature='',previewEnabled=false,previewState={ready:false,message:'Phone preview is waiting for real sensor readings.'};
  const pointers=new Map();let drag=null,pinch=0,moved=false;
  const request=()=>{if(!frame)frame=requestAnimationFrame(()=>{frame=0;draw();});};
  import('./atlas-data.js?v=atlas-1').then(data=>{stars=data.stars;constellations=data.constellations;dataLoaded=true;if(date&&A)prepare(date);request();}).catch(()=>{dataFailed=true;failed=true;canvas.removeAttribute('data-ready');request();});
@@ -74,13 +75,14 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
    if(active){ctx.beginPath();ctx.arc(pixel.x,pixel.y,12,0,Math.PI*2);ctx.stroke();for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){ctx.beginPath();ctx.moveTo(pixel.x+Math.cos(angle)*15,pixel.y+Math.sin(angle)*15);ctx.lineTo(pixel.x+Math.cos(angle)*21,pixel.y+Math.sin(angle)*21);ctx.stroke();}}
    if(active||body||(labels&&camera.fov<45&&mode!=='dome')){const y=pixel.y-18;text(object.name,Math.min(width-65,Math.max(65,pixel.x)),Math.max(14,y),colour,active?12:10);}
   }
-  $('atlas-direction').textContent=following&&!mapReady()?'Follow paused · last map view':mode==='dome'?'All sky · north at top':`${following?'Aligned view':'Map view'} · ${compass(camera.az)} · ${Math.round(camera.az)}° · ${Math.round(camera.alt)}° up`;
+  $('atlas-direction').textContent=phonePreview&&previewEnabled?previewState.ready?`${previewState.kind==='aligned'?'Aligned view':'Phone preview'} · ${compass(camera.az)} · ${Math.round(camera.az)}° · ${Math.round(camera.alt)}° up`:'Waiting for phone · calculated preview':following&&!mapReady()?'Follow paused · last map view':mode==='dome'?'All sky · north at top':`${following?'Aligned view':'Map view'} · ${compass(camera.az)} · ${Math.round(camera.az)}° · ${Math.round(camera.alt)}° up`;
   $('atlas-zoom').textContent=mode==='dome'?'Whole sky':Math.round(camera.fov)+'° vertical';
   $('atlas-status').textContent=pose?.practice?'PRACTICE sky · temporary time, assumed reference':daylight?'Daylight preview · most stars are hidden to the eye':sun&&sun.alt>-12?'Twilight · brighter objects are easier to see':isPlanned?'Planned sky · drag to explore, tap an object':'Live sky · drag to explore, tap an object';
-  canvas.dataset.ready='true';canvas.dataset.starCount=String(stars.length);canvas.dataset.deepStarCount=String(faintStars.length);canvas.dataset.milkyWay=String(deepLoaded);canvas.dataset.view=mode;canvas.dataset.azimuth=String(Math.round(camera.az));canvas.dataset.planned=String(isPlanned);canvas.dataset.epoch=date.toISOString();
+  canvas.dataset.ready='true';canvas.dataset.starCount=String(stars.length);canvas.dataset.deepStarCount=String(faintStars.length);canvas.dataset.milkyWay=String(deepLoaded);canvas.dataset.view=mode;canvas.dataset.azimuth=String(Math.round(camera.az));canvas.dataset.altitude=String(Math.round(camera.alt));canvas.dataset.planned=String(isPlanned);canvas.dataset.epoch=date.toISOString();if(phonePreview){canvas.dataset.motion=previewEnabled?previewState.ready?previewState.kind:'waiting':'manual';$('atlas-status').textContent=daylight?'Calculated daylight sky · stars may be hidden to the eye':previewEnabled?'Real catalogue positions · phone orientation is approximate until aligned':'Manual sky preview · use the controls to explore';}
  }
  function mapReady(){const p=pose?.map;return !!p?.calibrated&&p.ready===true&&Number.isFinite(p.current?.az)&&Number.isFinite(p.current?.alt);}
  function followUI(){
+  if(phonePreview){canvas.style.touchAction=previewEnabled?'pan-y':'none';const state=previewEnabled?previewState.ready?'following':'paused':'manual';$('atlas-card').dataset.phoneFollow=state;$('atlas-card').dataset.previewEnabled=String(previewEnabled);$('atlas-follow-state').textContent=previewEnabled?previewState.message:'Manual exploration · phone movement is not controlling this view.';$('atlas-follow').textContent=previewEnabled&&previewState.ready?'Phone tilt: on':previewEnabled?'Enable phone view':'Use phone tilt';$('atlas-follow').setAttribute('aria-pressed',String(previewEnabled));$('atlas-follow').disabled=previewState.supported===false;return;}
   const available=!!pose?.map?.calibrated;
   const state=isPlanned?'planned':failed?'unavailable':following?(mapReady()?'following':'paused'):available?(mapReady()?'ready':'waiting'):followStopped?'stopped':'manual';
   const text=isPlanned?'Planned sky · phone follow is off. Return to Now and align before following your phone.':failed?'Sky map unavailable. Object search and Pointing remain available.':following?(mapReady()?'Following your aligned phone. Dragging the map returns to manual view.':'Phone follow paused · '+(pose?.map?.message||'Waiting for a fresh aligned reading.')+' Resumes automatically when fresh readings return.') :available?(mapReady()?'Aligned phone ready · tap Follow aligned phone to move this map with your phone.':'Alignment retained · waiting for fresh readings. You can enable Follow; it will resume when readings return.'):followStopped?'Phone follow stopped · '+(pose?.map?.message||'Alignment was lost.')+' Repeat alignment before enabling Follow.':'Manual sky map · the compass alone does not move this view. Set up pointing after dusk, then enable Follow.';
@@ -88,8 +90,8 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
   const description=(pose?.practice?'PRACTICE · assumed reference. ':'')+text;if($('atlas-follow-state').textContent!==description)$('atlas-follow-state').textContent=description;
   $('atlas-follow').textContent=pose?.practice?(following?'Stop practice phone follow':'Follow practice phone'):following?'Stop phone follow':'Follow aligned phone';$('atlas-follow').setAttribute('aria-pressed',String(following));$('atlas-follow').disabled=!following&&(!available||isPlanned||failed);
  }
- function stopFollowing(stopped=false){following=false;followStopped=stopped;followUI();}
- function move(dx,dy){if(mode==='dome')return;stopFollowing();camera=moveCamera(camera,dx,dy,width,height);request();}
+ function stopFollowing(stopped=false){if(phonePreview&&previewEnabled){previewEnabled=false;onPreviewToggle(false);}following=false;followStopped=stopped;followUI();}
+ function move(dx,dy){if(mode==='dome'||phonePreview&&previewEnabled)return;stopFollowing();camera=moveCamera(camera,dx,dy,width,height);request();}
  function zoom(factor){if(mode==='dome')return;camera.fov=Math.max(8,Math.min(105,camera.fov*factor));if(date&&deepLoaded&&camera.fov<55&&!faintPositions.length)prepare(date);request();}
  canvas.addEventListener('pointerdown',event=>{canvas.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});drag={x:event.clientX,y:event.clientY};moved=false;if(pointers.size===2){const [a,b]=[...pointers.values()];pinch=Math.hypot(a.x-b.x,a.y-b.y);}});
  canvas.addEventListener('pointermove',event=>{
@@ -104,19 +106,19 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
  canvas.addEventListener('pointerup',event=>finish(event));canvas.addEventListener('pointercancel',event=>finish(event,true));
  canvas.addEventListener('wheel',event=>{event.preventDefault();zoom(event.deltaY>0?1.12:1/1.12);},{passive:false});
  canvas.addEventListener('keydown',event=>{const moves={ArrowLeft:[45,0],ArrowRight:[-45,0],ArrowUp:[0,35],ArrowDown:[0,-35]};if(moves[event.key]){event.preventDefault();move(...moves[event.key]);}else if(['+','=','-'].includes(event.key)){event.preventDefault();zoom(event.key==='-'?1.15:1/1.15);}});
- for(const button of document.querySelectorAll('[data-atlas-bearing]'))button.addEventListener('click',()=>{stopFollowing();mode='horizon';camera={az:Number(button.dataset.atlasBearing),alt:28,fov:85};$('atlas-overview').setAttribute('aria-pressed','false');request();});
+ for(const button of $('atlas-card').querySelectorAll(phonePreview?'[data-home-atlas-bearing]':'[data-atlas-bearing]'))button.addEventListener('click',()=>{stopFollowing();mode='horizon';camera={az:Number(phonePreview?button.dataset.homeAtlasBearing:button.dataset.atlasBearing),alt:28,fov:85};$('atlas-overview').setAttribute('aria-pressed','false');request();});
  $('atlas-in').addEventListener('click',()=>zoom(1/1.25));$('atlas-out').addEventListener('click',()=>zoom(1.25));
  $('atlas-lines').addEventListener('click',()=>{lines=!lines;$('atlas-lines').setAttribute('aria-pressed',String(lines));request();});
  $('atlas-labels').addEventListener('click',()=>{labels=!labels;$('atlas-labels').setAttribute('aria-pressed',String(labels));request();});
  $('atlas-overview').addEventListener('click',()=>{stopFollowing();mode=mode==='dome'?'horizon':'dome';$('atlas-overview').setAttribute('aria-pressed',String(mode==='dome'));request();});
  function follow(){if(!pose?.map?.calibrated||isPlanned||failed)return false;following=true;followStopped=false;mode='horizon';$('atlas-overview').setAttribute('aria-pressed','false');if(mapReady()){camera.az=pose.map.current.az;camera.alt=Math.min(85,Math.max(-10,pose.map.current.alt));}followUI();request();return true;}
- $('atlas-follow').addEventListener('click',()=>{if(following){stopFollowing();request();}else follow();});
+ $('atlas-follow').addEventListener('click',()=>{if(phonePreview){onPreviewToggle(!(previewEnabled&&previewState.ready));return;}if(following){stopFollowing();request();}else follow();});
  const resize=new ResizeObserver(request);resize.observe(canvas);new MutationObserver(request).observe(document.body,{attributes:true,attributeFilter:['class']});followUI();
- return {follow,get following(){return following;},
+ return {preview(state){if(!phonePreview)return;const signature=JSON.stringify([state.enabled,state.ready,state.current,state.kind,state.message,state.supported]);if(signature===previewSignature)return;previewSignature=signature;previewState=state;previewEnabled=!!state.enabled;if(previewEnabled&&state.ready&&Number.isFinite(state.current?.az)&&Number.isFinite(state.current?.alt)){mode='horizon';camera.az=wrap(state.current.az);camera.alt=Math.min(85,Math.max(-85,state.current.alt));}followUI();request();},follow,get following(){return following;},
   update(nextPositions,id,now=new Date(),planned=false){
    isPlanned=planned;if(isPlanned){stopFollowing();$('atlas-follow').disabled=true;}
    const first=!date;positions=nextPositions;selected=id;date=now;failed=dataFailed;
-   const target=positions.get(selected);if(first&&target?.alt>0)camera={az:target.az,alt:Math.min(85,target.alt),fov:85};
+   const target=positions.get(selected);if(first&&target?.alt>0&&!(phonePreview&&previewEnabled))camera={az:target.az,alt:Math.min(85,target.alt),fov:85};
    try{if(!A)throw Error('Astronomy library unavailable');if(dataLoaded&&(!lastEpoch||Math.abs(now.getTime()-lastEpoch)>9000))prepare(now);followUI();request();}catch{failed=true;followUI();request();}
   },
   centerTarget(){const p=positions.get(selected);if(!p)return;stopFollowing();if(p.alt<=0){$('atlas-status').textContent='This object is below the horizon. The map stays above your horizon.';return;}mode='horizon';camera={az:p.az,alt:Math.min(85,p.alt),fov:60};$('atlas-overview').setAttribute('aria-pressed','false');request();},
@@ -128,7 +130,7 @@ export function createSkyAtlas({A,site,catalogue,onSelect}){
    else if(wasReady!==mapReady())request();
    followUI();
   },
-  locationChanged(){lastEpoch=0;date=null;stopFollowing();},
+  locationChanged(){lastEpoch=0;date=null;if(!phonePreview)stopFollowing();},
   fail(){failed=true;date=null;positions=new Map();stopFollowing();canvas.removeAttribute('data-ready');request();},
   refresh:request
   ,showHop(ids){hopIds=ids;stopFollowing();mode='horizon';const p=positions.get(ids[0]);if(p)camera={az:p.az,alt:Math.min(80,p.alt),fov:85};request();}
