@@ -14,7 +14,7 @@
 .home-live-sky .atlas-follow-panel>p{font-size:12px;line-height:1.5;margin:0 0 10px}
 .home-live-sky .atlas-follow-panel>div{display:flex;flex-wrap:wrap;gap:8px}
 .home-live-sky .atlas-follow-panel button{font-size:12px;padding:10px 13px;min-height:42px}
-.home-live-sky .atlas-follow-guide,.home-live-sky .home-atlas-options{font-size:12px;line-height:1.6}
+.home-live-sky .home-atlas-follow-guide,.home-live-sky .home-atlas-options{font-size:12px;line-height:1.6}
 .home-live-sky .home-atlas-options{padding:10px 16px}.home-live-sky .atlas-hint{font-size:10px;padding:6px 16px;margin:0}
 .home-live-sky[data-preview-enabled=true] .atlas-navigation{display:none}
 .home-live-sky .atlas-navigation{padding:9px 14px;gap:7px}.home-live-sky .atlas-navigation button{padding:7px 11px;font-size:12px}

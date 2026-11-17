@@ -31,6 +31,7 @@ test('planned skies use local time in both hemispheres and finding returns to th
 test('mission sky checks advance and the shared forecast refreshes automatically',async({page})=>{
  await page.clock.install({time:new Date('2026-10-27T03:00Z')});let cloud=10,requests=0;
  await page.route('https://api.open-meteo.com/**',r=>{requests++;return r.fulfill({json:weather('America/Edmonton',cloud)});});await page.goto('/');await page.locator('.home-mission').click();await expect.poll(()=>page.locator('#mission-stops .mission-stop').count()).toBeGreaterThanOrEqual(3);
+ await expect(page.locator('#mission-weather')).toContainText('Open-Meteo');
  const stamp=await page.locator('#mission-view').getAttribute('data-weather-stamp');await page.clock.fastForward(61000);expect(await page.locator('#mission-stops .mission-stop').evaluateAll(els=>els.every(el=>Date.parse(el.dataset.time)>=Date.now()-60000))).toBe(true);
  cloud=95;await page.clock.fastForward(31*60000);await expect.poll(()=>requests).toBeGreaterThan(1);await expect(page.locator('#mission-stops')).toContainText('95%');await expect(page.locator('#mission-weather-advice')).toContainText('Weather caution');await expect(page.locator('#mission-view')).not.toHaveAttribute('data-weather-stamp',stamp);
 });

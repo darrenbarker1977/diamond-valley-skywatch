@@ -23,7 +23,7 @@ test('location choices sit above the sky, reuse the shared site, and keep it on 
  await expect(page.locator('#home-location-feedback')).toContainText('denied');await expect(page.locator('#home-active-location')).toContainText('Diamond Valley');await expect(gps).toHaveAttribute('aria-pressed','false');
  await page.evaluate(()=>navigator.geolocation.getCurrentPosition=ok=>ok({coords:{latitude:-23.7,longitude:133.88,accuracy:12,altitude:null}}));await gps.click();
  await expect(gps).toHaveAttribute('aria-pressed','true');await expect(page.locator('#home-active-location')).toContainText('23.700° S');await expect(page.locator('#home-location-source')).toContainText('±12 m');
- await page.locator('#nav-to-forecast').click();await expect(page.locator('#forecast-frame')).toHaveAttribute('src',/lat=-23.7/);
+ await page.locator('#nav-to-forecast').click();await expect.poll(()=>page.locator('#forecast-frame').evaluate(el=>el.contentWindow.location.href)).toContain('lat=-23.7');
  await page.locator('#app-header [data-app-view=home]').click();await page.reload();await expect(page.locator('#home-location-source')).toContainText('Last saved place');await expect(gps).toHaveAttribute('aria-pressed','false');
  await page.locator('#home-choose-place').click();await expect(page.locator('#place-query')).toBeVisible();
 });
