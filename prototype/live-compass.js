@@ -20,7 +20,7 @@ export function compassVisual(){
 }
 
 export function createLiveCompass({env=window,root=document}={}){
- let faces=[],drawn=new WeakSet(),headerRequested=false;
+ let faces=[],drawn=new WeakSet(),headerRequested=false,cameraReference=false,snapshot=null;const listeners=new Set();
  // v1 remembered Stop as a permanent opt-out. Only the explicit setting may do that now.
  const preferenceKey='dvsky:compass:auto:v2';
  let automatic=true;try{automatic=env.localStorage.getItem(preferenceKey)!=='off';}catch{}
@@ -30,7 +30,7 @@ export function createLiveCompass({env=window,root=document}={}){
  if(autoOption){autoOption.checked=automatic;autoOption.addEventListener('change',()=>{
   automatic=autoOption.checked;wanted=automatic;
   try{env.localStorage.setItem(preferenceKey,automatic?'on':'off');}catch{}
-  if(!automatic)stop();else{headerRequested=true;received=false;session.start('mounted');}
+  if(!automatic)stop();else{headerRequested=true;received=false;session.start();}
  });}
  const header=root.getElementById('compass-launch'),panel=root.getElementById('phone-compass-dialog');
  if(header&&panel){
@@ -38,7 +38,7 @@ export function createLiveCompass({env=window,root=document}={}){
   const smallDial=face.querySelector('.phone-compass-dial').cloneNode(true);
   smallDial.querySelector('.compass-north').setAttribute('y','48');
   header.append(smallDial);
-  header.addEventListener('click',()=>{headerRequested=true;if(!panel.open)panel.showModal();header.setAttribute('aria-expanded','true');if(wanted&&session.status!=='permission')session.active?session.reconnect():session.start();});
+  header.addEventListener('click',()=>{headerRequested=true;if(!panel.open)panel.showModal();header.setAttribute('aria-expanded','true');if(wanted&&session.status!=='permission'){if(session.active&&received)session.reconnect();else enable();}});
   const close=()=>panel.close();root.getElementById('compass-close').addEventListener('click',close);
   panel.addEventListener('close',()=>{header.setAttribute('aria-expanded','false');sync();header.focus({preventScroll:true});});
   root.getElementById('compass-night').addEventListener('click',()=>{root.getElementById('night').click();night();});
@@ -51,7 +51,8 @@ export function createLiveCompass({env=window,root=document}={}){
  function paint(){
   const latest=session.history.at(-1),fresh=session.active&&session.status==='receiving'&&latest&&session.now()-latest.time<=3000;
   let heading=null,message=session.message,state=session.status;
-  if(fresh){received=true;const pose=skyAngles(latest.vector);if(Math.abs(pose.alt)>80){message='Lower the phone’s top edge: near vertical, a compass bearing is undefined.';state='tilted';}
+  let reference='Physical top edge of your phone';const useCamera=cameraReference&&!panel?.open&&fresh&&Math.abs(skyAngles(latest.camera).alt)<80;if(useCamera)reference='Rear-camera direction · approximate device north';
+  if(fresh){received=true;const pose=skyAngles(useCamera?latest.camera:latest.vector);if(Math.abs(pose.alt)>80){message='Lower the phone’s top edge: near vertical, a compass bearing is undefined.';state='tilted';}
    else{heading=pose.az;state='live';message='Live device-north heading · accuracy unknown. Keep away from magnets and telescope metal.';}}
   else if(session.active&&latest){state='waiting';message='Compass enabled · waiting for a fresh reading; heading hidden.';}
   if(state==='off')message='Sensors off. Tap Start compass to read your phone’s heading.';
@@ -67,18 +68,17 @@ export function createLiveCompass({env=window,root=document}={}){
    figure.dataset.state=state;figure.querySelector('.phone-compass-face').style.transform=heading===null?'':'rotate('+(-heading)+'deg)';
    const set=(selector,text)=>{const el=figure.querySelector(selector);if(el.textContent!==text)el.textContent=text;};
    set('.phone-compass-heading',heading===null?'—':`${Math.round(heading)%360}° ${['N','NE','E','SE','S','SW','W','NW'][Math.round(heading/45)%8]}`);
-   set('.phone-compass-status',message);set('.phone-compass-toggle',busy?'Stop compass':'Start compass');figure.querySelector('button').setAttribute('aria-pressed',String(busy));drawn.add(figure);
+   set('.phone-compass-reference',reference);set('.phone-compass-status',message);set('.phone-compass-toggle',busy?'Stop compass':'Start compass');figure.querySelector('button').setAttribute('aria-pressed',String(busy));drawn.add(figure);
   }
+  snapshot={status:state,message,active:session.active,wanted,automatic,phone,fresh:!!fresh,current:fresh?skyAngles(latest.camera):null,heading,time:fresh?latest.time:null};for(const listener of listeners)listener(snapshot);
  }
  function stop(){wanted=false;headerRequested=false;session.stop();paint();}
  function pause(){retriedAfterTap=false;session.stop();session.status='paused';session.message='Compass paused while hidden. It will resume when you return if enabled.';paint();}
  function autoStart(){
   headerRequested=true;received=false;
-  // Safari-style permission requests require a real tap, even when auto is on.
-  if(env.isSecureContext&&typeof env.DeviceOrientationEvent?.requestPermission==='function'){
-   session.status='gesture';session.message='Tap Start compass once to allow motion sensors in this browser.';paint();return;
-  }
-  session.start('mounted');
+  // Already-authorized sensors can stream even when a permission API exists.
+  // Listen passively on load; request permission only in a real user gesture.
+  session.start({interactive:false});
  }
  function sync(){
   faces=[...root.querySelectorAll('.live-phone-compass')];
@@ -87,11 +87,12 @@ export function createLiveCompass({env=window,root=document}={}){
   if(wanted&&available&&['off','paused'].includes(session.status))autoStart();
   if(faces.some(figure=>!drawn.has(figure)))paint();
  }
- root.addEventListener('click',event=>{if(!event.target.closest('.phone-compass-toggle'))return;if(session.active||session.status==='permission')stop();else{wanted=true;received=false;headerRequested=true;session.start('mounted');}});
+ function enable(){if(session.status==='permission')return;wanted=true;headerRequested=true;if(session.active&&received){session.reconnect();return;}received=false;retriedAfterTap=true;return session.start();}
+ root.addEventListener('click',event=>{if(!event.target.closest('.phone-compass-toggle'))return;if(session.active&&received||session.status==='permission')stop();else enable();});
  // Some phone/browser combinations withhold the first stream until a site tap.
  // Retry once for a missing stream, never for a jump or a stream that became stale.
  const retryAfterTap=event=>{
-  if(!event.isTrusted||event.repeat||event.target.closest?.('.phone-compass-toggle,#compass-auto')||!automatic||!wanted||retriedAfterTap||!['waiting','receiving','gesture','unreliable','paused'].includes(session.status)||typeof env.DeviceOrientationEvent?.requestPermission==='function')return;
+  if(!event.isTrusted||event.repeat||event.target.closest?.('.phone-compass-toggle,#compass-auto,#compass-launch,#home-atlas-follow,#home-manual-map,#enable-sensors')||!automatic||!wanted||retriedAfterTap||!['waiting','receiving','gesture','unreliable','paused'].includes(session.status)||received)return;
   retriedAfterTap=true;session.active?session.reconnect():autoStart();
  };
  root.addEventListener('pointerdown',retryAfterTap,true);root.addEventListener('keydown',retryAfterTap,true);
@@ -99,5 +100,5 @@ export function createLiveCompass({env=window,root=document}={}){
  const observer=new MutationObserver(changes=>{if(changes.some(change=>change.type==='attributes'||[...change.addedNodes,...change.removedNodes].some(el=>el.nodeType===1&&(el.matches('.live-phone-compass')||el.querySelector('.live-phone-compass')))))sync();});
  observer.observe(root.documentElement||root,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open','class']});
  env.document.addEventListener('visibilitychange',()=>{if(env.document.hidden)pause();else sync();});env.addEventListener('pagehide',pause);env.addEventListener('pageshow',sync);root.addEventListener('click',event=>{if(event.target.closest?.('#enable-sensors')&&wanted&&!session.active)session.start();});sync();
- return {stop};
+ return {stop,enable,phone,get snapshot(){return snapshot;},subscribe(listener){listeners.add(listener);if(snapshot)listener(snapshot);return ()=>listeners.delete(listener);},reference(mode){const value=mode==='camera';if(value===cameraReference)return;cameraReference=value;paint();}};
 }

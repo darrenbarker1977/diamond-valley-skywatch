@@ -1,9 +1,10 @@
-import test from 'node:test';import assert from 'node:assert/strict';
+import test,{mock} from 'node:test';import assert from 'node:assert/strict';
 import {normalizeOfficial,checkedOfficial,officialAt,officialEvening,fetchOfficial,conditionClass} from '../prototype/official-weather.js';
 import {weatherSnapshot,weatherAt,assessWeather} from '../prototype/mission-weather.js';
 import {captureSightingWeather,validateSightingWeather,describeSightingWeather} from '../prototype/sighting-weather.js';
 import {officialFeature,modelWeather} from './official-fixture.mjs';
 const site={latitude:50.68,longitude:-114.25},zone='America/Edmonton',now=Date.parse('2026-11-09T16:00Z'),night=new Date('2026-11-10T03:20Z');
+test.before(()=>mock.method(Date,'now',()=>now));test.after(()=>mock.restoreAll());
 const official=()=>normalizeOfficial(officialFeature(),site,zone,now);
 test('Canadian official hours and future nights retain real dates, area, issue times and no invented cloud percentages',()=>{const o=official(),e=officialEvening('2026-11-09',o,zone,now);assert.equal(e.outlook,'GREEN LIGHT');assert.equal(e.best.length,6);assert.equal(e.rows[0].time,'2026-11-09T18:00');assert.equal(e.rows[0].temperature_2m,10);assert.equal(e.rows[0].cloud_cover,null);assert.equal(e.area.name,'Diamond Valley');assert.ok(e.distanceKm>.2&&e.distanceKm<.4);const later=officialEvening('2026-11-11',o,zone,now);assert.equal(later.outlook,'MAYBE');assert.equal(later.rows,null);assert.equal(later.best,null);assert.equal(later.night.date,'2026-11-11');});
 test('nearest Canadian area is selected only within range and Canadian timezone, without substituting foreign or incomplete results',async()=>{const near=officialFeature(),far=structuredClone(near);far.geometry.coordinates=[-114.06,51.05];let calls=0;const fetcher=async()=>{calls++;return {ok:true,json:async()=>({features:[far,near],numberMatched:2})};};assert.equal((await fetchOfficial(site,zone,{fetcher,now})).data.area.name,'Diamond Valley');assert.equal((await fetchOfficial({latitude:-23.7,longitude:133.88},'Australia/Darwin',{fetcher,now})).data,null);assert.equal(calls,3);await assert.rejects(fetchOfficial({latitude:0,longitude:0},zone,{fetcher,now}),/within 2.5/);await assert.rejects(fetchOfficial(site,zone,{fetcher:async()=>({ok:true,json:async()=>({features:[near],numberMatched:80})}),now}),/incomplete/);});

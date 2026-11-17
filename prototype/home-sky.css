@@ -1,0 +1,64 @@
+/* The opening screen is an observatory, with its tools one step away. */
+#home-view{max-width:1440px;margin:0 auto;padding:18px 20px 40px;text-align:left}
+#home-view[hidden]{display:none!important}
+#home-sky-slot{min-width:0;margin:0 0 18px}
+.home-live-sky{position:relative;margin:0;border-color:#365763;background:#06101c;box-shadow:0 22px 65px #0005}
+.home-live-sky>.atlas-heading{padding:20px 22px 12px;cursor:default;gap:12px;background:linear-gradient(120deg,#112735,#071421)}
+.home-live-sky>.atlas-heading::marker{content:''}.home-live-sky>.atlas-heading::-webkit-details-marker{display:none}
+.home-live-sky .atlas-kicker{font-size:8px;letter-spacing:1.8px;color:var(--muted,#9db6c4)}
+.home-live-sky h1{font-family:Georgia,serif;font-size:clamp(27px,3.4vw,45px);font-weight:400;line-height:1.1;margin:6px 0 0;color:var(--ink,#eee9d5)}
+.home-live-sky .atlas-live{font-size:9px;letter-spacing:1px;white-space:nowrap;padding:9px 10px}
+.home-live-sky .atlas-stage{height:clamp(320px,calc(100svh - var(--app-header-height,185px) - 250px),700px);min-height:320px;border-block:1px solid #223e4c}
+.home-live-sky canvas{height:100%;width:100%;display:block;touch-action:none}
+.home-live-sky .atlas-follow-panel{padding:12px 16px;background:linear-gradient(120deg,#102332,#0a1927)}
+.home-live-sky .atlas-follow-panel>p{font-size:12px;line-height:1.5;margin:0 0 10px}
+.home-live-sky .atlas-follow-panel>div{display:flex;flex-wrap:wrap;gap:8px}
+.home-live-sky .atlas-follow-panel button{font-size:12px;padding:10px 13px;min-height:42px}
+.home-live-sky .atlas-follow-guide,.home-live-sky .home-atlas-options{font-size:12px;line-height:1.6}
+.home-live-sky .home-atlas-options{padding:10px 16px}.home-live-sky .atlas-hint{font-size:10px;padding:6px 16px;margin:0}
+.home-live-sky[data-preview-enabled=true] .atlas-navigation{display:none}
+.home-live-sky .atlas-navigation{padding:9px 14px;gap:7px}.home-live-sky .atlas-navigation button{padding:7px 11px;font-size:12px}
+.home-observer-location{font-size:11px;color:var(--muted,#a7bac7)}
+.home-sky-target{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-block:1px solid #294655;background:#152636}
+.home-sky-target[hidden]{display:none}.home-sky-target span{font-size:11px;color:var(--muted,#b0c3ce)}.home-sky-target button{margin-left:auto;padding:9px 12px;font-size:12px}
+#home-view>.experience-picker{margin:0 0 15px;padding:12px 14px;border-radius:16px}
+#home-view>.experience-picker h2{font-size:12px;margin:0 0 10px;font-family:inherit}
+#home-view .experience-options{gap:7px}#home-view .experience-options button{min-height:42px;padding:10px 8px;font-size:12px}
+#home-view #experience-home-note{font-size:11px;line-height:1.5;margin:9px 0 0}
+.home-tool-dock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 18px}
+#home-view .home-tool-dock>button{position:relative;display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;margin:0;border:1px solid var(--line,#304b5d);border-radius:17px;padding:15px;min-height:89px;box-shadow:none;background:linear-gradient(120deg,#142b3a,#0d1e2c);color:var(--ink,#efe9d7);text-align:left}
+#home-view .home-tool-dock>button strong{font-size:16px;line-height:1.25;font-family:Georgia,serif;font-weight:400}
+#home-view .home-tool-dock>button small{display:block;font-family:inherit;font-size:10px;line-height:1.4;margin-top:5px;color:var(--muted,#a5bbc8)}
+#home-view .home-tool-dock .home-mission{background:linear-gradient(125deg,#273731,#152634);border-color:#756d48}
+#home-view .home-tool-dock .home-mission :is(h2,h3){font-size:21px;margin:0;line-height:1.2}
+#home-view .home-tool-dock .home-mission .atlas-kicker{font-size:7px;letter-spacing:1.1px}
+#home-view .home-tool-dock .home-mission>span:first-child{font-size:24px}
+#home-view .home-location-disclosure,#home-view .home-preferences{margin-top:13px}
+#home-view #active-site-caption{font-size:10px;color:var(--muted,#a5bbc8)}
+.dv-nav-night .home-live-sky,.dv-nav-night .home-live-sky>.atlas-heading,.dv-nav-night .home-live-sky .atlas-follow-panel,.dv-nav-night .home-sky-target,.dv-nav-night .home-tool-dock>button{background:#130706!important;border-color:#5b2921!important;box-shadow:none}
+.dv-nav-night .home-live-sky :is(h1,.atlas-kicker),.dv-nav-night .home-tool-dock>button{color:#be6655}
+@media(min-width:1050px){#home-view{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px 22px;align-items:start}#home-sky-slot{grid-column:1;grid-row:1/span 10;position:sticky;top:calc(var(--app-header-height,160px) + 16px);margin:0}#home-view>:not(#home-sky-slot){grid-column:2;margin-top:0}.home-live-sky .atlas-stage{height:clamp(400px,calc(100svh - var(--app-header-height,160px) - 250px),740px)}.home-tool-dock{grid-template-columns:1fr;margin-bottom:0}#home-view .home-tool-dock>button{min-height:76px}.home-live-sky .atlas-follow-panel>p{font-size:13px}}
+@media(max-width:560px){#home-view{padding:12px 10px 30px}.home-live-sky>.atlas-heading{padding:16px 14px 12px}.home-live-sky .atlas-live{max-width:105px;white-space:normal;text-align:center;font-size:8px}.home-live-sky .atlas-kicker{font-size:7px;letter-spacing:1.1px}.home-live-sky .atlas-follow-panel{padding:11px 12px}.home-tool-dock{gap:8px}#home-view .home-tool-dock>button{padding:13px;gap:7px}#home-view .home-tool-dock>button strong{font-size:16px}}
+
+#home-view .home-tool-dock .home-mission em{display:none}
+#home-view .home-tool-dock .home-mission strong{font-size:20px}
+/* Keep the motion/setup controls clear of the fixed screen-awake badge. */
+@media(max-width:1049px){.home-live-sky .atlas-stage{height:clamp(320px,calc(100svh - var(--app-header-height,185px) - 330px),620px)}}
+#home-view .home-tool-dock>button{display:grid;grid-template-columns:26px minmax(0,1fr);column-gap:10px;row-gap:4px;align-content:center}
+#home-view .home-tool-dock>button>span:first-child{grid-column:1;grid-row:1/span 2;align-self:center;font-size:24px}
+#home-view .home-tool-dock>button>strong{grid-column:2;grid-row:1}
+#home-view .home-tool-dock>button>small{grid-column:2;grid-row:2;margin-top:0}
+#home-view .home-tool-dock>button>span:nth-child(2){grid-column:2;grid-row:1/span 2}
+#home-view .home-tool-dock>button>span:nth-child(3),#home-view .home-tool-dock>button>b{display:none}
+
+.home-sky-location{padding:12px 16px;background:#0c202e;border-top:1px solid #294655}
+.home-location-kicker{font-size:8px;letter-spacing:1.6px;margin:0 0 5px;color:var(--muted,#a5bbc8)}
+#home-active-location{display:block;font-size:13px;line-height:1.5}
+.home-location-choices{display:flex;flex-wrap:wrap;gap:8px;margin:9px 0}
+.home-location-choices button{padding:9px 12px;font-size:12px;min-height:42px}
+.home-location-choices button[aria-pressed=true]{border-color:#88c6c0;background:#193d43}
+.home-sky-location p:not(.home-location-kicker){font-size:11px;line-height:1.5;margin:5px 0;color:var(--muted,#a5bbc8)}
+#home-location-feedback:empty{display:none}
+.home-live-sky>#home-location-panel{margin:0;border-radius:0;border-inline:0;font-size:12px}
+.home-live-sky>#home-location-panel>summary{padding:10px 16px}
+.dv-nav-night .home-sky-location,.dv-nav-night .home-location-choices button[aria-pressed=true]{background:#130706;border-color:#5b2921}
