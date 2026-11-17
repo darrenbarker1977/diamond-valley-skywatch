@@ -207,13 +207,19 @@ if(DVSkyTime.permanent(albertaZone||TZ)){
  acceptWeather(data,Date.now(),false);try{localStorage.setItem(CACHE_KEY,JSON.stringify({stamp:lastSuccess,data}));}catch(_){}setState('live',activeOfficial?'Live · Environment Canada':data.model_source?'Live · Canadian GEM':officialGuide.canadianZone(TZ)?'Live · Open-Meteo fallback':'Live · Open-Meteo');$('#health').className='notice';$('#health').textContent=(activeOfficial?'Environment Canada is primary for its labelled matched forecast point or area. '+(data.no_model?'Open-Meteo details are unavailable. ':'Numerical cloud layers and extra model details: Open-Meteo. '):officialNote+' ')+'Forecasts retrieved for the selected location. The cloud icons are illustrations, not live sky photos. Targets and Moon times are approximate astronomical calculations. Seeing/transparency and future event discoveries require separate sources.';}
 catch(e){offline=true;weatherFailure=e.name==='AbortError'?'Weather request timed out':e.message;publishWeather();setState('pending',DATA.length?'Offline · previous forecast':'Unable to load weather');$('#health').className='notice error';$('#health').textContent=`Weather update failed (${e.name==='AbortError'?'timed out':e.message}). `+(DATA.length?'Showing the previously retrieved forecast: values may be stale. Only cached nights that remain in range are shown. No new weather is available offline. Tap Refresh to try again.':'No weather conditions or stargazing recommendation will be fabricated. Check your internet connection and retry.');if(!DATA.length){$('#days').innerHTML='<div class="empty">Forecast unavailable. Tap Refresh Now.</div>';$('#detailtitle').textContent='Weather unavailable';$('#verdict').textContent='NO VERIFIED CONDITIONS';}updateTime();}
 finally{clearTimeout(timer);loading=false;b.disabled=false;b.textContent='↻ Refresh now';if(reason==='manual'||reason==='mission')astroQuality?.retry();}}
+function tonightBrief(){
+ const date=dateHere(),d=DATA.find(day=>day.date===date);if(!d)return null;
+ const clouds=d.rows.map(r=>r.cloud_cover).filter(Number.isFinite),temperatures=d.rows.map(r=>r.temperature_2m).filter(Number.isFinite),winds=d.rows.map(r=>r.wind_speed_10m).filter(Number.isFinite);
+ return {date,zone:TZ,verdict:d.verdict,window:bestLabel(d),cloudMin:lowest(clouds),cloudMax:peak(clouds),tempMin:lowest(temperatures),tempMax:peak(temperatures),windMax:peak(winds),condition:d.official?.condition||'',source:d.official?'Environment Canada':lastWeatherData?.model_source||'Open-Meteo',detailsSource:lastWeatherData?.no_model?null:lastWeatherData?.model_source||'Open-Meteo',reason:d.green?.reason||''};
+}
 function publishWeather(){
  if(window.parent===window)return;
- window.parent.postMessage({type:'dvsky-weather-snapshot',latitude:LAT,longitude:LON,stamp:lastSuccess,data:lastWeatherData?{...lastWeatherData,timezone:TZ}:null,offline,cached:offline,error:weatherFailure,status:weatherFailure?'unavailable':loading?'loading':lastWeatherData?'ready':'unavailable'},location.origin);
+ window.parent.postMessage({type:'dvsky-weather-snapshot',latitude:LAT,longitude:LON,stamp:lastSuccess,data:lastWeatherData?{...lastWeatherData,timezone:TZ}:null,offline,cached:offline,error:weatherFailure,status:weatherFailure?'unavailable':loading?'loading':lastWeatherData?'ready':'unavailable',tonight:tonightBrief()},location.origin);
 }
 window.addEventListener('message',event=>{
  if(window.parent===window||event.origin!==location.origin||event.source!==window.parent)return;
- if(event.data?.type==='dvsky-weather-request')publishWeather();
+ if(event.data?.type==='dvsky-weather-tonight'){const i=DATA.findIndex(d=>d.date===dateHere());if(i>=0){selected=i;drawDays();drawDetail();window.scrollTo(0,0);}}
+ else if(event.data?.type==='dvsky-weather-request')publishWeather();
  else if(event.data?.type==='dvsky-weather-refresh')refresh('mission');
 });
 $('#forecast-mission').addEventListener('click',()=>{

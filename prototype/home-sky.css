@@ -62,3 +62,16 @@
 .home-live-sky>#home-location-panel{margin:0;border-radius:0;border-inline:0;font-size:12px}
 .home-live-sky>#home-location-panel>summary{padding:10px 16px}
 .dv-nav-night .home-sky-location,.dv-nav-night .home-location-choices button[aria-pressed=true]{background:#130706;border-color:#5b2921}
+/* One shared-source evening brief, before the opening sky on every screen size. */
+#home-view>.home-tonight{grid-column:1/-1!important;margin:0 0 14px;min-width:0}
+#home-tonight-open{width:100%;display:grid;grid-template-columns:minmax(145px,.7fr) minmax(0,1.3fr) 18px;gap:12px;align-items:center;text-align:left;padding:14px 16px;border:1px solid #56716e;border-radius:16px;background:linear-gradient(115deg,#163536,#102333);color:var(--ink,#ece8d4);box-shadow:none}
+.tonight-heading>span{display:block;font-size:8px;letter-spacing:1.6px;color:var(--muted,#aac5c8);margin-bottom:5px}
+.tonight-heading strong{display:block;font-size:15px;line-height:1.35;font-weight:600}
+.tonight-body>span{display:block;font-size:12px;line-height:1.5}.tonight-body small{display:block;font-size:10px;line-height:1.45;color:var(--muted,#a5bbc8);margin-top:4px}.tonight-arrow{font-size:21px;color:#d7c794}
+#home-tonight[data-state=green] #home-tonight-open{border-color:#81bfa1;background:linear-gradient(115deg,#1d4037,#102a31)}
+#home-tonight[data-state=maybe] #home-tonight-open,#home-tonight[data-state=saved] #home-tonight-open{border-color:#968457;background:linear-gradient(115deg,#353329,#112735)}
+#home-tonight[data-state=skip] #home-tonight-open{border-color:#98646a;background:linear-gradient(115deg,#382830,#122432)}
+#home-tonight[data-state=unavailable] #home-tonight-open,#home-tonight[data-state=loading] #home-tonight-open{border-color:#3c596b;background:#102332}
+.dv-nav-night #home-tonight-open{background:#130706!important;border-color:#71372a!important;color:#be6655}
+@media(min-width:1050px){#home-tonight{grid-row:1}#home-sky-slot{grid-row:2/span 10}}
+@media(max-width:560px){#home-tonight-open{grid-template-columns:minmax(0,1fr) 16px;gap:8px;padding:13px 15px}.tonight-heading{grid-column:1;grid-row:1}.tonight-body{grid-column:1;grid-row:2}.tonight-arrow{grid-column:2;grid-row:1/span 2}.tonight-heading strong{font-size:15px}.tonight-body>span{font-size:11px}}
