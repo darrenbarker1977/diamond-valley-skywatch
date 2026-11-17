@@ -25,7 +25,7 @@ export function createHomeSky({A,site,catalogue,compass,getPointing,onTarget,onS
  const locationPanel=$('home-location-panel'),locationBar=document.createElement('section');
  locationBar.className='home-sky-location';locationBar.setAttribute('aria-label','Location for the live sky');
  locationBar.innerHTML='<p class="home-location-kicker">SKY & FORECAST LOCATION</p><strong id="home-active-location"></strong><div class="home-location-choices"><button type="button" id="home-use-phone-location" aria-pressed="false"><span aria-hidden="true">□</span> Phone location</button><button type="button" id="home-choose-place" aria-expanded="false" aria-controls="home-location-panel"><span aria-hidden="true">□</span> Choose a place</button></div><p id="home-location-source"></p><p class="home-location-help">A nearby town is enough to browse. For pointing, use your actual observing site. Saved locations work without GPS or cell service; weather needs a connection to refresh.</p><p id="home-location-feedback" role="status"></p>';
- card.querySelector('.atlas-stage').before(locationBar,locationPanel);
+ card.querySelector('.atlas-stage').before(locationBar,locationPanel);slot.append(card);
  const phoneLocation=$('home-use-phone-location'),choosePlace=$('home-choose-place');
  function locationUI(){
   const gps=site.source==='geolocation',pending=$('use-location').disabled;
@@ -33,13 +33,13 @@ export function createHomeSky({A,site,catalogue,compass,getPointing,onTarget,onS
   phoneLocation.setAttribute('aria-pressed',String(gps));phoneLocation.querySelector('span').textContent=gps?'☑':'□';phoneLocation.disabled=pending;
   choosePlace.querySelector('span').textContent=gps?'□':'☑';choosePlace.setAttribute('aria-expanded',String(locationPanel.open));
   $('home-location-source').textContent=gps?`Phone fix in use · accuracy ±${Math.round(site.accuracy)} m. Update after moving; this is not live tracking.`:site.source==='saved'?'Last saved place in use · no new GPS fix.':site.source==='default'?'Default place in use · choose your location if you are elsewhere.':'Chosen place in use · GPS is optional.';
-  $('home-location-feedback').textContent=$('location-status').textContent;
+  const feedback=$('location-status').textContent;$('home-location-feedback').textContent=/^(Saved on this browser|Restored your last|Using the default)/.test(feedback)?'':feedback;
  }
  phoneLocation.addEventListener('click',()=>{$('use-location').click();locationUI();});
  choosePlace.addEventListener('click',()=>{locationPanel.open=!locationPanel.open;if(locationPanel.open){const search=locationPanel.querySelector('.dv-location-search');search.open=true;$('place-query').focus({preventScroll:true});}locationUI();});
  locationPanel.addEventListener('toggle',locationUI);
  new MutationObserver(locationUI).observe($('location-status'),{childList:true,subtree:true,characterData:true});
- locationUI();slot.append(card);
+ locationUI();
  const target=document.createElement('div');target.id='home-sky-target';target.className='home-sky-target';target.hidden=true;
  const targetName=document.createElement('strong'),targetPlace=document.createElement('span'),targetButton=document.createElement('button');targetButton.type='button';targetButton.textContent='View target';target.append(targetName,targetPlace,targetButton);card.querySelector('.atlas-follow-panel').after(target);
  // Keep the existing controls, event handlers, mode choices and saved data.
